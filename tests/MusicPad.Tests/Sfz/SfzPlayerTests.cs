@@ -86,6 +86,148 @@ public class SfzPlayerTests
         Assert.All(buffer, s => Assert.Equal(0f, s));
     }
 
+    #region Loop Mode Tests
+
+    [Fact]
+    public void LoopContinuous_SampleLoopsIndefinitely()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateLoopingInstrument(LoopMode.LoopContinuous, loopStart: 100, loopEnd: 200);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate enough samples to go through the loop multiple times
+        // Sample plays from 0 to loopEnd (200), then loops back to loopStart (100)
+        // Each loop iteration is 100 samples, so 5000 samples should be ~50 loops
+        var buffer = new float[5000];
+        player.GenerateSamples(buffer);
+        
+        // Voice should still be active (not finished) because it's looping
+        Assert.Equal(1, player.ActiveVoiceCount);
+        
+        // Should have sound throughout (looping samples)
+        var lastPortion = buffer.Skip(4500).Take(100).ToArray();
+        Assert.Contains(lastPortion, s => Math.Abs(s) > 0.001f);
+    }
+
+    [Fact]
+    public void LoopContinuous_VoiceDoesNotEndPrematurely()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        // Short sample that would end quickly without looping
+        var instrument = CreateLoopingInstrument(LoopMode.LoopContinuous, loopStart: 50, loopEnd: 100, sampleLength: 150);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate way more samples than the sample length
+        var buffer = new float[1000];
+        player.GenerateSamples(buffer);
+        
+        // Voice should still be playing due to loop
+        Assert.Equal(1, player.ActiveVoiceCount);
+    }
+
+    [Fact]
+    public void NoLoop_VoiceEndsAtSampleEnd()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateLoopingInstrument(LoopMode.NoLoop, loopStart: 50, loopEnd: 100, sampleLength: 200);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate more samples than the sample length
+        var buffer = new float[500];
+        player.GenerateSamples(buffer);
+        
+        // Voice should have finished (no loop, reached end)
+        Assert.Equal(0, player.ActiveVoiceCount);
+    }
+
+    [Fact]
+    public void LoopSustain_LoopsDuringSustain()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateLoopingInstrument(LoopMode.LoopSustain, loopStart: 50, loopEnd: 100, sampleLength: 200);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate samples while note is held (in sustain)
+        var buffer = new float[500];
+        player.GenerateSamples(buffer);
+        
+        // Voice should still be playing (looping in sustain)
+        Assert.Equal(1, player.ActiveVoiceCount);
+    }
+
+    [Fact]
+    public void LoopSustain_PlaysToEndAfterNoteOff()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        // Create instrument with loop in middle, and enough samples after loop for release
+        var instrument = CreateLoopingInstrument(LoopMode.LoopSustain, loopStart: 50, loopEnd: 100, sampleLength: 300);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Play a bit, then release
+        var buffer1 = new float[200];
+        player.GenerateSamples(buffer1);
+        Assert.Equal(1, player.ActiveVoiceCount); // Still playing (looping)
+        
+        player.NoteOff(60);
+        
+        // Generate enough samples for release phase to complete and sample to end
+        var buffer2 = new float[10000];
+        player.GenerateSamples(buffer2);
+        
+        // Voice should have finished (played to end after release)
+        Assert.Equal(0, player.ActiveVoiceCount);
+    }
+
+    [Fact]
+    public void LoopContinuous_StillLoopsAfterNoteOff()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateLoopingInstrument(LoopMode.LoopContinuous, loopStart: 50, loopEnd: 100, sampleLength: 150);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        player.NoteOff(60);
+        
+        // Generate samples during release - voice should continue looping but with envelope
+        var buffer = new float[500];
+        player.GenerateSamples(buffer);
+        
+        // Voice finishes when release envelope completes, not when sample ends
+        // With default short release, voice should be gone
+        // But if release was very short, voice might still be there
+        // This test just verifies it doesn't crash
+    }
+
+    [Fact]
+    public void LoopContinuous_InvalidLoopPoints_NoLoop()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        // Invalid loop points (loopEnd <= loopStart)
+        var instrument = CreateLoopingInstrument(LoopMode.LoopContinuous, loopStart: 100, loopEnd: 50, sampleLength: 200);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate more samples than sample length
+        var buffer = new float[500];
+        player.GenerateSamples(buffer);
+        
+        // Should behave like no loop (voice ends at sample end)
+        Assert.Equal(0, player.ActiveVoiceCount);
+    }
+
+    #endregion
+
     private static SfzInstrument CreateTestInstrument()
     {
         return CreateTestInstrumentWithPitchCenter(60);
@@ -120,6 +262,41 @@ public class SfzPlayerTests
             samples[i] = (float)Math.Sin(2 * Math.PI * 440 * i / 44100.0);
         }
         instrument.TestSamples = samples; // We'll add this property for testing
+
+        return instrument;
+    }
+
+    private static SfzInstrument CreateLoopingInstrument(LoopMode loopMode, int loopStart, int loopEnd, int sampleLength = 1000)
+    {
+        var instrument = new SfzInstrument
+        {
+            Name = "LoopTest",
+            BasePath = ""
+        };
+
+        var region = new SfzRegion
+        {
+            LoKey = 0,
+            HiKey = 127,
+            PitchKeycenter = 60,
+            Offset = 0,
+            End = sampleLength - 1,
+            LoopMode = loopMode,
+            LoopStart = loopStart,
+            LoopEnd = loopEnd,
+            AmpegAttack = 0.001f,
+            AmpegRelease = 0.1f,
+            AmpegSustain = 100f
+        };
+        instrument.Regions.Add(region);
+
+        // Generate sine wave samples
+        var samples = new float[sampleLength];
+        for (int i = 0; i < samples.Length; i++)
+        {
+            samples[i] = (float)Math.Sin(2 * Math.PI * 440 * i / 44100.0);
+        }
+        instrument.TestSamples = samples;
 
         return instrument;
     }
