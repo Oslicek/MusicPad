@@ -56,8 +56,21 @@ public class SfzPlayer
 
             // Calculate envelope parameters in samples
             int attackSamples = Math.Max(1, (int)(_sampleRate * region.AmpegAttack));
+            int holdSamples = (int)(_sampleRate * region.AmpegHold);
+            int decaySamples = Math.Max(1, (int)(_sampleRate * region.AmpegDecay));
             int releaseSamples = Math.Max(1, (int)(_sampleRate * region.AmpegRelease));
+            
+            // Sustain level - ensure minimum audible level for instruments with very low sustain
             float sustainLevel = region.AmpegSustain / 100f;
+            if (sustainLevel < 0.01f && (region.AmpegDecay > 0.1f || region.AmpegHold < 0.1f))
+            {
+                // For instruments with near-zero sustain and no significant hold time,
+                // use a minimum sustain level to keep the sound audible
+                sustainLevel = Math.Max(sustainLevel, 0.5f);
+            }
+            
+            // Clamp pitch ratio to prevent extremely slow or fast playback
+            double clampedPitchRatio = Math.Clamp(pitchRatio, 0.1, 10.0);
 
             // Create voice
             _activeVoice = new Voice
@@ -65,9 +78,11 @@ public class SfzPlayer
                 Samples = samples,
                 Position = region.Offset,
                 EndPosition = region.End > 0 ? region.End : samples.Length - 1,
-                PitchRatio = pitchRatio,
+                PitchRatio = clampedPitchRatio,
                 Volume = DbToLinear(region.Volume),
                 AttackSamples = attackSamples,
+                HoldSamples = holdSamples,
+                DecaySamples = decaySamples,
                 ReleaseSamples = releaseSamples,
                 SustainLevel = sustainLevel,
                 EnvelopePhase = EnvelopePhase.Attack,
@@ -182,8 +197,40 @@ public class SfzPlayer
                 voice.EnvelopePosition++;
                 if (voice.EnvelopePosition >= voice.AttackSamples)
                 {
-                    voice.EnvelopePhase = EnvelopePhase.Sustain;
-                    level = voice.SustainLevel;
+                    level = 1.0f;
+                    if (voice.HoldSamples > 0)
+                    {
+                        voice.EnvelopePhase = EnvelopePhase.Hold;
+                        voice.EnvelopePosition = 0;
+                    }
+                    else
+                    {
+                        voice.EnvelopePhase = EnvelopePhase.Decay;
+                        voice.EnvelopePosition = 0;
+                    }
+                }
+                break;
+
+            case EnvelopePhase.Hold:
+                level = 1.0f; // Stay at peak during hold
+                voice.EnvelopePosition++;
+                if (voice.EnvelopePosition >= voice.HoldSamples)
+                {
+                    voice.EnvelopePhase = EnvelopePhase.Decay;
+                    voice.EnvelopePosition = 0;
+                }
+                break;
+
+            case EnvelopePhase.Decay:
+                {
+                    float decayProgress = (float)voice.EnvelopePosition / voice.DecaySamples;
+                    level = 1.0f - (1.0f - voice.SustainLevel) * decayProgress;
+                    voice.EnvelopePosition++;
+                    if (voice.EnvelopePosition >= voice.DecaySamples)
+                    {
+                        voice.EnvelopePhase = EnvelopePhase.Sustain;
+                        level = voice.SustainLevel;
+                    }
                 }
                 break;
 
@@ -192,13 +239,15 @@ public class SfzPlayer
                 break;
 
             case EnvelopePhase.Release:
-                float releaseProgress = (float)voice.EnvelopePosition / voice.ReleaseSamples;
-                level = voice.ReleaseStartLevel * (1f - releaseProgress);
-                voice.EnvelopePosition++;
-                if (voice.EnvelopePosition >= voice.ReleaseSamples)
                 {
-                    level = 0;
-                    voice.IsFinished = true;
+                    float releaseProgress = (float)voice.EnvelopePosition / voice.ReleaseSamples;
+                    level = voice.ReleaseStartLevel * (1f - releaseProgress);
+                    voice.EnvelopePosition++;
+                    if (voice.EnvelopePosition >= voice.ReleaseSamples)
+                    {
+                        level = 0;
+                        voice.IsFinished = true;
+                    }
                 }
                 break;
         }
@@ -223,8 +272,10 @@ public class SfzPlayer
         public double PitchRatio { get; set; } = 1.0;
         public float Volume { get; set; } = 1f;
         
-        // Envelope
+        // Envelope (AHDSR - Attack, Hold, Decay, Sustain, Release)
         public int AttackSamples { get; set; }
+        public int HoldSamples { get; set; }
+        public int DecaySamples { get; set; }
         public int ReleaseSamples { get; set; }
         public float SustainLevel { get; set; } = 1f;
         public EnvelopePhase EnvelopePhase { get; set; }
@@ -238,6 +289,8 @@ public class SfzPlayer
     private enum EnvelopePhase
     {
         Attack,
+        Hold,
+        Decay,
         Sustain,
         Release
     }

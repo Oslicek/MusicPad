@@ -1,31 +1,22 @@
-using Microsoft.Maui.Controls.Shapes;
+using MusicPad.Controls;
 using MusicPad.Services;
 
 namespace MusicPad;
 
 public partial class MainPage : ContentPage
 {
-    private static readonly string[] NoteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-    private static readonly bool[] IsSharp = { false, true, false, true, false, false, true, false, true, false, true, false };
-    
-    // Natural notes - teal
-    private static readonly Color PadColor = Color.FromArgb("#4ECDC4");
-    private static readonly Color PadPressedColor = Color.FromArgb("#7EEEE6");
-    private static readonly Color PadBorderColor = Color.FromArgb("#2A9D8F");
-    
-    // Sharp/flat notes - orange/amber
-    private static readonly Color SharpPadColor = Color.FromArgb("#E8A838");
-    private static readonly Color SharpPadPressedColor = Color.FromArgb("#F5C868");
-    private static readonly Color SharpPadBorderColor = Color.FromArgb("#C48820");
-    
     private readonly ISfzService _sfzService;
-    private readonly Dictionary<int, Border> _padBorders = new();
+    private readonly PadMatrixDrawable _padDrawable;
+    private GraphicsView? _padGraphicsView;
     private bool _isLoading;
 
     public MainPage(ISfzService sfzService)
     {
         InitializeComponent();
         _sfzService = sfzService;
+        _padDrawable = new PadMatrixDrawable();
+        _padDrawable.NoteOn += OnNoteOn;
+        _padDrawable.NoteOff += OnNoteOff;
     }
 
     protected override async void OnAppearing()
@@ -88,8 +79,8 @@ public partial class MainPage : ContentPage
             
             await _sfzService.LoadInstrumentAsync(instrumentName);
             
-            // Build pad matrix
-            BuildPadMatrix();
+            // Setup pad matrix
+            SetupPadMatrix();
             
             StatusLabel.Text = $"{instrumentName}";
         }
@@ -104,205 +95,85 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private Grid? _padGrid;
-    private int _gridRows;
-    private int _gridColumns;
-
-    private void BuildPadMatrix()
+    private void SetupPadMatrix()
     {
-        _padBorders.Clear();
-        PadContainer.Children.Clear();
         LoadingLabel.IsVisible = false;
 
         var (minKey, maxKey) = _sfzService.CurrentKeyRange;
-        int noteCount = maxKey - minKey + 1;
-
-        if (noteCount <= 0)
+        
+        if (maxKey <= minKey)
         {
             LoadingLabel.IsVisible = true;
             LoadingLabel.Text = "No notes";
             return;
         }
 
-        // Calculate grid dimensions - aim for a roughly square grid
-        _gridColumns = (int)Math.Ceiling(Math.Sqrt(noteCount));
-        _gridRows = (int)Math.Ceiling((double)noteCount / _gridColumns);
+        _padDrawable.SetKeyRange(minKey, maxKey);
 
-        // Create the grid - will be centered and sized to fill space with square pads
-        _padGrid = new Grid
+        // Create or reuse GraphicsView
+        if (_padGraphicsView == null)
         {
-            ColumnSpacing = 3,
-            RowSpacing = 3,
-            HorizontalOptions = LayoutOptions.Center,
-            VerticalOptions = LayoutOptions.Center
-        };
-
-        // Add row and column definitions
-        for (int i = 0; i < _gridRows; i++)
-            _padGrid.RowDefinitions.Add(new RowDefinition(GridLength.Star));
-        for (int i = 0; i < _gridColumns; i++)
-            _padGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-
-        // Create pads - arrange from bottom-left (low notes) to top-right (high notes)
-        int noteIndex = 0;
-        for (int row = _gridRows - 1; row >= 0 && noteIndex < noteCount; row--)
-        {
-            for (int col = 0; col < _gridColumns && noteIndex < noteCount; col++)
+            _padGraphicsView = new GraphicsView
             {
-                int midiNote = minKey + noteIndex;
-                var pad = CreatePad(midiNote);
-                
-                Grid.SetRow(pad, row);
-                Grid.SetColumn(pad, col);
-                _padGrid.Children.Add(pad);
-                
-                _padBorders[midiNote] = pad;
-                noteIndex++;
-            }
+                Drawable = _padDrawable,
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
+
+            // Setup touch handlers
+            _padGraphicsView.StartInteraction += OnStartInteraction;
+            _padGraphicsView.DragInteraction += OnDragInteraction;
+            _padGraphicsView.EndInteraction += OnEndInteraction;
+            _padGraphicsView.CancelInteraction += OnCancelInteraction;
+
+            PadContainer.Children.Add(_padGraphicsView);
         }
 
-        PadContainer.Children.Add(_padGrid);
-        
-        // Update sizing when container size changes
-        PadContainer.SizeChanged -= OnPadContainerSizeChanged;
-        PadContainer.SizeChanged += OnPadContainerSizeChanged;
-        
-        // Trigger initial sizing
-        UpdateGridSize();
+        _padGraphicsView.Invalidate();
     }
 
-    private void OnPadContainerSizeChanged(object? sender, EventArgs e)
+    private void OnStartInteraction(object? sender, TouchEventArgs e)
     {
-        UpdateGridSize();
-    }
-
-    private void UpdateGridSize()
-    {
-        if (_padGrid == null || PadContainer.Width <= 0 || PadContainer.Height <= 0)
-            return;
-
-        double availableWidth = PadContainer.Width;
-        double availableHeight = PadContainer.Height;
-        double spacing = 3;
-
-        // Calculate pad size to make squares that fill the smaller dimension
-        double padSizeByWidth = (availableWidth - (_gridColumns - 1) * spacing) / _gridColumns;
-        double padSizeByHeight = (availableHeight - (_gridRows - 1) * spacing) / _gridRows;
-        
-        // Use the smaller size to ensure squares fit
-        double padSize = Math.Min(padSizeByWidth, padSizeByHeight);
-        
-        // Calculate total grid size
-        double gridWidth = padSize * _gridColumns + (_gridColumns - 1) * spacing;
-        double gridHeight = padSize * _gridRows + (_gridRows - 1) * spacing;
-
-        _padGrid.WidthRequest = gridWidth;
-        _padGrid.HeightRequest = gridHeight;
-        
-        // Update font size based on pad size
-        double fontSize = Math.Max(10, padSize / 4);
-        foreach (var child in _padGrid.Children)
+        var touch = e.Touches.FirstOrDefault();
+        if (touch != default)
         {
-            if (child is Border border && border.Content is Label label)
-            {
-                label.FontSize = fontSize;
-            }
+            _padDrawable.OnTouchStart((float)touch.X, (float)touch.Y);
+            _padGraphicsView?.Invalidate();
         }
     }
 
-    private Border CreatePad(int midiNote)
+    private void OnDragInteraction(object? sender, TouchEventArgs e)
     {
-        string noteName = GetNoteName(midiNote);
-        bool isSharpNote = IsSharp[midiNote % 12];
-        
-        Color padColor = isSharpNote ? SharpPadColor : PadColor;
-        Color borderColor = isSharpNote ? SharpPadBorderColor : PadBorderColor;
-        
-        var label = new Label
+        var touch = e.Touches.FirstOrDefault();
+        if (touch != default)
         {
-            Text = noteName,
-            FontSize = 14,
-            FontAttributes = FontAttributes.Bold,
-            TextColor = Colors.White,
-            HorizontalOptions = LayoutOptions.Center,
-            VerticalOptions = LayoutOptions.Center,
-            Shadow = new Shadow
-            {
-                Brush = new SolidColorBrush(Colors.Black),
-                Offset = new Point(1, 1),
-                Radius = 2,
-                Opacity = 0.5f
-            }
-        };
-
-        var border = new Border
-        {
-            BackgroundColor = padColor,
-            Stroke = borderColor,
-            StrokeThickness = 2,
-            StrokeShape = new RoundRectangle { CornerRadius = 8 },
-            Padding = 4,
-            Content = label
-        };
-
-        // Store the normal color for this pad
-        border.BindingContext = (isSharpNote, padColor);
-
-        // Add touch handling
-        var tapRecognizer = new TapGestureRecognizer();
-        tapRecognizer.Tapped += (s, e) => OnPadPressed(midiNote, border);
-        border.GestureRecognizers.Add(tapRecognizer);
-
-        // Use PointerGestureRecognizer for press/release on supported platforms
-        var pointerRecognizer = new PointerGestureRecognizer();
-        pointerRecognizer.PointerPressed += (s, e) => OnPadTouchDown(midiNote, border);
-        pointerRecognizer.PointerReleased += (s, e) => OnPadTouchUp(midiNote, border);
-        pointerRecognizer.PointerExited += (s, e) => OnPadTouchUp(midiNote, border);
-        border.GestureRecognizers.Add(pointerRecognizer);
-
-        return border;
+            _padDrawable.OnTouchMove((float)touch.X, (float)touch.Y);
+        }
     }
 
-    private void OnPadPressed(int midiNote, Border border)
+    private void OnEndInteraction(object? sender, TouchEventArgs e)
     {
-        bool isSharp = IsSharp[midiNote % 12];
-        Color normalColor = isSharp ? SharpPadColor : PadColor;
-        Color pressedColor = isSharp ? SharpPadPressedColor : PadPressedColor;
-        
-        // Fallback for tap - play note briefly
+        var touch = e.Touches.FirstOrDefault();
+        if (touch != default)
+        {
+            _padDrawable.OnTouchEnd((float)touch.X, (float)touch.Y);
+            _padGraphicsView?.Invalidate();
+        }
+    }
+
+    private void OnCancelInteraction(object? sender, EventArgs e)
+    {
+        _padDrawable.OnAllTouchesEnd();
+        _padGraphicsView?.Invalidate();
+    }
+
+    private void OnNoteOn(object? sender, int midiNote)
+    {
         _sfzService.NoteOn(midiNote);
-        border.BackgroundColor = pressedColor;
-        
-        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(300), () =>
-        {
-            _sfzService.NoteOff(midiNote);
-            border.BackgroundColor = normalColor;
-        });
     }
 
-    private void OnPadTouchDown(int midiNote, Border border)
+    private void OnNoteOff(object? sender, int midiNote)
     {
-        bool isSharp = IsSharp[midiNote % 12];
-        Color pressedColor = isSharp ? SharpPadPressedColor : PadPressedColor;
-        
-        _sfzService.NoteOn(midiNote);
-        border.BackgroundColor = pressedColor;
-    }
-
-    private void OnPadTouchUp(int midiNote, Border border)
-    {
-        bool isSharp = IsSharp[midiNote % 12];
-        Color normalColor = isSharp ? SharpPadColor : PadColor;
-        
         _sfzService.NoteOff(midiNote);
-        border.BackgroundColor = normalColor;
-    }
-
-    private static string GetNoteName(int midiNote)
-    {
-        int noteIndex = midiNote % 12;
-        int octave = (midiNote / 12) - 1;
-        return $"{NoteNames[noteIndex]}{octave}";
     }
 }
-
