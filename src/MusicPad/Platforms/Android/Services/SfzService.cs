@@ -20,11 +20,10 @@ public class SfzService : ISfzService, IDisposable
     private CancellationTokenSource? _cts;
     private Task? _playTask;
     private SfzInstrument? _currentInstrument;
-    private int _currentNote;
-    private bool _isPlaying;
 
     public IReadOnlyList<string> AvailableInstruments => _instrumentNames;
     public string? CurrentInstrumentName => _currentInstrument?.Name;
+    public (int minKey, int maxKey) CurrentKeyRange => _currentInstrument?.GetKeyRange() ?? (0, 127);
 
     public SfzService()
     {
@@ -64,7 +63,7 @@ public class SfzService : ISfzService, IDisposable
         try
         {
             // Stop any current playback
-            StopNote();
+            StopAll();
             
             // Find SFZ file in the instrument folder
             var files = _assets.List($"instruments/{instrumentName}");
@@ -120,22 +119,29 @@ public class SfzService : ISfzService, IDisposable
         }
     }
 
-    public void PlayNote()
+    public void NoteOn(int midiNote)
     {
         if (_currentInstrument == null)
             return;
 
-        _currentNote = _currentInstrument.GetMiddleKey();
-        _player.NoteOn(_currentNote, velocity: 100);
-        _isPlaying = true;
+        _player.NoteOn(midiNote, velocity: 100);
     }
 
-    public void StopNote()
+    public void NoteOff(int midiNote)
     {
-        if (_isPlaying)
+        _player.NoteOff(midiNote);
+    }
+
+    public void StopAll()
+    {
+        // For now, just stop any active voice
+        if (_currentInstrument != null)
         {
-            _player.NoteOff(_currentNote);
-            _isPlaying = false;
+            var (min, max) = _currentInstrument.GetKeyRange();
+            for (int i = min; i <= max; i++)
+            {
+                _player.NoteOff(i);
+            }
         }
     }
 

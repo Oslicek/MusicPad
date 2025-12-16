@@ -1,5 +1,3 @@
-using MusicPad.Core.Sfz;
-
 namespace MusicPad.Services;
 
 /// <summary>
@@ -18,18 +16,28 @@ public interface ISfzService
     string? CurrentInstrumentName { get; }
     
     /// <summary>
+    /// Gets the key range (min, max) of the current instrument.
+    /// </summary>
+    (int minKey, int maxKey) CurrentKeyRange { get; }
+    
+    /// <summary>
     /// Loads an SFZ instrument by name.
     /// </summary>
     Task LoadInstrumentAsync(string instrumentName);
     
     /// <summary>
-    /// Plays a note (triggers note-on with middle key of instrument).
+    /// Plays a specific MIDI note.
     /// </summary>
-    void PlayNote();
+    void NoteOn(int midiNote);
     
     /// <summary>
-    /// Stops the currently playing note.
+    /// Stops a specific MIDI note.
     /// </summary>
-    void StopNote();
+    void NoteOff(int midiNote);
+    
+    /// <summary>
+    /// Stops all playing notes.
+    /// </summary>
+    void StopAll();
 }
 

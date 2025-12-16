@@ -26,27 +26,20 @@
                     SelectedIndexChanged="OnInstrumentChanged" />
         </Grid>
         
-        <!-- Tap Pad -->
-        <Frame Grid.Row="1"
-               Margin="0,12"
-               Padding="0"
-               BackgroundColor="#2a2a4e"
-               BorderColor="#3a3a6e"
-               CornerRadius="16"
-               HasShadow="False">
-            <Grid x:Name="TapPad" BackgroundColor="Transparent">
-                <Grid.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnPadTapped" />
-                </Grid.GestureRecognizers>
-                
-                <Label x:Name="PadLabel"
-                       Text="Tap to Play"
-                       FontSize="24"
-                       TextColor="#666"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center" />
-            </Grid>
-        </Frame>
+        <!-- Pad Matrix Container -->
+        <Grid x:Name="PadContainer" 
+              Grid.Row="1"
+              Margin="0,4"
+              HorizontalOptions="Fill"
+              VerticalOptions="Fill">
+            
+            <Label x:Name="LoadingLabel"
+                   Text="Loading..."
+                   FontSize="18"
+                   TextColor="#666"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+        </Grid>
         
         <!-- Status Bar -->
         <Label Grid.Row="2"
