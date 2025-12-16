@@ -1,4 +1,4 @@
-# MusicMap
+# MusicPad
 
 A .NET MAUI music synthesizer application for Android.
 
@@ -18,7 +18,7 @@ dotnet workload install maui
 ### Build and Run
 
 ```bash
-cd src/MusicMap
+cd src/MusicPad
 dotnet build -f net10.0-android
 dotnet build -t:Run -f net10.0-android
 ```
@@ -26,16 +26,16 @@ dotnet build -t:Run -f net10.0-android
 ### Run Tests
 
 ```bash
-cd tests/MusicMap.Tests
+cd tests/MusicPad.Tests
 dotnet test
 ```
 
 ## Project Structure
 
 ```
-MusicMap/
+MusicPad/
 ├── src/
-│   ├── MusicMap/                    # MAUI application
+│   ├── MusicPad/                    # MAUI application
 │   │   ├── Platforms/
 │   │   │   └── Android/
 │   │   │       └── Services/
@@ -45,14 +45,14 @@ MusicMap/
 │   │   ├── MainPage.xaml             # Synthesizer UI
 │   │   └── MauiProgram.cs
 │   │
-│   └── MusicMap.Core/                # Shared library (platform-independent)
+│   └── MusicPad.Core/                # Shared library (platform-independent)
 │       └── Audio/
 │           ├── WaveTableGenerator.cs # Wavetable generation
 │           ├── VoiceMixer.cs         # Polyphonic mixing
 │           └── AHDSHRSettings.cs     # Envelope settings
 │
 ├── tests/
-│   └── MusicMap.Tests/               # Unit tests
+│   └── MusicPad.Tests/               # Unit tests
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │

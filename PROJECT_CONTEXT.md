@@ -4,7 +4,7 @@
 
 ## Overview
 
-**MusicMap** is a .NET MAUI music synthesizer application targeting Android as the primary platform.
+**MusicPad** is a .NET MAUI music synthesizer application targeting Android as the primary platform.
 
 ## Technology Stack
 
@@ -20,9 +20,9 @@
 ## Project Structure
 
 ```
-MusicMap/
+MusicPad/
 ├── src/
-│   ├── MusicMap/                    # MAUI application
+│   ├── MusicPad/                    # MAUI application
 │   │   ├── Platforms/
 │   │   │   └── Android/
 │   │   │       └── Services/
@@ -38,14 +38,14 @@ MusicMap/
 │   │   ├── MainPage.xaml             # Synthesizer UI
 │   │   └── MauiProgram.cs
 │   │
-│   └── MusicMap.Core/                # Shared library (platform-independent)
+│   └── MusicPad.Core/                # Shared library (platform-independent)
 │       └── Audio/
 │           ├── WaveTableGenerator.cs # Wavetable generation
 │           ├── VoiceMixer.cs         # Polyphonic mixing with release
 │           └── AHDSHRSettings.cs     # Envelope settings
 │
 ├── tests/
-│   └── MusicMap.Tests/               # Unit tests
+│   └── MusicPad.Tests/               # Unit tests
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │
@@ -61,8 +61,8 @@ MusicMap/
 **Pattern:** Service-based with Dependency Injection
 
 **Layers:**
-- `MusicMap.Core` - Platform-independent audio logic (wavetable, poly mixer)
-- `MusicMap` - MAUI app with platform-specific implementations
+- `MusicPad.Core` - Platform-independent audio logic (wavetable, poly mixer)
+- `MusicPad` - MAUI app with platform-specific implementations
 
 **Audio Engine:**
 - Sample Rate: 44,100 Hz
@@ -76,9 +76,9 @@ MusicMap/
 | `WaveTableGenerator` | Core | Generates sine wave tables |
 | `VoiceMixer` | Core | Polyphonic voice mixing with per-voice release |
 | `AHDSHRSettings` | Core | Envelope settings (Attack, Hold1, Decay, Sustain, Hold2, Release) |
-| `ITonePlayer` | MusicMap | Audio playback interface |
+| `ITonePlayer` | MusicPad | Audio playback interface |
 | `TonePlayer` | Android | AudioTrack player using `VoiceMixer` |
-| `MainPage` | MusicMap | Synth UI (placeholder) |
+| `MainPage` | MusicPad | Synth UI (placeholder) |
 
 ## Tests
 

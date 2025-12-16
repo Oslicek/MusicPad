@@ -134,7 +134,7 @@
 
 ### Test Project Structure
 ```
-MusicMap.Tests/
+MusicPad.Tests/
 ├── Unit/
 │   ├── ViewModels/
 │   ├── Services/
