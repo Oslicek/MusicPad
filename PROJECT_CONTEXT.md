@@ -20,7 +20,40 @@
 ## Project Structure
 
 ```
-
+MusicMap/
+├── src/
+│   ├── MusicMap/                    # MAUI application
+│   │   ├── Platforms/
+│   │   │   └── Android/
+│   │   │       └── Services/
+│   │   │           └── TonePlayer.cs # AudioTrack player
+│   │   ├── Services/
+│   │   │   ├── ITonePlayer.cs        # Audio interface
+│   │   │   ├── AudioSettings.cs      # Audio configuration
+│   │   │   └── TonePlayer.Stub.cs    # Stub for non-Android platforms
+│   │   ├── Resources/
+│   │   │   ├── Styles/               # Colors.xaml, Styles.xaml
+│   │   │   ├── AppIcon/              # App icon SVGs
+│   │   │   └── Fonts/                # OpenSans fonts
+│   │   ├── MainPage.xaml             # Synthesizer UI
+│   │   └── MauiProgram.cs
+│   │
+│   └── MusicMap.Core/                # Shared library (platform-independent)
+│       └── Audio/
+│           ├── WaveTableGenerator.cs # Wavetable generation
+│           ├── VoiceMixer.cs         # Polyphonic mixing with release
+│           └── AHDSHRSettings.cs     # Envelope settings
+│
+├── tests/
+│   └── MusicMap.Tests/               # Unit tests
+│       ├── WaveTableGeneratorTests.cs
+│       └── VoiceMixerTests.cs
+│
+├── .gitignore
+├── global.json
+├── PROJECT_RULES.md
+├── PROJECT_CONTEXT.md
+└── README.md
 ```
 
 ## Architecture
@@ -38,9 +71,21 @@
 
 ## Key Components
 
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `WaveTableGenerator` | Core | Generates sine wave tables |
+| `VoiceMixer` | Core | Polyphonic voice mixing with per-voice release |
+| `AHDSHRSettings` | Core | Envelope settings (Attack, Hold1, Decay, Sustain, Hold2, Release) |
+| `ITonePlayer` | MusicMap | Audio playback interface |
+| `TonePlayer` | Android | AudioTrack player using `VoiceMixer` |
+| `MainPage` | MusicMap | Synth UI (placeholder) |
 
 ## Tests
 
+| Test Class | Purpose |
+|------------|---------|
+| `WaveTableGeneratorTests` | Sine wavetable shape/count/amplitude |
+| `VoiceMixerTests` | Polyphony mixing, release, max-voice handling |
 
 ## Test Devices
 
@@ -50,14 +95,24 @@
 
 ## Current State
 
-**Phase:** 
+**Phase:** Initial Setup Complete
 
 **Completed:**
+- [x] Project setup with .NET 10 LTS and MAUI 10
+- [x] Core audio library with WaveTableGenerator and VoiceMixer
+- [x] Android AudioTrack TonePlayer implementation
+- [x] AHDSHR envelope support in VoiceMixer
+- [x] Multi-platform structure (Android, iOS, macOS, Windows, Tizen)
+- [x] Unit tests (18 tests passing)
+- [x] Dark theme UI styles
+- [x] Initial commit to Git
 
-
-**Current Features:**
-
-  - To be applied to mixer output; algorithms pending implementation
+**Pending:**
+- [ ] Create GitHub repository and push
+- [ ] Build synthesizer UI (piano keyboard, waveform editor)
+- [ ] Additional synthesis features
 
 ## Notes
 
+- Based on architecture from DrawSound project
+- WiFi debugging enabled on physical devices (phone + tablet)
