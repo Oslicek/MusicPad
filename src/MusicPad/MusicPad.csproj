@@ -15,7 +15,7 @@
 		<ApplicationTitle>MusicPad</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.MusicPad</ApplicationId>
+		<ApplicationId>com.companyname.musicpad</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

@@ -1,3 +1,4 @@
+#if !ANDROID
 using MusicPad.Core.Audio;
 
 namespace MusicPad.Services;
@@ -15,4 +16,4 @@ public partial class TonePlayer : ITonePlayer
     public void StopTone(double frequency) { }
     public void StopAll() { }
 }
-
+#endif
