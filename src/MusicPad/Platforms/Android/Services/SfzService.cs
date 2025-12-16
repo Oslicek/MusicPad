@@ -134,15 +134,7 @@ public class SfzService : ISfzService, IDisposable
 
     public void StopAll()
     {
-        // For now, just stop any active voice
-        if (_currentInstrument != null)
-        {
-            var (min, max) = _currentInstrument.GetKeyRange();
-            for (int i = min; i <= max; i++)
-            {
-                _player.NoteOff(i);
-            }
-        }
+        _player.StopAll();
     }
 
     private void EnsurePlaybackThread()

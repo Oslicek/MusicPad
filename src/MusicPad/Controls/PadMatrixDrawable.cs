@@ -3,7 +3,7 @@ using Microsoft.Maui.Graphics;
 namespace MusicPad.Controls;
 
 /// <summary>
-/// Drawable for the pad matrix that handles rendering and touch detection.
+/// Drawable for the pad matrix that handles rendering and multi-touch detection.
 /// </summary>
 public class PadMatrixDrawable : IDrawable
 {
@@ -28,7 +28,7 @@ public class PadMatrixDrawable : IDrawable
     private float _offsetX;
     private float _offsetY;
     
-    private readonly HashSet<int> _pressedNotes = new();
+    private readonly HashSet<int> _activeNotes = new();
 
     public event EventHandler<int>? NoteOn;
     public event EventHandler<int>? NoteOff;
@@ -83,7 +83,7 @@ public class PadMatrixDrawable : IDrawable
         float y = _offsetY + row * (_padSize + _spacing);
 
         bool isSharpNote = IsSharp[midiNote % 12];
-        bool isPressed = _pressedNotes.Contains(midiNote);
+        bool isPressed = _activeNotes.Contains(midiNote);
 
         Color bgColor = isSharpNote
             ? (isPressed ? SharpPressedColor : SharpColor)
@@ -112,37 +112,50 @@ public class PadMatrixDrawable : IDrawable
             HorizontalAlignment.Center, VerticalAlignment.Center);
     }
 
-    public void OnTouchStart(float x, float y)
+    /// <summary>
+    /// Updates active notes based on all current touch positions.
+    /// This handles multi-touch by comparing the new set of touched notes to the previous set.
+    /// </summary>
+    public void OnTouches(IEnumerable<PointF> touches)
     {
-        int? note = GetNoteAtPosition(x, y);
-        if (note.HasValue && !_pressedNotes.Contains(note.Value))
+        // Find all notes currently being touched
+        var newNotes = new HashSet<int>();
+        foreach (var touch in touches)
         {
-            _pressedNotes.Add(note.Value);
-            NoteOn?.Invoke(this, note.Value);
+            int? note = GetNoteAtPosition(touch.X, touch.Y);
+            if (note.HasValue)
+            {
+                newNotes.Add(note.Value);
+            }
+        }
+
+        // Find notes to press (in newNotes but not in _activeNotes)
+        foreach (var note in newNotes)
+        {
+            if (!_activeNotes.Contains(note))
+            {
+                _activeNotes.Add(note);
+                NoteOn?.Invoke(this, note);
+            }
+        }
+
+        // Find notes to release (in _activeNotes but not in newNotes)
+        var toRelease = _activeNotes.Where(n => !newNotes.Contains(n)).ToList();
+        foreach (var note in toRelease)
+        {
+            _activeNotes.Remove(note);
+            NoteOff?.Invoke(this, note);
         }
     }
 
-    public void OnTouchMove(float x, float y)
-    {
-        // For now, just handle the current touch position
-        // Could be extended for glissando later
-    }
-
-    public void OnTouchEnd(float x, float y)
-    {
-        int? note = GetNoteAtPosition(x, y);
-        if (note.HasValue && _pressedNotes.Contains(note.Value))
-        {
-            _pressedNotes.Remove(note.Value);
-            NoteOff?.Invoke(this, note.Value);
-        }
-    }
-
+    /// <summary>
+    /// Called when all touches end.
+    /// </summary>
     public void OnAllTouchesEnd()
     {
-        foreach (var note in _pressedNotes.ToList())
+        foreach (var note in _activeNotes.ToList())
         {
-            _pressedNotes.Remove(note);
+            _activeNotes.Remove(note);
             NoteOff?.Invoke(this, note);
         }
     }
@@ -189,4 +202,3 @@ public class PadMatrixDrawable : IDrawable
         return $"{NoteNames[noteIndex]}{octave}";
     }
 }
-

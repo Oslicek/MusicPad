@@ -134,31 +134,26 @@ public partial class MainPage : ContentPage
 
     private void OnStartInteraction(object? sender, TouchEventArgs e)
     {
-        var touch = e.Touches.FirstOrDefault();
-        if (touch != default)
-        {
-            _padDrawable.OnTouchStart((float)touch.X, (float)touch.Y);
-            _padGraphicsView?.Invalidate();
-        }
+        // Pass all current touches to handle multi-touch
+        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y));
+        _padDrawable.OnTouches(touches);
+        _padGraphicsView?.Invalidate();
     }
 
     private void OnDragInteraction(object? sender, TouchEventArgs e)
     {
-        var touch = e.Touches.FirstOrDefault();
-        if (touch != default)
-        {
-            _padDrawable.OnTouchMove((float)touch.X, (float)touch.Y);
-        }
+        // Pass all current touches to handle multi-touch
+        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y));
+        _padDrawable.OnTouches(touches);
+        _padGraphicsView?.Invalidate();
     }
 
     private void OnEndInteraction(object? sender, TouchEventArgs e)
     {
-        var touch = e.Touches.FirstOrDefault();
-        if (touch != default)
-        {
-            _padDrawable.OnTouchEnd((float)touch.X, (float)touch.Y);
-            _padGraphicsView?.Invalidate();
-        }
+        // Pass remaining touches (or empty if all fingers lifted)
+        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y));
+        _padDrawable.OnTouches(touches);
+        _padGraphicsView?.Invalidate();
     }
 
     private void OnCancelInteraction(object? sender, EventArgs e)

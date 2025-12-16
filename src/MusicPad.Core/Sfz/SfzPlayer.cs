@@ -2,18 +2,36 @@ namespace MusicPad.Core.Sfz;
 
 /// <summary>
 /// Plays SFZ instruments by generating audio samples.
-/// Currently supports single-voice (monophonic) playback.
+/// Supports polyphonic playback with configurable max voices.
 /// </summary>
 public class SfzPlayer
 {
+    private const int DefaultMaxVoices = 10;
+    
     private readonly int _sampleRate;
+    private readonly int _maxVoices;
     private SfzInstrument? _instrument;
-    private Voice? _activeVoice;
+    private readonly List<Voice> _voices = new();
     private readonly object _lock = new();
 
-    public SfzPlayer(int sampleRate)
+    public SfzPlayer(int sampleRate, int maxVoices = DefaultMaxVoices)
     {
         _sampleRate = sampleRate;
+        _maxVoices = Math.Max(1, maxVoices);
+    }
+
+    /// <summary>
+    /// Gets the number of currently active voices.
+    /// </summary>
+    public int ActiveVoiceCount
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _voices.Count;
+            }
+        }
     }
 
     /// <summary>
@@ -24,7 +42,7 @@ public class SfzPlayer
         lock (_lock)
         {
             _instrument = instrument;
-            _activeVoice = null; // Clear any active notes
+            _voices.Clear();
         }
     }
 
@@ -38,18 +56,28 @@ public class SfzPlayer
             if (_instrument == null)
                 return;
 
+            // Check if this note is already playing
+            if (_voices.Any(v => v.MidiNote == midiNote && v.EnvelopePhase != EnvelopePhase.Release))
+                return;
+
             // Find matching regions
             var regions = _instrument.FindRegions(midiNote, velocity).ToList();
             if (regions.Count == 0)
                 return;
 
-            // For now, just use the first matching region (mono playback)
+            // Use the first matching region
             var region = regions[0];
             
             // Get sample data
             float[]? samples = GetSamplesForRegion(region);
             if (samples == null || samples.Length == 0)
                 return;
+
+            // Voice stealing if at max polyphony
+            if (_voices.Count >= _maxVoices)
+            {
+                _voices.RemoveAt(0); // Remove oldest voice
+            }
 
             // Calculate pitch ratio
             double pitchRatio = region.GetPitchRatio(midiNote);
@@ -64,8 +92,6 @@ public class SfzPlayer
             float sustainLevel = region.AmpegSustain / 100f;
             if (sustainLevel < 0.01f && (region.AmpegDecay > 0.1f || region.AmpegHold < 0.1f))
             {
-                // For instruments with near-zero sustain and no significant hold time,
-                // use a minimum sustain level to keep the sound audible
                 sustainLevel = Math.Max(sustainLevel, 0.5f);
             }
             
@@ -73,8 +99,9 @@ public class SfzPlayer
             double clampedPitchRatio = Math.Clamp(pitchRatio, 0.1, 10.0);
 
             // Create voice
-            _activeVoice = new Voice
+            var voice = new Voice
             {
+                MidiNote = midiNote,
                 Samples = samples,
                 Position = region.Offset,
                 EndPosition = region.End > 0 ? region.End : samples.Length - 1,
@@ -89,6 +116,8 @@ public class SfzPlayer
                 EnvelopePosition = 0,
                 EnvelopeLevel = 0
             };
+
+            _voices.Add(voice);
         }
     }
 
@@ -99,11 +128,31 @@ public class SfzPlayer
     {
         lock (_lock)
         {
-            if (_activeVoice != null && _activeVoice.EnvelopePhase != EnvelopePhase.Release)
+            var voice = _voices.FirstOrDefault(v => v.MidiNote == midiNote && v.EnvelopePhase != EnvelopePhase.Release);
+            if (voice != null)
             {
-                _activeVoice.EnvelopePhase = EnvelopePhase.Release;
-                _activeVoice.EnvelopePosition = 0;
-                _activeVoice.ReleaseStartLevel = _activeVoice.EnvelopeLevel;
+                voice.EnvelopePhase = EnvelopePhase.Release;
+                voice.EnvelopePosition = 0;
+                voice.ReleaseStartLevel = voice.EnvelopeLevel;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Stops all playing voices.
+    /// </summary>
+    public void StopAll()
+    {
+        lock (_lock)
+        {
+            foreach (var voice in _voices)
+            {
+                if (voice.EnvelopePhase != EnvelopePhase.Release)
+                {
+                    voice.EnvelopePhase = EnvelopePhase.Release;
+                    voice.EnvelopePosition = 0;
+                    voice.ReleaseStartLevel = voice.EnvelopeLevel;
+                }
             }
         }
     }
@@ -115,29 +164,33 @@ public class SfzPlayer
     {
         Array.Clear(buffer, 0, buffer.Length);
 
+        Voice[] snapshot;
         lock (_lock)
         {
-            if (_activeVoice == null)
-                return;
+            snapshot = _voices.ToArray();
+        }
 
-            var voice = _activeVoice;
+        if (snapshot.Length == 0)
+            return;
 
-            for (int i = 0; i < buffer.Length; i++)
+        // Mix all voices
+        for (int i = 0; i < buffer.Length; i++)
+        {
+            float sample = 0f;
+
+            foreach (var voice in snapshot)
             {
                 if (voice.IsFinished)
-                {
-                    _activeVoice = null;
-                    break;
-                }
+                    continue;
 
                 // Get sample with linear interpolation
-                float sample = GetInterpolatedSample(voice);
+                float voiceSample = GetInterpolatedSample(voice);
 
                 // Apply envelope
                 float envelope = CalculateEnvelope(voice);
 
-                // Apply volume and envelope
-                buffer[i] = sample * voice.Volume * envelope;
+                // Apply volume and envelope, add to mix
+                sample += voiceSample * voice.Volume * envelope;
 
                 // Advance position
                 voice.FractionalPosition += voice.PitchRatio;
@@ -151,6 +204,20 @@ public class SfzPlayer
                 if (voice.Position >= voice.EndPosition)
                 {
                     voice.IsFinished = true;
+                }
+            }
+
+            buffer[i] = sample;
+        }
+
+        // Remove finished voices
+        lock (_lock)
+        {
+            for (int v = _voices.Count - 1; v >= 0; v--)
+            {
+                if (_voices[v].IsFinished)
+                {
+                    _voices.RemoveAt(v);
                 }
             }
         }
@@ -212,7 +279,7 @@ public class SfzPlayer
                 break;
 
             case EnvelopePhase.Hold:
-                level = 1.0f; // Stay at peak during hold
+                level = 1.0f;
                 voice.EnvelopePosition++;
                 if (voice.EnvelopePosition >= voice.HoldSamples)
                 {
@@ -265,6 +332,7 @@ public class SfzPlayer
 
     private class Voice
     {
+        public int MidiNote { get; set; }
         public float[] Samples { get; set; } = Array.Empty<float>();
         public int Position { get; set; }
         public int EndPosition { get; set; }
@@ -272,7 +340,7 @@ public class SfzPlayer
         public double PitchRatio { get; set; } = 1.0;
         public float Volume { get; set; } = 1f;
         
-        // Envelope (AHDSR - Attack, Hold, Decay, Sustain, Release)
+        // Envelope (AHDSR)
         public int AttackSamples { get; set; }
         public int HoldSamples { get; set; }
         public int DecaySamples { get; set; }
@@ -295,4 +363,3 @@ public class SfzPlayer
         Release
     }
 }
-
