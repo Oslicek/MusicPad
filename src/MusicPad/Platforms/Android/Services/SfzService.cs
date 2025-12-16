@@ -15,6 +15,7 @@ public class SfzService : ISfzService, IDisposable
     private readonly AssetManager _assets;
     private readonly SfzPlayer _player;
     private readonly List<string> _instrumentNames = new();
+    private readonly Dictionary<string, (string folder, string sfzFile)> _instrumentPaths = new();
     
     private AudioTrack? _audioTrack;
     private CancellationTokenSource? _cts;
@@ -43,11 +44,31 @@ public class SfzService : ISfzService, IDisposable
             {
                 foreach (var folder in folders)
                 {
-                    // Check if folder contains an SFZ file
                     var files = _assets.List($"instruments/{folder}");
-                    if (files != null && files.Any(f => f.EndsWith(".sfz", StringComparison.OrdinalIgnoreCase)))
+                    if (files == null) continue;
+                    
+                    // Find all SFZ files in the folder
+                    var sfzFiles = files
+                        .Where(f => f.EndsWith(".sfz", StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(f => f)
+                        .ToList();
+                    
+                    foreach (var sfzFile in sfzFiles)
                     {
-                        _instrumentNames.Add(folder);
+                        // Create a nice display name from the SFZ filename
+                        // Remove leading numbers and extension, e.g. "000_Good_flute.sfz" -> "Good flute"
+                        var displayName = GetDisplayName(sfzFile);
+                        
+                        // Ensure unique names
+                        var uniqueName = displayName;
+                        int counter = 2;
+                        while (_instrumentNames.Contains(uniqueName))
+                        {
+                            uniqueName = $"{displayName} ({counter++})";
+                        }
+                        
+                        _instrumentNames.Add(uniqueName);
+                        _instrumentPaths[uniqueName] = (folder, sfzFile);
                     }
                 }
             }
@@ -57,6 +78,28 @@ public class SfzService : ISfzService, IDisposable
             System.Diagnostics.Debug.WriteLine($"Error discovering instruments: {ex.Message}");
         }
     }
+    
+    private static string GetDisplayName(string sfzFileName)
+    {
+        // Remove .sfz extension
+        var name = Path.GetFileNameWithoutExtension(sfzFileName);
+        
+        // Remove leading numbers and underscores (e.g., "000_", "001_")
+        while (name.Length > 0 && (char.IsDigit(name[0]) || name[0] == '_'))
+        {
+            name = name.Substring(1);
+        }
+        
+        // Replace underscores with spaces
+        name = name.Replace('_', ' ').Replace('-', ' ');
+        
+        // Trim and ensure not empty
+        name = name.Trim();
+        if (string.IsNullOrEmpty(name))
+            name = sfzFileName;
+            
+        return name;
+    }
 
     public async Task LoadInstrumentAsync(string instrumentName)
     {
@@ -65,15 +108,15 @@ public class SfzService : ISfzService, IDisposable
             // Stop any current playback
             StopAll();
             
-            // Find SFZ file in the instrument folder
-            var files = _assets.List($"instruments/{instrumentName}");
-            var sfzFile = files?.FirstOrDefault(f => f.EndsWith(".sfz", StringComparison.OrdinalIgnoreCase));
+            // Look up the folder and SFZ file for this instrument
+            if (!_instrumentPaths.TryGetValue(instrumentName, out var pathInfo))
+                throw new FileNotFoundException($"Instrument not found: {instrumentName}");
             
-            if (sfzFile == null)
-                throw new FileNotFoundException($"No SFZ file found in instrument folder: {instrumentName}");
+            var (folder, sfzFile) = pathInfo;
+            var basePath = $"instruments/{folder}";
 
             // Read and parse SFZ file
-            var sfzPath = $"instruments/{instrumentName}/{sfzFile}";
+            var sfzPath = $"{basePath}/{sfzFile}";
             string sfzContent;
             using (var stream = _assets.Open(sfzPath))
             using (var reader = new StreamReader(stream))
@@ -81,13 +124,13 @@ public class SfzService : ISfzService, IDisposable
                 sfzContent = await reader.ReadToEndAsync();
             }
 
-            var instrument = SfzParser.Parse(sfzContent, instrumentName, $"instruments/{instrumentName}");
+            var instrument = SfzParser.Parse(sfzContent, instrumentName, basePath);
 
             // Load the sample WAV file
             var samplePath = instrument.DefaultSample;
             if (!string.IsNullOrEmpty(samplePath))
             {
-                var fullSamplePath = $"instruments/{instrumentName}/{samplePath}";
+                var fullSamplePath = $"{basePath}/{samplePath}";
                 using var sampleStream = _assets.Open(fullSamplePath);
                 using var ms = new MemoryStream();
                 await sampleStream.CopyToAsync(ms);

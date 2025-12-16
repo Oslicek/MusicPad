@@ -29,6 +29,10 @@ public class PadMatrixDrawable : IDrawable
     private float _offsetY;
     
     private readonly HashSet<int> _activeNotes = new();
+    
+    // Track which touch index is playing which note (for multi-touch stability)
+    private readonly Dictionary<int, int> _touchToNote = new();
+    private int _lastTouchCount;
 
     public event EventHandler<int>? NoteOn;
     public event EventHandler<int>? NoteOff;
@@ -114,38 +118,51 @@ public class PadMatrixDrawable : IDrawable
 
     /// <summary>
     /// Updates active notes based on all current touch positions.
-    /// This handles multi-touch by comparing the new set of touched notes to the previous set.
+    /// Uses touch index tracking to handle capacitive touch drift on multi-touch.
     /// </summary>
     public void OnTouches(IEnumerable<PointF> touches)
     {
-        // Find all notes currently being touched
-        var newNotes = new HashSet<int>();
-        foreach (var touch in touches)
+        var touchList = touches.ToList();
+        var currentTouchCount = touchList.Count;
+        
+        // If touch count decreased, some fingers were lifted
+        // We need to figure out which touches are still active
+        if (currentTouchCount < _lastTouchCount)
+        {
+            // Release notes for removed touches
+            // We can't track exact finger identity in MAUI, so use a heuristic:
+            // Keep notes that still have a touch near them
+            var notesToKeep = new HashSet<int>();
+            foreach (var touch in touchList)
+            {
+                int? note = GetNoteAtPosition(touch.X, touch.Y);
+                if (note.HasValue && _activeNotes.Contains(note.Value))
+                {
+                    notesToKeep.Add(note.Value);
+                }
+            }
+            
+            // Release notes that no longer have any touch
+            var toRelease = _activeNotes.Except(notesToKeep).ToList();
+            foreach (var note in toRelease)
+            {
+                _activeNotes.Remove(note);
+                NoteOff?.Invoke(this, note);
+            }
+        }
+        
+        // For each current touch, check if it's on a new pad
+        foreach (var touch in touchList)
         {
             int? note = GetNoteAtPosition(touch.X, touch.Y);
-            if (note.HasValue)
+            if (note.HasValue && !_activeNotes.Contains(note.Value))
             {
-                newNotes.Add(note.Value);
+                _activeNotes.Add(note.Value);
+                NoteOn?.Invoke(this, note.Value);
             }
         }
-
-        // Find notes to press (in newNotes but not in _activeNotes)
-        foreach (var note in newNotes)
-        {
-            if (!_activeNotes.Contains(note))
-            {
-                _activeNotes.Add(note);
-                NoteOn?.Invoke(this, note);
-            }
-        }
-
-        // Find notes to release (in _activeNotes but not in newNotes)
-        var toRelease = _activeNotes.Where(n => !newNotes.Contains(n)).ToList();
-        foreach (var note in toRelease)
-        {
-            _activeNotes.Remove(note);
-            NoteOff?.Invoke(this, note);
-        }
+        
+        _lastTouchCount = currentTouchCount;
     }
 
     /// <summary>
@@ -158,6 +175,8 @@ public class PadMatrixDrawable : IDrawable
             _activeNotes.Remove(note);
             NoteOff?.Invoke(this, note);
         }
+        _touchToNote.Clear();
+        _lastTouchCount = 0;
     }
 
     private int? GetNoteAtPosition(float x, float y)

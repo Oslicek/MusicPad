@@ -135,7 +135,7 @@ public partial class MainPage : ContentPage
     private void OnStartInteraction(object? sender, TouchEventArgs e)
     {
         // Pass all current touches to handle multi-touch
-        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y));
+        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y)).ToList();
         _padDrawable.OnTouches(touches);
         _padGraphicsView?.Invalidate();
     }
@@ -143,16 +143,16 @@ public partial class MainPage : ContentPage
     private void OnDragInteraction(object? sender, TouchEventArgs e)
     {
         // Pass all current touches to handle multi-touch
-        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y));
+        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y)).ToList();
         _padDrawable.OnTouches(touches);
         _padGraphicsView?.Invalidate();
     }
 
     private void OnEndInteraction(object? sender, TouchEventArgs e)
     {
-        // Pass remaining touches (or empty if all fingers lifted)
-        var touches = e.Touches.Select(t => new PointF((float)t.X, (float)t.Y));
-        _padDrawable.OnTouches(touches);
+        // EndInteraction is called when ALL touches end
+        // Release all notes to ensure none get stuck
+        _padDrawable.OnAllTouchesEnd();
         _padGraphicsView?.Invalidate();
     }
 

@@ -83,10 +83,11 @@ public class SfzPlayer
             double pitchRatio = region.GetPitchRatio(midiNote);
 
             // Calculate envelope parameters in samples
+            // Clamp release to max 3 seconds to prevent stuck notes
             int attackSamples = Math.Max(1, (int)(_sampleRate * region.AmpegAttack));
-            int holdSamples = (int)(_sampleRate * region.AmpegHold);
+            int holdSamples = (int)(_sampleRate * Math.Min(region.AmpegHold, 10f));
             int decaySamples = Math.Max(1, (int)(_sampleRate * region.AmpegDecay));
-            int releaseSamples = Math.Max(1, (int)(_sampleRate * region.AmpegRelease));
+            int releaseSamples = Math.Max(1, Math.Min((int)(_sampleRate * region.AmpegRelease), _sampleRate * 3));
             
             // Sustain level - ensure minimum audible level for instruments with very low sustain
             float sustainLevel = region.AmpegSustain / 100f;
@@ -98,6 +99,10 @@ public class SfzPlayer
             // Clamp pitch ratio to prevent extremely slow or fast playback
             double clampedPitchRatio = Math.Clamp(pitchRatio, 0.1, 10.0);
 
+            // Calculate loop points (relative to sample start)
+            int loopStart = region.LoopStart;
+            int loopEnd = region.LoopEnd > 0 ? region.LoopEnd : (region.End > 0 ? region.End : samples.Length - 1);
+            
             // Create voice
             var voice = new Voice
             {
@@ -107,6 +112,9 @@ public class SfzPlayer
                 EndPosition = region.End > 0 ? region.End : samples.Length - 1,
                 PitchRatio = clampedPitchRatio,
                 Volume = DbToLinear(region.Volume),
+                LoopMode = region.LoopMode,
+                LoopStart = loopStart,
+                LoopEnd = loopEnd,
                 AttackSamples = attackSamples,
                 HoldSamples = holdSamples,
                 DecaySamples = decaySamples,
@@ -128,18 +136,20 @@ public class SfzPlayer
     {
         lock (_lock)
         {
-            var voice = _voices.FirstOrDefault(v => v.MidiNote == midiNote && v.EnvelopePhase != EnvelopePhase.Release);
-            if (voice != null)
+            // Find all voices with this note that aren't already releasing
+            var voices = _voices.Where(v => v.MidiNote == midiNote && v.EnvelopePhase != EnvelopePhase.Release).ToList();
+            foreach (var voice in voices)
             {
                 voice.EnvelopePhase = EnvelopePhase.Release;
                 voice.EnvelopePosition = 0;
-                voice.ReleaseStartLevel = voice.EnvelopeLevel;
+                // Ensure release starts from at least a small level to prevent stuck silent voices
+                voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
             }
         }
     }
 
     /// <summary>
-    /// Stops all playing voices.
+    /// Stops all playing voices immediately.
     /// </summary>
     public void StopAll()
     {
@@ -151,9 +161,20 @@ public class SfzPlayer
                 {
                     voice.EnvelopePhase = EnvelopePhase.Release;
                     voice.EnvelopePosition = 0;
-                    voice.ReleaseStartLevel = voice.EnvelopeLevel;
+                    voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Immediately stops all voices without release phase.
+    /// </summary>
+    public void KillAll()
+    {
+        lock (_lock)
+        {
+            _voices.Clear();
         }
     }
 
@@ -200,10 +221,34 @@ public class SfzPlayer
                     voice.Position++;
                 }
 
-                // Check if we've reached the end
-                if (voice.Position >= voice.EndPosition)
+                // Handle looping and end of sample
+                if (voice.LoopMode == LoopMode.LoopContinuous && voice.LoopEnd > voice.LoopStart)
                 {
-                    voice.IsFinished = true;
+                    // Loop continuously while playing
+                    if (voice.Position >= voice.LoopEnd)
+                    {
+                        voice.Position = voice.LoopStart + (voice.Position - voice.LoopEnd);
+                    }
+                }
+                else if (voice.LoopMode == LoopMode.LoopSustain && voice.LoopEnd > voice.LoopStart)
+                {
+                    // Loop while in sustain phase, play to end during release
+                    if (voice.EnvelopePhase != EnvelopePhase.Release && voice.Position >= voice.LoopEnd)
+                    {
+                        voice.Position = voice.LoopStart + (voice.Position - voice.LoopEnd);
+                    }
+                    else if (voice.Position >= voice.EndPosition)
+                    {
+                        voice.IsFinished = true;
+                    }
+                }
+                else
+                {
+                    // No loop or one-shot: end when reaching end position
+                    if (voice.Position >= voice.EndPosition)
+                    {
+                        voice.IsFinished = true;
+                    }
                 }
             }
 
@@ -339,6 +384,11 @@ public class SfzPlayer
         public double FractionalPosition { get; set; }
         public double PitchRatio { get; set; } = 1.0;
         public float Volume { get; set; } = 1f;
+        
+        // Loop settings
+        public LoopMode LoopMode { get; set; } = LoopMode.NoLoop;
+        public int LoopStart { get; set; }
+        public int LoopEnd { get; set; }
         
         // Envelope (AHDSR)
         public int AttackSamples { get; set; }
