@@ -64,5 +64,10 @@
 	  <ProjectReference Include="..\MusicPad.Core\MusicPad.Core.csproj" />
 	</ItemGroup>
 
+	<!-- Ensure generated commit info is available to XamlC -->
+	<ItemGroup>
+	  <Compile Include="..\GeneratedCommitInfo.cs" />
+	</ItemGroup>
+
 </Project>
 

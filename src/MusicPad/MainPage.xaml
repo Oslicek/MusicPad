@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MusicPad"
              x:Class="MusicPad.MainPage"
-             Title="MusicPad Synth">
+             BackgroundColor="{StaticResource Gray950}">
 
-    <Grid Padding="20" RowDefinitions="Auto,*,Auto">
+    <Grid Padding="4" RowDefinitions="*,Auto">
         
-        <!-- Header -->
-        <Label Grid.Row="0"
-               Text="MusicPad Synth"
-               FontSize="28"
-               FontAttributes="Bold"
-               HorizontalOptions="Center"
-               TextColor="{StaticResource Primary}" />
+        <!-- Commit hash label -->
+        <Label Text="{x:Static local:BuildInfo.CommitHash}"
+               FontSize="8"
+               TextColor="#666"
+               HorizontalOptions="Start"
+               VerticalOptions="Start"
+               Margin="1,1,0,0" />
         
         <!-- Main Content Area -->
-        <Frame Grid.Row="1"
+        <Frame Grid.Row="0"
                Margin="0,20"
                Padding="20"
                BackgroundColor="{StaticResource Surface}"
@@ -33,7 +34,7 @@
         </Frame>
         
         <!-- Status Bar -->
-        <Label Grid.Row="2"
+        <Label Grid.Row="1"
                x:Name="StatusLabel"
                Text="Ready"
                FontSize="12"
@@ -43,4 +44,3 @@
     </Grid>
 
 </ContentPage>
-

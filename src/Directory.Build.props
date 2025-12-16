@@ -4,6 +4,31 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GeneratedCommitInfo>$(MSBuildThisFileDirectory)GeneratedCommitInfo.cs</GeneratedCommitInfo>
   </PropertyGroup>
-</Project>
 
+  <Target Name="GenerateCommitInfo" BeforeTargets="Compile">
+    <Exec Command="git rev-parse --short HEAD &gt; $(IntermediateOutputPath)commit.txt"
+          IgnoreExitCode="true" />
+    <ReadLinesFromFile File="$(IntermediateOutputPath)commit.txt">
+      <Output TaskParameter="Lines" PropertyName="CommitHashRaw" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <CommitHash>$([System.String]::Copy('$(CommitHashRaw)').Trim())</CommitHash>
+    </PropertyGroup>
+    <ItemGroup>
+      <CommitInfoLines Include="namespace MusicPad%3B" />
+      <CommitInfoLines Include="public static class BuildInfo" />
+      <CommitInfoLines Include="{" />
+      <CommitInfoLines Include="    public const string CommitHash = &quot;$(CommitHash)&quot;%3B" />
+      <CommitInfoLines Include="}" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(GeneratedCommitInfo)"
+                      Lines="@(CommitInfoLines)"
+                      Overwrite="true" />
+    <ItemGroup>
+      <Compile Include="$(GeneratedCommitInfo)" />
+    </ItemGroup>
+  </Target>
+</Project>
