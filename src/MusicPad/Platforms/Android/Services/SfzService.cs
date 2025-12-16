@@ -10,7 +10,6 @@ namespace MusicPad.Services;
 public class SfzService : ISfzService, IDisposable
 {
     private const int SampleRate = 44100;
-    private const float MasterGain = 0.5f;
     
     private readonly AssetManager _assets;
     private readonly SfzPlayer _player;
@@ -25,6 +24,13 @@ public class SfzService : ISfzService, IDisposable
     public IReadOnlyList<string> AvailableInstruments => _instrumentNames;
     public string? CurrentInstrumentName => _currentInstrument?.Name;
     public (int minKey, int maxKey) CurrentKeyRange => _currentInstrument?.GetKeyRange() ?? (0, 127);
+    
+    private float _volume = 0.75f;
+    public float Volume
+    {
+        get => _volume;
+        set => _volume = Math.Clamp(value, 0f, 1f);
+    }
 
     public SfzService()
     {
@@ -222,10 +228,11 @@ public class SfzService : ISfzService, IDisposable
         {
             _player.GenerateSamples(buffer);
 
-            // Apply master gain and soft limiting
+            // Apply volume and soft limiting
+            float vol = _volume;
             for (int i = 0; i < buffer.Length; i++)
             {
-                float s = buffer[i] * MasterGain;
+                float s = buffer[i] * vol;
                 buffer[i] = (float)Math.Tanh(s);
             }
 

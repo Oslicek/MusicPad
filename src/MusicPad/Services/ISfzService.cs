@@ -39,5 +39,10 @@ public interface ISfzService
     /// Stops all playing notes.
     /// </summary>
     void StopAll();
+    
+    /// <summary>
+    /// Gets or sets the master volume (0.0 to 1.0).
+    /// </summary>
+    float Volume { get; set; }
 }
 

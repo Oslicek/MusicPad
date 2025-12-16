@@ -26,6 +26,7 @@ public static class MauiProgram
         // Register services
         builder.Services.AddSingleton<ITonePlayer, TonePlayer>();
         builder.Services.AddSingleton<ISfzService, SfzService>();
+        builder.Services.AddSingleton<IPadreaService, PadreaService>();
         builder.Services.AddTransient<MainPage>();
 
 #if DEBUG

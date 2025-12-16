@@ -1,10 +1,10 @@
 # Project Context
 
-> **Last Updated:** 2025-12-16
+> **Last Updated:** 2025-12-17
 
 ## Overview
 
-**MusicPad** is a .NET MAUI music synthesizer application targeting Android as the primary platform.
+**MusicPad** is a .NET MAUI music synthesizer application targeting Android as the primary platform. It plays SFZ-based sampled instruments with polyphonic playback and touch-based pad interface.
 
 ## Technology Stack
 
@@ -14,7 +14,7 @@
 | UI Framework | .NET MAUI 10.0.1 |
 | Language | C# |
 | Primary Platform | Android 6.0+ (API 23+) |
-| Audio | 44.1kHz, 32-bit float, wavetable synthesis |
+| Audio | 44.1kHz, 32-bit float, SFZ sample playback |
 | Testing | xUnit |
 
 ## Project Structure
@@ -23,14 +23,19 @@
 MusicPad/
 ├── src/
 │   ├── MusicPad/                    # MAUI application
+│   │   ├── Controls/
+│   │   │   ├── PadMatrixDrawable.cs # Touch pad grid with multi-touch
+│   │   │   └── RotaryKnobDrawable.cs # Volume knob control
 │   │   ├── Platforms/
 │   │   │   └── Android/
+│   │   │       ├── Assets/instruments/ # Bundled SFZ instruments
 │   │   │       └── Services/
-│   │   │           └── TonePlayer.cs # AudioTrack player
+│   │   │           └── SfzService.cs   # Android SFZ playback
 │   │   ├── Services/
-│   │   │   ├── ITonePlayer.cs        # Audio interface
-│   │   │   ├── AudioSettings.cs      # Audio configuration
-│   │   │   └── TonePlayer.Stub.cs    # Stub for non-Android platforms
+│   │   │   ├── ISfzService.cs        # SFZ playback interface
+│   │   │   ├── IPadreaService.cs     # Padrea management interface
+│   │   │   ├── PadreaService.cs      # Padrea configuration
+│   │   │   └── SfzService.Stub.cs    # Stub for non-Android
 │   │   ├── Resources/
 │   │   │   ├── Styles/               # Colors.xaml, Styles.xaml
 │   │   │   ├── AppIcon/              # App icon SVGs
@@ -39,15 +44,36 @@ MusicPad/
 │   │   └── MauiProgram.cs
 │   │
 │   └── MusicPad.Core/                # Shared library (platform-independent)
-│       └── Audio/
-│           ├── WaveTableGenerator.cs # Wavetable generation
-│           ├── VoiceMixer.cs         # Polyphonic mixing with release
-│           └── AHDSHRSettings.cs     # Envelope settings
+│       ├── Audio/
+│       │   ├── WaveTableGenerator.cs # Wavetable generation
+│       │   ├── VoiceMixer.cs         # Polyphonic mixing with release
+│       │   └── AHDSHRSettings.cs     # Envelope settings
+│       ├── Models/
+│       │   └── Padrea.cs             # Pad area configuration
+│       └── Sfz/
+│           ├── SfzParser.cs          # SFZ file parser
+│           ├── SfzPlayer.cs          # Polyphonic sample playback
+│           ├── SfzInstrument.cs      # Instrument data model
+│           ├── SfzRegion.cs          # Region data model
+│           └── WavLoader.cs          # WAV file loader
 │
 ├── tests/
 │   └── MusicPad.Tests/               # Unit tests
+│       ├── Sfz/
+│       │   ├── SfzParserTests.cs
+│       │   ├── SfzPlayerTests.cs
+│       │   └── WavLoaderTests.cs
+│       ├── Models/
+│       │   └── PadreaTests.cs
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
+│
+├── data/                             # Source instrument data
+│   ├── glockenspiel_sf2/
+│   ├── good_flutes_sf2/
+│   ├── Gothorgn_sf2/
+│   ├── Simmons_SDS7_sf2/
+│   └── VocalsPapel_sf2/
 │
 ├── .gitignore
 ├── global.json
@@ -61,31 +87,63 @@ MusicPad/
 **Pattern:** Service-based with Dependency Injection
 
 **Layers:**
-- `MusicPad.Core` - Platform-independent audio logic (wavetable, poly mixer)
+- `MusicPad.Core` - Platform-independent audio logic (SFZ parsing, sample playback)
 - `MusicPad` - MAUI app with platform-specific implementations
 
 **Audio Engine:**
 - Sample Rate: 44,100 Hz
 - Bit Depth: 32-bit float (PcmFloat)
-- Synthesis: Wavetable (single cycle buffer, looped)
+- Synthesis: SFZ sample-based with AHDSR envelope
+- Polyphony: Up to 10 simultaneous voices
 
 ## Key Components
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `WaveTableGenerator` | Core | Generates sine wave tables |
-| `VoiceMixer` | Core | Polyphonic voice mixing with per-voice release |
-| `AHDSHRSettings` | Core | Envelope settings (Attack, Hold1, Decay, Sustain, Hold2, Release) |
-| `ITonePlayer` | MusicPad | Audio playback interface |
-| `TonePlayer` | Android | AudioTrack player using `VoiceMixer` |
-| `MainPage` | MusicPad | Synth UI (placeholder) |
+| `SfzParser` | Core/Sfz | Parses SFZ instrument files |
+| `SfzPlayer` | Core/Sfz | Polyphonic sample playback with envelope |
+| `WavLoader` | Core/Sfz | Loads WAV audio samples |
+| `Padrea` | Core/Models | Configurable pad area with note filtering |
+| `PadMatrixDrawable` | Controls | Touch pad grid with multi-touch support |
+| `RotaryKnobDrawable` | Controls | Volume knob with drag rotation |
+| `ISfzService` | Services | SFZ playback interface |
+| `PadreaService` | Services | Padrea management (Full Range, Pentatonic) |
+| `MainPage` | MusicPad | Synth UI with pads, pickers, volume knob |
+
+## Padrea System
+
+**Padreas** (pad areas) define how notes are displayed and filtered:
+
+| Padrea | Description |
+|--------|-------------|
+| Full Range | All chromatic notes from instrument range |
+| Pentatonic | Major pentatonic scale (C, D, E, G, A) |
+
+Features:
+- Note filtering (chromatic, pentatonic major/minor)
+- Custom grid layouts (columns, rows per viewpage)
+- Viewpage navigation for large note ranges
+- Custom colors per padrea
+
+## UI Features
+
+- **Pad Matrix**: Touch grid with multi-touch polyphony
+- **Navigation Arrows**: Compact, neon-green arrows next to pads
+- **Volume Knob**: Rotary control with drag interaction
+- **Instrument Picker**: Dropdown for SFZ instrument selection
+- **Padrea Picker**: Dropdown for pad configuration
+- **Aggressive Colors**: High-contrast pressed states (white, yellow, hot pink)
 
 ## Tests
 
 | Test Class | Purpose |
 |------------|---------|
-| `WaveTableGeneratorTests` | Sine wavetable shape/count/amplitude |
-| `VoiceMixerTests` | Polyphony mixing, release, max-voice handling |
+| `SfzParserTests` | SFZ parsing, region inheritance |
+| `SfzPlayerTests` | Playback, envelope, looping |
+| `WavLoaderTests` | WAV loading (16-bit, 24-bit) |
+| `PadreaTests` | Padrea model properties |
+| `WaveTableGeneratorTests` | Wavetable shape/amplitude |
+| `VoiceMixerTests` | Polyphony, release handling |
 
 ## Test Devices
 
@@ -95,24 +153,29 @@ MusicPad/
 
 ## Current State
 
-**Phase:** Initial Setup Complete
+**Phase:** Core Functionality Complete
 
 **Completed:**
 - [x] Project setup with .NET 10 LTS and MAUI 10
-- [x] Core audio library with WaveTableGenerator and VoiceMixer
-- [x] Android AudioTrack TonePlayer implementation
-- [x] AHDSHR envelope support in VoiceMixer
-- [x] Multi-platform structure (Android, iOS, macOS, Windows, Tizen)
-- [x] Unit tests (18 tests passing)
-- [x] Dark theme UI styles
-- [x] Initial commit to Git
+- [x] SFZ parsing and sample loading
+- [x] Polyphonic playback with AHDSR envelope
+- [x] Sample looping (loop_continuous, loop_sustain)
+- [x] Touch pad matrix with multi-touch
+- [x] Viewpage navigation for large instruments
+- [x] Padrea system (Full Range, Pentatonic)
+- [x] Volume knob control
+- [x] 8 bundled SFZ instruments
+- [x] Unit tests passing
+- [x] GitHub repository connected
 
 **Pending:**
-- [ ] Create GitHub repository and push
-- [ ] Build synthesizer UI (piano keyboard, waveform editor)
-- [ ] Additional synthesis features
+- [ ] More padrea types (natural minor, modes)
+- [ ] Save/load custom padreas
+- [ ] Effects (reverb, delay)
+- [ ] Recording functionality
 
 ## Notes
 
 - Based on architecture from DrawSound project
-- WiFi debugging enabled on physical devices (phone + tablet)
+- WiFi debugging enabled on physical devices
+- Release builds used for deployment (Fast Deployment issues with Debug)

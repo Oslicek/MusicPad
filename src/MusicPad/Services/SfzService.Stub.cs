@@ -10,6 +10,7 @@ public class SfzService : ISfzService
     public IReadOnlyList<string> AvailableInstruments => Array.Empty<string>();
     public string? CurrentInstrumentName => null;
     public (int minKey, int maxKey) CurrentKeyRange => (0, 127);
+    public float Volume { get; set; } = 0.75f;
 
     public Task LoadInstrumentAsync(string instrumentName) => Task.CompletedTask;
     public void NoteOn(int midiNote) { }

@@ -1,4 +1,5 @@
 using MusicPad.Controls;
+using MusicPad.Core.Models;
 using MusicPad.Services;
 
 namespace MusicPad;
@@ -6,22 +7,78 @@ namespace MusicPad;
 public partial class MainPage : ContentPage
 {
     private readonly ISfzService _sfzService;
+    private readonly IPadreaService _padreaService;
     private readonly PadMatrixDrawable _padDrawable;
+    private readonly RotaryKnobDrawable _volumeKnobDrawable;
     private GraphicsView? _padGraphicsView;
     private bool _isLoading;
 
-    public MainPage(ISfzService sfzService)
+    public MainPage(ISfzService sfzService, IPadreaService padreaService)
     {
         InitializeComponent();
         _sfzService = sfzService;
+        _padreaService = padreaService;
         _padDrawable = new PadMatrixDrawable();
         _padDrawable.NoteOn += OnNoteOn;
         _padDrawable.NoteOff += OnNoteOff;
+        _padDrawable.NavigateUp += OnNavigateUp;
+        _padDrawable.NavigateDown += OnNavigateDown;
+        
+        // Setup volume knob
+        _volumeKnobDrawable = new RotaryKnobDrawable { Label = "VOL", Value = 0.75f };
+        _volumeKnobDrawable.ValueChanged += OnVolumeChanged;
+        SetupVolumeKnob();
+    }
+
+    private void SetupVolumeKnob()
+    {
+        VolumeKnob.Drawable = _volumeKnobDrawable;
+        
+        VolumeKnob.StartInteraction += (s, e) =>
+        {
+            var touch = e.Touches.FirstOrDefault();
+            if (touch != default)
+            {
+                _volumeKnobDrawable.OnTouch((float)touch.X, (float)touch.Y, isStart: true);
+                VolumeKnob.Invalidate();
+            }
+        };
+        
+        VolumeKnob.DragInteraction += (s, e) =>
+        {
+            var touch = e.Touches.FirstOrDefault();
+            if (touch != default)
+            {
+                _volumeKnobDrawable.OnTouch((float)touch.X, (float)touch.Y, isStart: false);
+                VolumeKnob.Invalidate();
+            }
+        };
+        
+        VolumeKnob.EndInteraction += (s, e) =>
+        {
+            _volumeKnobDrawable.OnTouchEnd();
+            VolumeKnob.Invalidate();
+        };
+        
+        VolumeKnob.CancelInteraction += (s, e) =>
+        {
+            _volumeKnobDrawable.OnTouchEnd();
+            VolumeKnob.Invalidate();
+        };
+        
+        // Apply initial volume
+        _sfzService.Volume = _volumeKnobDrawable.Value;
+    }
+
+    private void OnVolumeChanged(object? sender, float volume)
+    {
+        _sfzService.Volume = volume;
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        LoadPadreas();
         await LoadInstrumentsAsync();
     }
 
@@ -29,6 +86,34 @@ public partial class MainPage : ContentPage
     {
         base.OnDisappearing();
         _sfzService.StopAll();
+    }
+
+    private void LoadPadreas()
+    {
+        var padreas = _padreaService.AvailablePadreas;
+        PadreaPicker.ItemsSource = padreas.ToList();
+        
+        // Select current padrea
+        var currentPadrea = _padreaService.CurrentPadrea;
+        if (currentPadrea != null)
+        {
+            var index = padreas.ToList().FindIndex(p => p.Id == currentPadrea.Id);
+            if (index >= 0)
+                PadreaPicker.SelectedIndex = index;
+        }
+        else if (padreas.Count > 0)
+        {
+            PadreaPicker.SelectedIndex = 0;
+        }
+    }
+
+    private void OnPadreaChanged(object? sender, EventArgs e)
+    {
+        if (PadreaPicker.SelectedItem is Padrea selectedPadrea)
+        {
+            _padreaService.CurrentPadrea = selectedPadrea;
+            UpdatePadMatrixForPadrea();
+        }
     }
 
     private async Task LoadInstrumentsAsync()
@@ -99,16 +184,44 @@ public partial class MainPage : ContentPage
     {
         LoadingLabel.IsVisible = false;
 
-        var (minKey, maxKey) = _sfzService.CurrentKeyRange;
+        var (instrumentMinKey, instrumentMaxKey) = _sfzService.CurrentKeyRange;
         
-        if (maxKey <= minKey)
+        if (instrumentMaxKey <= instrumentMinKey)
         {
             LoadingLabel.IsVisible = true;
             LoadingLabel.Text = "No notes";
             return;
         }
 
-        _padDrawable.SetKeyRange(minKey, maxKey);
+        var padrea = _padreaService.CurrentPadrea;
+        
+        if (padrea == null)
+        {
+            // Fallback to simple range
+            _padDrawable.SetKeyRange(instrumentMinKey, instrumentMaxKey);
+        }
+        else
+        {
+            // Get notes for current viewpage based on padrea settings
+            var notes = padrea.GetViewpageNotes(instrumentMinKey, instrumentMaxKey);
+            
+            if (notes.Count == 0)
+            {
+                LoadingLabel.IsVisible = true;
+                LoadingLabel.Text = "No notes in range";
+                return;
+            }
+            
+            // Check if we need navigation arrows
+            int totalViewpages = padrea.GetTotalViewpages(instrumentMinKey, instrumentMaxKey);
+            bool hasUpArrow = padrea.CurrentViewpage < totalViewpages - 1;
+            bool hasDownArrow = padrea.CurrentViewpage > 0;
+            
+            // Set notes and colors
+            _padDrawable.SetNotes(notes, padrea.Columns, hasUpArrow, hasDownArrow);
+            _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
+                                   padrea.PadAltColor, padrea.PadAltPressedColor);
+        }
 
         // Create or reuse GraphicsView
         if (_padGraphicsView == null)
@@ -130,6 +243,22 @@ public partial class MainPage : ContentPage
         }
 
         _padGraphicsView.Invalidate();
+        
+        // Update status with viewpage info
+        if (padrea != null && padrea.RowsPerViewpage.HasValue)
+        {
+            int total = padrea.GetTotalViewpages(instrumentMinKey, instrumentMaxKey);
+            StatusLabel.Text = $"{_sfzService.CurrentInstrumentName} - Page {padrea.CurrentViewpage + 1}/{total}";
+        }
+    }
+
+    private void UpdatePadMatrixForPadrea()
+    {
+        // Only update if we have an instrument loaded
+        if (_sfzService.CurrentInstrumentName != null)
+        {
+            SetupPadMatrix();
+        }
     }
 
     private void OnStartInteraction(object? sender, TouchEventArgs e)
@@ -150,7 +279,13 @@ public partial class MainPage : ContentPage
 
     private void OnEndInteraction(object? sender, TouchEventArgs e)
     {
-        // EndInteraction is called when ALL touches end
+        // Check for navigation taps before releasing notes
+        var lastTouch = e.Touches.FirstOrDefault();
+        if (lastTouch != default)
+        {
+            _padDrawable.OnTapEnd((float)lastTouch.X, (float)lastTouch.Y);
+        }
+        
         // Release all notes to ensure none get stuck
         _padDrawable.OnAllTouchesEnd();
         _padGraphicsView?.Invalidate();
@@ -170,5 +305,29 @@ public partial class MainPage : ContentPage
     private void OnNoteOff(object? sender, int midiNote)
     {
         _sfzService.NoteOff(midiNote);
+    }
+
+    private void OnNavigateUp(object? sender, EventArgs e)
+    {
+        var padrea = _padreaService.CurrentPadrea;
+        if (padrea == null) return;
+        
+        var (minKey, maxKey) = _sfzService.CurrentKeyRange;
+        if (padrea.NextViewpage(minKey, maxKey))
+        {
+            SetupPadMatrix();
+        }
+    }
+
+    private void OnNavigateDown(object? sender, EventArgs e)
+    {
+        var padrea = _padreaService.CurrentPadrea;
+        if (padrea == null) return;
+        
+        var (minKey, maxKey) = _sfzService.CurrentKeyRange;
+        if (padrea.PreviousViewpage(minKey, maxKey))
+        {
+            SetupPadMatrix();
+        }
     }
 }
