@@ -3,43 +3,59 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:MusicPad"
              x:Class="MusicPad.MainPage"
-             BackgroundColor="{StaticResource Gray950}">
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#1a1a2e">
 
-    <Grid Padding="4" RowDefinitions="*,Auto">
+    <Grid Padding="8" RowDefinitions="Auto,*,Auto">
         
-        <!-- Commit hash label -->
-        <Label Text="{x:Static local:BuildInfo.CommitHash}"
-               FontSize="8"
-               TextColor="#666"
-               HorizontalOptions="Start"
-               VerticalOptions="Start"
-               Margin="1,1,0,0" />
+        <!-- Header with commit hash and instrument picker -->
+        <Grid ColumnDefinitions="Auto,*">
+            <Label Text="{x:Static local:BuildInfo.CommitHash}"
+                   FontSize="8"
+                   TextColor="#CC0000"
+                   VerticalOptions="Center"
+                   Margin="4,0" />
+            
+            <Picker x:Name="InstrumentPicker"
+                    Grid.Column="1"
+                    Title="Select Instrument"
+                    TitleColor="#888"
+                    TextColor="White"
+                    BackgroundColor="#2a2a4e"
+                    HorizontalOptions="End"
+                    SelectedIndexChanged="OnInstrumentChanged" />
+        </Grid>
         
-        <!-- Main Content Area -->
-        <Frame Grid.Row="0"
-               Margin="0,20"
-               Padding="20"
-               BackgroundColor="{StaticResource Surface}"
-               BorderColor="{StaticResource SurfaceBorder}"
-               CornerRadius="12">
-            <VerticalStackLayout VerticalOptions="Center" Spacing="20">
-                <Label Text="Welcome to MusicPad"
-                       FontSize="20"
-                       HorizontalOptions="Center" />
-                <Label Text="A .NET MAUI Music Synthesizer"
-                       FontSize="14"
-                       TextColor="{StaticResource Gray400}"
-                       HorizontalOptions="Center" />
-            </VerticalStackLayout>
+        <!-- Tap Pad -->
+        <Frame Grid.Row="1"
+               Margin="0,12"
+               Padding="0"
+               BackgroundColor="#2a2a4e"
+               BorderColor="#3a3a6e"
+               CornerRadius="16"
+               HasShadow="False">
+            <Grid x:Name="TapPad" BackgroundColor="Transparent">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnPadTapped" />
+                </Grid.GestureRecognizers>
+                
+                <Label x:Name="PadLabel"
+                       Text="Tap to Play"
+                       FontSize="24"
+                       TextColor="#666"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Grid>
         </Frame>
         
         <!-- Status Bar -->
-        <Label Grid.Row="1"
+        <Label Grid.Row="2"
                x:Name="StatusLabel"
-               Text="Ready"
+               Text="Loading instruments..."
                FontSize="12"
-               TextColor="{StaticResource Gray500}"
-               HorizontalOptions="Center" />
+               TextColor="#888"
+               HorizontalOptions="Center"
+               Margin="0,4" />
         
     </Grid>
 

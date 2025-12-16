@@ -53,6 +53,11 @@
 		</None>
 	</ItemGroup>
 
+	<!-- Android-specific assets for SFZ instruments -->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+		<AndroidAsset Include="Platforms\Android\Assets\instruments\**\*" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
@@ -70,4 +75,3 @@
 	</ItemGroup>
 
 </Project>
-
