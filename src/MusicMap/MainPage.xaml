@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MusicMap.MainPage"
+             Title="MusicMap Synth">
+
+    <Grid Padding="20" RowDefinitions="Auto,*,Auto">
+        
+        <!-- Header -->
+        <Label Grid.Row="0"
+               Text="MusicMap Synth"
+               FontSize="28"
+               FontAttributes="Bold"
+               HorizontalOptions="Center"
+               TextColor="{StaticResource Primary}" />
+        
+        <!-- Main Content Area -->
+        <Frame Grid.Row="1"
+               Margin="0,20"
+               Padding="20"
+               BackgroundColor="{StaticResource Surface}"
+               BorderColor="{StaticResource SurfaceBorder}"
+               CornerRadius="12">
+            <VerticalStackLayout VerticalOptions="Center" Spacing="20">
+                <Label Text="Welcome to MusicMap"
+                       FontSize="20"
+                       HorizontalOptions="Center" />
+                <Label Text="A .NET MAUI Music Synthesizer"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Frame>
+        
+        <!-- Status Bar -->
+        <Label Grid.Row="2"
+               x:Name="StatusLabel"
+               Text="Ready"
+               FontSize="12"
+               TextColor="{StaticResource Gray500}"
+               HorizontalOptions="Center" />
+        
+    </Grid>
+
+</ContentPage>
+

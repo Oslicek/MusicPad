@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(78, 78)">
+    <!-- Music Note Symbol -->
+    <ellipse cx="60" cy="260" rx="45" ry="35" fill="#FFFFFF"/>
+    <rect x="95" y="40" width="15" height="220" fill="#FFFFFF"/>
+    <path d="M 110 40 Q 200 20 200 100 Q 200 140 110 120" fill="#FFFFFF"/>
+    
+    <!-- Wave Lines -->
+    <path d="M 180 180 Q 210 160 240 180 Q 270 200 300 180" stroke="#4A90D9" stroke-width="12" fill="none"/>
+    <path d="M 180 220 Q 210 200 240 220 Q 270 240 300 220" stroke="#4A90D9" stroke-width="12" fill="none"/>
+    <path d="M 180 260 Q 210 240 240 260 Q 270 280 300 260" stroke="#4A90D9" stroke-width="12" fill="none"/>
+  </g>
+</svg>
+

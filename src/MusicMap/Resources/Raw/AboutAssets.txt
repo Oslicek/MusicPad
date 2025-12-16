@@ -1,0 +1,6 @@
+Any raw assets you want to be deployed with your application can be placed in
+this directory (and child directories). Deployment of the asset to your application
+is automatic. These files will be deployed with your package.
+
+The MauiAsset target in the .csproj file automatically manages this process.
+

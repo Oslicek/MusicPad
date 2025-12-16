@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+    
+    <!-- Primary Colors - Deep Ocean Blue -->
+    <Color x:Key="Primary">#1E3A5F</Color>
+    <Color x:Key="PrimaryDark">#0F1E30</Color>
+    <Color x:Key="PrimaryLight">#2E5A8F</Color>
+    
+    <!-- Secondary Colors - Warm Coral -->
+    <Color x:Key="Secondary">#4A90D9</Color>
+    <Color x:Key="SecondaryDark">#3570B0</Color>
+    <Color x:Key="SecondaryLight">#6BB0FF</Color>
+    
+    <!-- Accent Colors -->
+    <Color x:Key="Accent">#FF6B6B</Color>
+    <Color x:Key="AccentDark">#CC4545</Color>
+    
+    <!-- Surface Colors -->
+    <Color x:Key="Surface">#1A1A2E</Color>
+    <Color x:Key="SurfaceLight">#252545</Color>
+    <Color x:Key="SurfaceBorder">#3A3A5A</Color>
+    
+    <!-- Text Colors -->
+    <Color x:Key="TextPrimary">#FFFFFF</Color>
+    <Color x:Key="TextSecondary">#B0B0C0</Color>
+    <Color x:Key="TextMuted">#707080</Color>
+    
+    <!-- Grayscale -->
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Gray100">#F5F5F5</Color>
+    <Color x:Key="Gray200">#E0E0E0</Color>
+    <Color x:Key="Gray300">#BDBDBD</Color>
+    <Color x:Key="Gray400">#9E9E9E</Color>
+    <Color x:Key="Gray500">#757575</Color>
+    <Color x:Key="Gray600">#616161</Color>
+    <Color x:Key="Gray900">#212121</Color>
+    <Color x:Key="Gray950">#141414</Color>
+
+</ResourceDictionary>
+
