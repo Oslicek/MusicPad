@@ -1,7 +1,6 @@
 using MusicPad.Controls;
 using MusicPad.Core.Models;
 using MusicPad.Services;
-using Microsoft.Maui.Devices;
 
 namespace MusicPad;
 
@@ -17,6 +16,8 @@ public partial class MainPage : ContentPage
     private GraphicsView? _padGraphicsView;
     private bool _isLoading;
     private bool _isLandscape;
+    private double _pageWidth;
+    private double _pageHeight;
 
     public MainPage(ISfzService sfzService, IPadreaService padreaService)
     {
@@ -92,50 +93,37 @@ public partial class MainPage : ContentPage
     private void AdjustVolumeLayout()
     {
         var currentPadrea = _padreaService.CurrentPadrea;
-        bool useLeft = _isLandscape && currentPadrea != null && currentPadrea.Kind == PadreaKind.Grid;
+        bool isPiano = currentPadrea?.Kind == PadreaKind.Piano;
+        bool isSquarePadrea = currentPadrea?.Kind == PadreaKind.Grid;
 
-        // Move volume knob to left host if needed
-        if (useLeft)
+        if (_isLandscape)
         {
-            if (VolumeLeftHost.Content != VolumeKnob)
+            if (isPiano)
             {
-                RemoveFromParent(VolumeKnob);
-                VolumeLeftHost.Content = VolumeKnob;
+                // Piano in landscape: volume knob at left edge, top
+                VolumeKnob.HorizontalOptions = LayoutOptions.Start;
+                VolumeKnob.VerticalOptions = LayoutOptions.Start;
+                VolumeKnob.Margin = new Thickness(8, 8, 0, 0);
+            }
+            else if (isSquarePadrea)
+            {
+                // Square padrea in landscape: volume knob at top, centered between left edge and padrea
+                // The padrea will be centered, so we position volume knob in the left space
+                VolumeKnob.HorizontalOptions = LayoutOptions.Start;
+                VolumeKnob.VerticalOptions = LayoutOptions.Start;
+                // Calculate left margin to center it in the space left of the padrea
+                double padreaSize = Math.Min(_pageWidth, _pageHeight - 60); // Approximate padrea size
+                double leftSpace = (_pageWidth - padreaSize) / 2;
+                double knobCenterX = (leftSpace - 120) / 2; // 120 is knob width
+                VolumeKnob.Margin = new Thickness(Math.Max(8, knobCenterX), 8, 0, 0);
             }
         }
         else
         {
-            if (VolumeLeftHost.Content == VolumeKnob)
-            {
-                VolumeLeftHost.Content = null;
-                AddVolumeTop();
-            }
-            else if (VolumeKnob.Parent == null)
-            {
-                AddVolumeTop();
-            }
-        }
-    }
-
-    private void AddVolumeTop()
-    {
-        if (Content is Grid grid && !grid.Children.Contains(VolumeKnob))
-        {
-            grid.Children.Add(VolumeKnob);
-            Grid.SetRow(VolumeKnob, 1);
-            Grid.SetColumn(VolumeKnob, 0);
-        }
-    }
-
-    private static void RemoveFromParent(View view)
-    {
-        if (view.Parent is Layout layout)
-        {
-            layout.Children.Remove(view);
-        }
-        else if (view.Parent is ContentView cv)
-        {
-            cv.Content = null;
+            // Portrait: volume knob at top center
+            VolumeKnob.HorizontalOptions = LayoutOptions.Center;
+            VolumeKnob.VerticalOptions = LayoutOptions.Start;
+            VolumeKnob.Margin = new Thickness(0, 8, 0, 8);
         }
     }
 
@@ -188,20 +176,30 @@ public partial class MainPage : ContentPage
     protected override void OnSizeAllocated(double width, double height)
     {
         base.OnSizeAllocated(width, height);
+        
+        if (width <= 0 || height <= 0) return;
+        
+        _pageWidth = width;
+        _pageHeight = height;
+        
         bool landscape = width > height;
-        if (landscape != _isLandscape)
+        bool orientationChanged = landscape != _isLandscape;
+        _isLandscape = landscape;
+        
+        if (orientationChanged)
         {
-            _isLandscape = landscape;
-            AdjustVolumeLayout();
             if (_pianoRangeManager != null)
             {
                 _pianoRangeManager.SetOrientation(_isLandscape, preserveStart: false);
             }
-            // Re-run layout if piano or for orientation-dependent logic
-            if (_sfzService.CurrentInstrumentName != null)
-            {
-                SetupPadMatrix();
-            }
+        }
+        
+        AdjustVolumeLayout();
+        
+        // Re-run layout for size-dependent padrea
+        if (_sfzService.CurrentInstrumentName != null)
+        {
+            SetupPadMatrix();
         }
     }
 
@@ -262,8 +260,7 @@ public partial class MainPage : ContentPage
             
             if (instruments.Count == 0)
             {
-                StatusLabel.Text = "No instruments found";
-                LoadingLabel.Text = "No instruments";
+                LoadingLabel.Text = "No instruments found";
                 return;
             }
 
@@ -274,7 +271,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            StatusLabel.Text = $"Error: {ex.Message}";
+            LoadingLabel.Text = $"Error: {ex.Message}";
         }
     }
 
@@ -296,21 +293,17 @@ public partial class MainPage : ContentPage
 
         try
         {
-            StatusLabel.Text = $"Loading {instrumentName}...";
             LoadingLabel.IsVisible = true;
-            LoadingLabel.Text = "Loading...";
+            LoadingLabel.Text = $"Loading {instrumentName}...";
             
             await _sfzService.LoadInstrumentAsync(instrumentName);
             
             // Setup pad matrix
             SetupPadMatrix();
-            
-            StatusLabel.Text = $"{instrumentName}";
         }
         catch (Exception ex)
         {
-            StatusLabel.Text = $"Error: {ex.Message}";
-            LoadingLabel.Text = "Error loading";
+            LoadingLabel.Text = $"Error: {ex.Message}";
         }
         finally
         {
@@ -332,7 +325,6 @@ public partial class MainPage : ContentPage
         }
 
         var padrea = _padreaService.CurrentPadrea;
-        
         bool isPiano = padrea?.Kind == PadreaKind.Piano;
 
         if (isPiano)
@@ -341,44 +333,94 @@ public partial class MainPage : ContentPage
         }
         else
         {
-            if (padrea == null)
+            SetupGridPadrea(padrea, instrumentMinKey, instrumentMaxKey);
+        }
+    }
+
+    private void SetupGridPadrea(Padrea? padrea, int instrumentMinKey, int instrumentMaxKey)
+    {
+        if (padrea == null)
+        {
+            // Fallback to simple range
+            _padDrawable.SetKeyRange(instrumentMinKey, instrumentMaxKey);
+            _padDrawable.SetHalftoneDetector(null);
+        }
+        else
+        {
+            // Get notes for current viewpage based on padrea settings
+            var notes = padrea.GetViewpageNotes(instrumentMinKey, instrumentMaxKey);
+            
+            if (notes.Count == 0)
             {
-                // Fallback to simple range
-                _padDrawable.SetKeyRange(instrumentMinKey, instrumentMaxKey);
-                _padDrawable.SetHalftoneDetector(null);
+                LoadingLabel.IsVisible = true;
+                LoadingLabel.Text = "No notes in range";
+                return;
+            }
+            
+            // Check if we need navigation arrows
+            int totalViewpages = padrea.GetTotalViewpages(instrumentMinKey, instrumentMaxKey);
+            bool hasUpArrow = padrea.CurrentViewpage < totalViewpages - 1;
+            bool hasDownArrow = padrea.CurrentViewpage > 0;
+            
+            // Set notes and colors
+            _padDrawable.SetNotes(notes, padrea.Columns, hasUpArrow, hasDownArrow);
+            _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
+                                   padrea.PadAltColor, padrea.PadAltPressedColor);
+            _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
+        }
+
+        // Calculate square size for grid padreas
+        double availableHeight = _pageHeight - 60 - 140; // Header and volume knob
+        double availableWidth = _pageWidth - 16; // Padding
+        double padreaSize = Math.Min(availableWidth, availableHeight);
+
+        EnsurePadGraphicsView(_padDrawable);
+        
+        // Square padreas: set size and center horizontally in landscape
+        if (_padGraphicsView != null)
+        {
+            _padGraphicsView.WidthRequest = padreaSize;
+            _padGraphicsView.HeightRequest = padreaSize;
+            _padGraphicsView.HorizontalOptions = _isLandscape ? LayoutOptions.Center : LayoutOptions.Fill;
+            _padGraphicsView.VerticalOptions = LayoutOptions.End;
+        }
+    }
+
+    private void SetupPianoPadrea(Padrea padrea, int instrumentMinKey, int instrumentMaxKey)
+    {
+        if (_pianoRangeManager == null)
+        {
+            _pianoRangeManager = new PianoRangeManager(instrumentMinKey, instrumentMaxKey, _isLandscape);
+        }
+        else
+        {
+            _pianoRangeManager.UpdateInstrumentRange(instrumentMinKey, instrumentMaxKey);
+            _pianoRangeManager.SetOrientation(_isLandscape, preserveStart: true);
+        }
+        var (start, end) = _pianoRangeManager.GetRange();
+
+        _pianoDrawable.SetRange(start, end, instrumentMinKey, instrumentMaxKey, _isLandscape);
+        
+        EnsurePadGraphicsView(_pianoDrawable);
+        
+        // Piano padrea: full width, shorter height in portrait
+        if (_padGraphicsView != null)
+        {
+            _padGraphicsView.WidthRequest = -1; // Auto width
+            
+            if (_isLandscape)
+            {
+                // Landscape: use available height minus header/volume space
+                _padGraphicsView.HeightRequest = _pageHeight - 60 - 140;
             }
             else
             {
-                // Get notes for current viewpage based on padrea settings
-                var notes = padrea.GetViewpageNotes(instrumentMinKey, instrumentMaxKey);
-                
-                if (notes.Count == 0)
-                {
-                    LoadingLabel.IsVisible = true;
-                    LoadingLabel.Text = "No notes in range";
-                    return;
-                }
-                
-                // Check if we need navigation arrows
-                int totalViewpages = padrea.GetTotalViewpages(instrumentMinKey, instrumentMaxKey);
-                bool hasUpArrow = padrea.CurrentViewpage < totalViewpages - 1;
-                bool hasDownArrow = padrea.CurrentViewpage > 0;
-                
-                // Set notes and colors
-                _padDrawable.SetNotes(notes, padrea.Columns, hasUpArrow, hasDownArrow);
-                _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
-                                       padrea.PadAltColor, padrea.PadAltPressedColor);
-                _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
+                // Portrait: make it shorter (about 35% of screen height)
+                _padGraphicsView.HeightRequest = _pageHeight * 0.35;
             }
-
-            EnsurePadGraphicsView(_padDrawable);
-        }
-
-        // Update status with viewpage info
-        if (padrea != null && padrea.RowsPerViewpage.HasValue && padrea.Kind != PadreaKind.Piano)
-        {
-            int total = padrea.GetTotalViewpages(instrumentMinKey, instrumentMaxKey);
-            StatusLabel.Text = $"{_sfzService.CurrentInstrumentName} - Page {padrea.CurrentViewpage + 1}/{total}";
+            
+            _padGraphicsView.HorizontalOptions = LayoutOptions.Fill;
+            _padGraphicsView.VerticalOptions = LayoutOptions.End;
         }
     }
 
@@ -525,15 +567,11 @@ public partial class MainPage : ContentPage
 
     private bool IsCurrentPadreaPiano() => _padreaService.CurrentPadrea?.Kind == PadreaKind.Piano;
 
-    private void EnsurePadGraphicsView(IDrawable drawable, bool alignBottom = false)
+    private void EnsurePadGraphicsView(IDrawable drawable)
     {
         if (_padGraphicsView == null)
         {
-            _padGraphicsView = new GraphicsView
-            {
-                HorizontalOptions = LayoutOptions.Fill,
-                VerticalOptions = alignBottom ? LayoutOptions.End : LayoutOptions.Fill
-            };
+            _padGraphicsView = new GraphicsView();
 
             // Setup touch handlers
             _padGraphicsView.StartInteraction += OnStartInteraction;
@@ -543,33 +581,9 @@ public partial class MainPage : ContentPage
 
             PadContainer.Children.Add(_padGraphicsView);
         }
-        else
-        {
-            // Update vertical alignment if needed
-            _padGraphicsView.VerticalOptions = alignBottom ? LayoutOptions.End : LayoutOptions.Fill;
-        }
 
         _padGraphicsView.Drawable = drawable;
         _padGraphicsView.Invalidate();
-    }
-
-    private void SetupPianoPadrea(Padrea padrea, int instrumentMinKey, int instrumentMaxKey)
-    {
-        if (_pianoRangeManager == null)
-        {
-            _pianoRangeManager = new PianoRangeManager(instrumentMinKey, instrumentMaxKey, _isLandscape);
-        }
-        else
-        {
-            _pianoRangeManager.UpdateInstrumentRange(instrumentMinKey, instrumentMaxKey);
-            _pianoRangeManager.SetOrientation(_isLandscape, preserveStart: true);
-        }
-        var (start, end) = _pianoRangeManager.GetRange();
-
-        _pianoDrawable.SetRange(start, end, instrumentMinKey, instrumentMaxKey, _isLandscape);
-        EnsurePadGraphicsView(_pianoDrawable, alignBottom: true); // Piano always at bottom
-
-        StatusLabel.Text = $"{_sfzService.CurrentInstrumentName} - Piano {GetNoteNameShort(start)}..{GetNoteNameShort(end)}";
     }
 
     private void OnPianoShiftRequested(object? sender, int semitoneDelta)
@@ -584,13 +598,5 @@ public partial class MainPage : ContentPage
         if (_pianoRangeManager == null) return;
         _pianoRangeManager.SetStartAbsolute(newStart);
         SetupPadMatrix();
-    }
-
-    private static string GetNoteNameShort(int midiNote)
-    {
-        string[] names = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-        int note = midiNote % 12;
-        int octave = (midiNote / 12) - 1;
-        return $"{names[note]}{octave}";
     }
 }

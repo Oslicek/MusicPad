@@ -121,7 +121,7 @@ public class PianoKeyboardDrawable : IDrawable
         canvas.FillColor = Color.FromArgb("#404040");
         canvas.FillRectangle(_stripHighlight);
 
-        // Draw black keys on top - shorter outside selection, taller inside
+        // Draw black keys on top - much shorter outside selection, taller inside
         for (int i = 0; i < totalKeys; i++)
         {
             int midi = GlobalMin + i;
@@ -130,7 +130,8 @@ public class PianoKeyboardDrawable : IDrawable
             
             // Check if this key is inside the selection rectangle
             bool insideSelection = midi >= _rangeStart && midi <= _rangeEnd;
-            float blackKeyHeight = insideSelection ? _stripRect.Height * 0.6f : _stripRect.Height * 0.3f;
+            // Make difference very dramatic: 65% inside, 18% outside
+            float blackKeyHeight = insideSelection ? _stripRect.Height * 0.65f : _stripRect.Height * 0.18f;
             
             var keyRect = new RectF(x, _stripRect.Y, keyWidth, blackKeyHeight);
             canvas.FillColor = Color.FromArgb("#111111");

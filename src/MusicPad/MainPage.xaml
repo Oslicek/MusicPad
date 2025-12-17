@@ -6,72 +6,69 @@
              Shell.NavBarIsVisible="False"
              BackgroundColor="#1a1a2e">
 
-    <Grid Padding="8" RowDefinitions="Auto,Auto,*,Auto">
+    <Grid x:Name="MainGrid" Padding="8" RowDefinitions="Auto,*">
         
-        <!-- Header with commit hash, padrea picker, instrument picker, scale picker -->
-        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-            <Label Text="{x:Static local:BuildInfo.CommitHash}"
-                   FontSize="8"
-                   TextColor="#CC0000"
-                   VerticalOptions="Center"
-                   Margin="4,0" />
-            
-            <Picker x:Name="PadreaPicker"
-                    Grid.Column="1"
-                    Title="Select Padrea"
+        <!-- Header: Instrument, Padrea, Scale pickers + commit hash on right -->
+        <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+            <Picker x:Name="InstrumentPicker"
+                    Grid.Column="0"
+                    Title="Instrument"
                     TitleColor="#888"
                     TextColor="White"
                     BackgroundColor="#2a2a4e"
                     HorizontalOptions="Start"
-                    Margin="8,0"
-                    SelectedIndexChanged="OnPadreaChanged" />
+                    Margin="0,0,8,0"
+                    SelectedIndexChanged="OnInstrumentChanged" />
             
-            <Picker x:Name="InstrumentPicker"
-                    Grid.Column="2"
-                    Title="Select Instrument"
+            <Picker x:Name="PadreaPicker"
+                    Grid.Column="1"
+                    Title="Padrea"
                     TitleColor="#888"
                     TextColor="White"
                     BackgroundColor="#2a2a4e"
-                    HorizontalOptions="End"
-                    SelectedIndexChanged="OnInstrumentChanged" />
+                    HorizontalOptions="Start"
+                    Margin="0,0,8,0"
+                    SelectedIndexChanged="OnPadreaChanged" />
 
             <Picker x:Name="ScalePicker"
-                    Grid.Column="3"
-                    Title="Select Scale"
+                    Grid.Column="2"
+                    Title="Scale"
                     TitleColor="#888"
                     TextColor="White"
                     BackgroundColor="#2a2a4e"
-                    HorizontalOptions="End"
+                    HorizontalOptions="Start"
                     IsVisible="False"
                     SelectedIndexChanged="OnScaleChanged" />
+            
+            <!-- Spacer -->
+            <BoxView Grid.Column="3" />
+            
+            <Label Grid.Column="4"
+                   Text="{x:Static local:BuildInfo.CommitHash}"
+                   FontSize="8"
+                   TextColor="#CC0000"
+                   VerticalOptions="Center"
+                   HorizontalOptions="End"
+                   Margin="4,0" />
         </Grid>
         
-        <!-- Volume Knob -->
-        <GraphicsView x:Name="VolumeKnob"
-                      Grid.Row="1"
-                      HeightRequest="120"
-                      WidthRequest="120"
-                      HorizontalOptions="Center"
-                      Margin="0,8" />
-        
-        <!-- Pad Area -->
-        <Grid x:Name="PadAreaGrid"
-              Grid.Row="2"
-              Margin="0,4"
-              ColumnDefinitions="Auto,*"
-              HorizontalOptions="Fill"
-              VerticalOptions="Fill">
-
-            <ContentView x:Name="VolumeLeftHost"
-                         Grid.Column="0"
-                         HorizontalOptions="Center"
-                         VerticalOptions="Center" />
-
-            <!-- Pad Container -->
-            <Grid x:Name="PadContainer" 
-                  Grid.Column="1"
+        <!-- Main content area: Volume knob + Pad Area -->
+        <Grid x:Name="ContentGrid"
+              Grid.Row="1"
+              Margin="0,8,0,0">
+            
+            <!-- Volume Knob - positioned dynamically -->
+            <GraphicsView x:Name="VolumeKnob"
+                          HeightRequest="120"
+                          WidthRequest="120"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Start"
+                          Margin="0,8" />
+            
+            <!-- Pad Container - will be configured dynamically -->
+            <Grid x:Name="PadContainer"
                   HorizontalOptions="Fill"
-                  VerticalOptions="Fill">
+                  VerticalOptions="End">
                 
                 <Label x:Name="LoadingLabel"
                        Text="Loading..."
@@ -81,15 +78,6 @@
                        VerticalOptions="Center" />
             </Grid>
         </Grid>
-        
-        <!-- Status Bar -->
-        <Label Grid.Row="3"
-               x:Name="StatusLabel"
-               Text="Loading instruments..."
-               FontSize="12"
-               TextColor="#888"
-               HorizontalOptions="Center"
-               Margin="0,4" />
         
     </Grid>
 
