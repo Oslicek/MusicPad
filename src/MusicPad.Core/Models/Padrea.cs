@@ -50,6 +50,16 @@ public class Padrea
     public NoteFilterType NoteFilter { get; set; } = NoteFilterType.Chromatic;
     
     /// <summary>
+    /// The scale type for HeptatonicScale filter.
+    /// </summary>
+    public ScaleType ScaleType { get; set; } = ScaleType.Major;
+    
+    /// <summary>
+    /// Root note (0-11, where 0=C, 1=C#, 2=D, etc.) for scale-based filters.
+    /// </summary>
+    public int RootNote { get; set; } = 0;
+    
+    /// <summary>
     /// Current viewpage index (0 = lowest notes).
     /// </summary>
     public int CurrentViewpage { get; set; }
@@ -106,8 +116,65 @@ public class Padrea
             NoteFilterType.PentatonicMinor => noteInOctave is 0 or 3 or 5 or 7 or 10, // C, Eb, F, G, Bb
             NoteFilterType.WhiteKeys => noteInOctave is 0 or 2 or 4 or 5 or 7 or 9 or 11, // C, D, E, F, G, A, B
             NoteFilterType.BlackKeys => noteInOctave is 1 or 3 or 6 or 8 or 10, // C#, D#, F#, G#, A#
+            NoteFilterType.HeptatonicScale => PassesHeptatonicFilter(noteInOctave),
             _ => true
         };
+    }
+    
+    /// <summary>
+    /// Checks if a note passes the heptatonic scale filter based on ScaleType and RootNote.
+    /// </summary>
+    private bool PassesHeptatonicFilter(int noteInOctave)
+    {
+        // Get the scale intervals (semitones from root)
+        var intervals = GetScaleIntervals(ScaleType);
+        
+        // Transpose the note relative to root
+        int relativeNote = (noteInOctave - RootNote + 12) % 12;
+        
+        return intervals.Contains(relativeNote);
+    }
+    
+    /// <summary>
+    /// Gets the semitone intervals for a scale type.
+    /// </summary>
+    private static HashSet<int> GetScaleIntervals(ScaleType scaleType)
+    {
+        return scaleType switch
+        {
+            // Major modes
+            ScaleType.Major or ScaleType.Ionian => new HashSet<int> { 0, 2, 4, 5, 7, 9, 11 },
+            ScaleType.Dorian => new HashSet<int> { 0, 2, 3, 5, 7, 9, 10 },
+            ScaleType.Phrygian => new HashSet<int> { 0, 1, 3, 5, 7, 8, 10 },
+            ScaleType.Lydian => new HashSet<int> { 0, 2, 4, 6, 7, 9, 11 },
+            ScaleType.Mixolydian => new HashSet<int> { 0, 2, 4, 5, 7, 9, 10 },
+            ScaleType.Aeolian or ScaleType.NaturalMinor => new HashSet<int> { 0, 2, 3, 5, 7, 8, 10 },
+            ScaleType.Locrian => new HashSet<int> { 0, 1, 3, 5, 6, 8, 10 },
+            
+            // Minor variants
+            ScaleType.HarmonicMinor => new HashSet<int> { 0, 2, 3, 5, 7, 8, 11 },
+            ScaleType.MelodicMinor => new HashSet<int> { 0, 2, 3, 5, 7, 9, 11 },
+            
+            _ => new HashSet<int> { 0, 2, 4, 5, 7, 9, 11 } // Default to Major
+        };
+    }
+    
+    /// <summary>
+    /// Checks if a MIDI note is a halftone (sharp/flat - black key on piano).
+    /// For heptatonic scales, this identifies notes that are "accidentals" in that scale.
+    /// </summary>
+    public bool IsHalftone(int midiNote)
+    {
+        int noteInOctave = midiNote % 12;
+        
+        // For chromatic and pentatonic, use standard black/white key definition
+        if (NoteFilter != NoteFilterType.HeptatonicScale)
+        {
+            return noteInOctave is 1 or 3 or 6 or 8 or 10; // C#, D#, F#, G#, A#
+        }
+        
+        // For heptatonic scales, black keys (sharps/flats) are halftones
+        return noteInOctave is 1 or 3 or 6 or 8 or 10;
     }
     
     /// <summary>
@@ -196,6 +263,30 @@ public enum NoteFilterType
     WhiteKeys,
     
     /// <summary>Black keys only: C#, D#, F#, G#, A# (5 notes per octave).</summary>
-    BlackKeys
+    BlackKeys,
+    
+    /// <summary>Heptatonic scale: 7 notes per octave based on ScaleType and RootNote.</summary>
+    HeptatonicScale
+}
+
+/// <summary>
+/// Types of heptatonic (7-note) scales.
+/// </summary>
+public enum ScaleType
+{
+    // Major modes
+    Major,
+    Ionian,         // Same as Major
+    Dorian,
+    Phrygian,
+    Lydian,
+    Mixolydian,
+    Aeolian,        // Same as Natural Minor
+    Locrian,
+    
+    // Minor variants
+    NaturalMinor,   // Same as Aeolian
+    HarmonicMinor,
+    MelodicMinor
 }
 
