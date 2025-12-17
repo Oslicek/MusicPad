@@ -525,14 +525,14 @@ public partial class MainPage : ContentPage
 
     private bool IsCurrentPadreaPiano() => _padreaService.CurrentPadrea?.Kind == PadreaKind.Piano;
 
-    private void EnsurePadGraphicsView(IDrawable drawable)
+    private void EnsurePadGraphicsView(IDrawable drawable, bool alignBottom = false)
     {
         if (_padGraphicsView == null)
         {
             _padGraphicsView = new GraphicsView
             {
                 HorizontalOptions = LayoutOptions.Fill,
-                VerticalOptions = LayoutOptions.Fill
+                VerticalOptions = alignBottom ? LayoutOptions.End : LayoutOptions.Fill
             };
 
             // Setup touch handlers
@@ -542,6 +542,11 @@ public partial class MainPage : ContentPage
             _padGraphicsView.CancelInteraction += OnCancelInteraction;
 
             PadContainer.Children.Add(_padGraphicsView);
+        }
+        else
+        {
+            // Update vertical alignment if needed
+            _padGraphicsView.VerticalOptions = alignBottom ? LayoutOptions.End : LayoutOptions.Fill;
         }
 
         _padGraphicsView.Drawable = drawable;
@@ -562,7 +567,7 @@ public partial class MainPage : ContentPage
         var (start, end) = _pianoRangeManager.GetRange();
 
         _pianoDrawable.SetRange(start, end, instrumentMinKey, instrumentMaxKey, _isLandscape);
-        EnsurePadGraphicsView(_pianoDrawable);
+        EnsurePadGraphicsView(_pianoDrawable, alignBottom: true); // Piano always at bottom
 
         StatusLabel.Text = $"{_sfzService.CurrentInstrumentName} - Piano {GetNoteNameShort(start)}..{GetNoteNameShort(end)}";
     }
