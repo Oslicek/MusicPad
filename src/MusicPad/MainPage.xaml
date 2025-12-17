@@ -39,10 +39,10 @@
         <!-- Volume Knob -->
         <GraphicsView x:Name="VolumeKnob"
                       Grid.Row="1"
-                      HeightRequest="70"
-                      WidthRequest="70"
+                      HeightRequest="120"
+                      WidthRequest="120"
                       HorizontalOptions="Center"
-                      Margin="0,4" />
+                      Margin="0,8" />
         
         <!-- Pad Matrix Container -->
         <Grid x:Name="PadContainer" 
