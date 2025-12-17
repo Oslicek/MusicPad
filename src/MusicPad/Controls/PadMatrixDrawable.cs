@@ -42,6 +42,7 @@ public class PadMatrixDrawable : IDrawable
     private RectF _downArrowRect;
     
     private readonly HashSet<int> _activeNotes = new();
+    private Func<int, bool>? _isHalftone;
     private int _lastTouchCount;
 
     public event EventHandler<int>? NoteOn;
@@ -91,6 +92,14 @@ public class PadMatrixDrawable : IDrawable
             _padAltColor = Color.FromArgb(padAltColor);
         if (!string.IsNullOrEmpty(padAltPressedColor))
             _padAltPressedColor = Color.FromArgb(padAltPressedColor);
+    }
+
+    /// <summary>
+    /// Sets a custom halftone detector (e.g., scale-based sharps/flats).
+    /// </summary>
+    public void SetHalftoneDetector(Func<int, bool>? detector)
+    {
+        _isHalftone = detector;
     }
 
     /// <summary>
@@ -221,7 +230,7 @@ public class PadMatrixDrawable : IDrawable
         float x = _offsetX + col * (_padSize + _spacing);
         float y = _offsetY + visualRow * (_padSize + _spacing);
 
-        bool isAltNote = IsSharp[midiNote % 12];
+        bool isAltNote = _isHalftone?.Invoke(midiNote) ?? IsSharp[midiNote % 12];
         bool isPressed = _activeNotes.Contains(midiNote);
 
         Color bgColor = isAltNote

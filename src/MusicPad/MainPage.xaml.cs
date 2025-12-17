@@ -10,6 +10,7 @@ public partial class MainPage : ContentPage
     private readonly IPadreaService _padreaService;
     private readonly PadMatrixDrawable _padDrawable;
     private readonly RotaryKnobDrawable _volumeKnobDrawable;
+    private readonly List<ScaleOption> _scaleOptions = new();
     private GraphicsView? _padGraphicsView;
     private bool _isLoading;
 
@@ -23,6 +24,9 @@ public partial class MainPage : ContentPage
         _padDrawable.NoteOff += OnNoteOff;
         _padDrawable.NavigateUp += OnNavigateUp;
         _padDrawable.NavigateDown += OnNavigateDown;
+        
+        // Build scale options (common scales)
+        BuildScaleOptions();
         
         // Setup volume knob
         _volumeKnobDrawable = new RotaryKnobDrawable { Label = "VOL", Value = 0.75f };
@@ -75,6 +79,45 @@ public partial class MainPage : ContentPage
         _sfzService.Volume = volume;
     }
 
+    private void BuildScaleOptions()
+    {
+        _scaleOptions.Clear();
+        // Major (12 roots)
+        foreach (var (root, name) in RootNotes())
+        {
+            _scaleOptions.Add(new ScaleOption($"{name} Major", root, ScaleType.Major));
+        }
+        // Natural minor (12 roots)
+        foreach (var (root, name) in RootNotes())
+        {
+            _scaleOptions.Add(new ScaleOption($"{name} Minor", root, ScaleType.NaturalMinor));
+        }
+        // Common modes (rooted on C by default)
+        _scaleOptions.Add(new ScaleOption("C Dorian", 0, ScaleType.Dorian));
+        _scaleOptions.Add(new ScaleOption("C Phrygian", 0, ScaleType.Phrygian));
+        _scaleOptions.Add(new ScaleOption("C Lydian", 0, ScaleType.Lydian));
+        _scaleOptions.Add(new ScaleOption("C Mixolydian", 0, ScaleType.Mixolydian));
+        _scaleOptions.Add(new ScaleOption("C Locrian", 0, ScaleType.Locrian));
+        _scaleOptions.Add(new ScaleOption("C Harmonic Minor", 0, ScaleType.HarmonicMinor));
+        _scaleOptions.Add(new ScaleOption("C Melodic Minor", 0, ScaleType.MelodicMinor));
+    }
+
+    private static IEnumerable<(int root, string name)> RootNotes()
+    {
+        yield return (0, "C");
+        yield return (1, "C#");
+        yield return (2, "D");
+        yield return (3, "D#");
+        yield return (4, "E");
+        yield return (5, "F");
+        yield return (6, "F#");
+        yield return (7, "G");
+        yield return (8, "G#");
+        yield return (9, "A");
+        yield return (10, "A#");
+        yield return (11, "B");
+    }
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();
@@ -92,6 +135,7 @@ public partial class MainPage : ContentPage
     {
         var padreas = _padreaService.AvailablePadreas;
         PadreaPicker.ItemsSource = padreas.ToList();
+        ScalePicker.ItemsSource = _scaleOptions.ToList();
         
         // Select current padrea
         var currentPadrea = _padreaService.CurrentPadrea;
@@ -112,7 +156,20 @@ public partial class MainPage : ContentPage
         if (PadreaPicker.SelectedItem is Padrea selectedPadrea)
         {
             _padreaService.CurrentPadrea = selectedPadrea;
+            UpdateScalePickerForPadrea(selectedPadrea);
             UpdatePadMatrixForPadrea();
+        }
+    }
+
+    private void OnScaleChanged(object? sender, EventArgs e)
+    {
+        if (ScalePicker.SelectedItem is ScaleOption option &&
+            _padreaService.CurrentPadrea is Padrea padrea &&
+            padrea.Id == "scales")
+        {
+            ApplyScaleOptionToPadrea(padrea, option);
+            padrea.CurrentViewpage = 0; // reset paging when scale changes
+            SetupPadMatrix();
         }
     }
 
@@ -199,6 +256,7 @@ public partial class MainPage : ContentPage
         {
             // Fallback to simple range
             _padDrawable.SetKeyRange(instrumentMinKey, instrumentMaxKey);
+            _padDrawable.SetHalftoneDetector(null);
         }
         else
         {
@@ -221,6 +279,7 @@ public partial class MainPage : ContentPage
             _padDrawable.SetNotes(notes, padrea.Columns, hasUpArrow, hasDownArrow);
             _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
                                    padrea.PadAltColor, padrea.PadAltPressedColor);
+            _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
         }
 
         // Create or reuse GraphicsView
@@ -329,5 +388,37 @@ public partial class MainPage : ContentPage
         {
             SetupPadMatrix();
         }
+    }
+
+    private void UpdateScalePickerForPadrea(Padrea padrea)
+    {
+        bool isScalePadrea = padrea.Id == "scales" || padrea.NoteFilter == NoteFilterType.HeptatonicScale;
+        ScalePicker.IsVisible = isScalePadrea;
+        if (isScalePadrea)
+        {
+            // Ensure a selection (default to C Major)
+            if (ScalePicker.SelectedIndex < 0)
+            {
+                var defaultIndex = _scaleOptions.FindIndex(s => s.Name == "C Major");
+                ScalePicker.SelectedIndex = defaultIndex >= 0 ? defaultIndex : 0;
+            }
+
+            if (ScalePicker.SelectedItem is ScaleOption option)
+            {
+                ApplyScaleOptionToPadrea(padrea, option);
+            }
+        }
+    }
+
+    private void ApplyScaleOptionToPadrea(Padrea padrea, ScaleOption option)
+    {
+        padrea.NoteFilter = NoteFilterType.HeptatonicScale;
+        padrea.ScaleType = option.ScaleType;
+        padrea.RootNote = option.Root;
+    }
+
+    private record ScaleOption(string Name, int Root, ScaleType ScaleType)
+    {
+        public override string ToString() => Name;
     }
 }

@@ -46,6 +46,23 @@ public class PadreaService : IPadreaService
             PadAltPressedColor = "#FF3300"    // Hot orange-red - aggressive contrast
         };
         _padreas.Add(pentatonicPadrea);
+
+        // Heptatonic scales padrea (default C Major)
+        var scalesPadrea = new Padrea
+        {
+            Id = "scales",
+            Name = "Scales",
+            Description = "Select a heptatonic scale (Major, Minor modes, etc.)",
+            NoteFilter = NoteFilterType.HeptatonicScale,
+            ScaleType = ScaleType.Major,
+            RootNote = 0, // C
+            // Warm base, halftones highlighted
+            PadColor = "#CD8B5A",
+            PadPressedColor = "#F4B27A",
+            PadAltColor = "#8B5A3A",          // Halftones darker
+            PadAltPressedColor = "#FF9966"
+        };
+        _padreas.Add(scalesPadrea);
         
         CurrentPadrea = fullRangePadrea;
     }
