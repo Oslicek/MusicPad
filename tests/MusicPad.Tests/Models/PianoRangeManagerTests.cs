@@ -45,5 +45,24 @@ public class PianoRangeManagerTests
         Assert.Equal(36, start);
         Assert.Equal(48, end);
     }
+
+    [Fact]
+    public void SetOrientation_PreservesOrResetsStart()
+    {
+        var mgr = new PianoRangeManager(21, 108, isLandscape: false);
+        mgr.Move(12); // move up to start at 60
+        var (start, _) = mgr.GetRange();
+        Assert.Equal(60, start);
+
+        // Preserve start when switching orientation
+        mgr.SetOrientation(isLandscape: true, preserveStart: true);
+        (start, _) = mgr.GetRange();
+        Assert.True(start >= 60 - 12); // clamped but not reset to default
+
+        // Reset when requested
+        mgr.SetOrientation(isLandscape: false, preserveStart: false);
+        (start, _) = mgr.GetRange();
+        Assert.Equal(48, start); // default portrait start C3
+    }
 }
 

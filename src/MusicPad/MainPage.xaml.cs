@@ -193,6 +193,10 @@ public partial class MainPage : ContentPage
         {
             _isLandscape = landscape;
             AdjustVolumeLayout();
+            if (_pianoRangeManager != null)
+            {
+                _pianoRangeManager.SetOrientation(_isLandscape, preserveStart: false);
+            }
             // Re-run layout if piano or for orientation-dependent logic
             if (_sfzService.CurrentInstrumentName != null)
             {
@@ -546,7 +550,15 @@ public partial class MainPage : ContentPage
 
     private void SetupPianoPadrea(Padrea padrea, int instrumentMinKey, int instrumentMaxKey)
     {
-        _pianoRangeManager = new PianoRangeManager(instrumentMinKey, instrumentMaxKey, _isLandscape);
+        if (_pianoRangeManager == null)
+        {
+            _pianoRangeManager = new PianoRangeManager(instrumentMinKey, instrumentMaxKey, _isLandscape);
+        }
+        else
+        {
+            _pianoRangeManager.UpdateInstrumentRange(instrumentMinKey, instrumentMaxKey);
+            _pianoRangeManager.SetOrientation(_isLandscape, preserveStart: true);
+        }
         var (start, end) = _pianoRangeManager.GetRange();
 
         _pianoDrawable.SetRange(start, end, instrumentMinKey, instrumentMaxKey, _isLandscape);

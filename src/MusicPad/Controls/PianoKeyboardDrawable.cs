@@ -19,8 +19,8 @@ public class PianoKeyboardDrawable : IDrawable
     private readonly List<KeyRect> _keyRects = new();
     private readonly HashSet<int> _activeNotes = new();
 
-    private RectF _upArrowRect;
-    private RectF _downArrowRect;
+    private RectF _leftArrowRect;
+    private RectF _rightArrowRect;
     private RectF _stripRect;
     private RectF _stripHighlight;
     private bool _draggingStrip;
@@ -48,28 +48,32 @@ public class PianoKeyboardDrawable : IDrawable
         _keyRects.Clear();
 
         float stripHeight = 26f;
-        float arrowHeight = 24f;
+        float arrowHeight = stripHeight;
         float arrowWidth = 28f;
         float arrowMargin = 6f;
 
-        // Layout regions
-        _upArrowRect = new RectF(dirtyRect.X + arrowMargin,
-                                 dirtyRect.Y + arrowMargin,
-                                 arrowWidth,
-                                 arrowHeight);
-
-        _downArrowRect = new RectF(dirtyRect.Right - arrowMargin - arrowWidth,
+        // Layout regions (left/right arrows)
+        _leftArrowRect = new RectF(dirtyRect.X + arrowMargin,
                                    dirtyRect.Y + arrowMargin,
                                    arrowWidth,
                                    arrowHeight);
 
-        _stripRect = new RectF(dirtyRect.X + arrowMargin,
-                               dirtyRect.Y + arrowMargin + arrowHeight + 4,
-                               dirtyRect.Width - arrowMargin * 2,
+        _rightArrowRect = new RectF(dirtyRect.Right - arrowMargin - arrowWidth,
+                                    dirtyRect.Y + arrowMargin,
+                                    arrowWidth,
+                                    arrowHeight);
+
+        _stripRect = new RectF(_leftArrowRect.Right + 4,
+                               dirtyRect.Y + arrowMargin,
+                               dirtyRect.Width - (arrowWidth * 2) - (arrowMargin * 2) - 8,
                                stripHeight);
 
-        float keyboardTop = _stripRect.Bottom + 8;
+        float keyboardTop = _stripRect.Bottom + 6;
         float keyboardHeight = dirtyRect.Bottom - keyboardTop;
+        if (!_isLandscape)
+        {
+            keyboardHeight *= 0.6f; // make it shorter in portrait so it's rectangular
+        }
 
         // Draw strip (88 keys)
         DrawStrip(canvas);
@@ -89,14 +93,51 @@ public class PianoKeyboardDrawable : IDrawable
         float highlightWidth = (_rangeEnd - _rangeStart + 1) * keyWidth;
         _stripHighlight = new RectF(highlightX, _stripRect.Y, highlightWidth, _stripRect.Height);
 
-        canvas.FillColor = Color.FromArgb("#202020");
-        canvas.FillRectangle(_stripRect);
+        // Draw white keys
+        for (int i = 0; i < totalKeys; i++)
+        {
+            int midi = GlobalMin + i;
+            float x = _stripRect.X + i * keyWidth;
+            var keyRect = new RectF(x, _stripRect.Y, keyWidth, _stripRect.Height);
+            bool isBlack = IsBlack(midi);
 
+            if (!isBlack)
+            {
+                canvas.FillColor = Colors.White;
+                canvas.FillRectangle(keyRect);
+            }
+        }
+
+        // Draw instrument range highlight underlay
+        int instStart = Math.Max(_instrumentMin, GlobalMin);
+        int instEnd = Math.Min(_instrumentMax, GlobalMax);
+        float instX = _stripRect.X + (instStart - GlobalMin) * keyWidth;
+        float instW = (instEnd - instStart + 1) * keyWidth;
+        var instRect = new RectF(instX, _stripRect.Y, instW, _stripRect.Height);
+        canvas.FillColor = Color.FromArgb("#2044AAFF");
+        canvas.FillRectangle(instRect);
+
+        // Draw current window highlight
         canvas.FillColor = Color.FromArgb("#404040");
         canvas.FillRectangle(_stripHighlight);
 
-        canvas.StrokeColor = Colors.White.WithAlpha(0.6f);
+        // Draw black keys on top
+        for (int i = 0; i < totalKeys; i++)
+        {
+            int midi = GlobalMin + i;
+            if (!IsBlack(midi)) continue;
+            float x = _stripRect.X + i * keyWidth;
+            var keyRect = new RectF(x, _stripRect.Y, keyWidth, _stripRect.Height * 0.6f);
+            canvas.FillColor = Color.FromArgb("#111111");
+            canvas.FillRectangle(keyRect);
+        }
+
+        // Outlines
+        canvas.StrokeColor = Color.FromArgb("#555555");
         canvas.StrokeSize = 1;
+        canvas.DrawRectangle(_stripRect);
+
+        canvas.StrokeColor = Colors.White.WithAlpha(0.7f);
         canvas.DrawRectangle(_stripHighlight);
     }
 
@@ -136,7 +177,7 @@ public class PianoKeyboardDrawable : IDrawable
             canvas.FontColor = disabled ? Color.FromArgb("#777777") : Color.FromArgb("#222222");
             canvas.DrawString(GetNoteName(note), keyRect, HorizontalAlignment.Center, VerticalAlignment.Bottom);
 
-            _keyRects.Add(new KeyRect(note, keyRect, isBlack: false, disabled));
+            _keyRects.Add(new KeyRect(note, keyRect, false, disabled));
             currentX += whiteWidth;
         }
 
@@ -166,16 +207,16 @@ public class PianoKeyboardDrawable : IDrawable
                 canvas.FontColor = disabled ? Color.FromArgb("#666666") : Colors.White;
                 canvas.DrawString(GetNoteName(note), keyRect, HorizontalAlignment.Center, VerticalAlignment.Bottom);
 
-                _keyRects.Add(new KeyRect(note, keyRect, isBlack: true, disabled));
+                _keyRects.Add(new KeyRect(note, keyRect, true, disabled));
             }
         }
 
         // Arrows
-        DrawArrow(canvas, _upArrowRect, up: true);
-        DrawArrow(canvas, _downArrowRect, up: false);
+        DrawArrow(canvas, _leftArrowRect, left: true);
+        DrawArrow(canvas, _rightArrowRect, left: false);
     }
 
-    private void DrawArrow(ICanvas canvas, RectF rect, bool up)
+    private void DrawArrow(ICanvas canvas, RectF rect, bool left)
     {
         canvas.FillColor = Color.FromArgb("#303030");
         canvas.FillRoundedRectangle(rect, 6);
@@ -188,17 +229,17 @@ public class PianoKeyboardDrawable : IDrawable
         float size = rect.Height * 0.3f;
 
         var path = new PathF();
-        if (up)
+        if (left)
         {
-            path.MoveTo(cx, cy - size);
+            path.MoveTo(cx - size, cy);
+            path.LineTo(cx + size, cy - size);
             path.LineTo(cx + size, cy + size);
-            path.LineTo(cx - size, cy + size);
         }
         else
         {
-            path.MoveTo(cx, cy + size);
-            path.LineTo(cx + size, cy - size);
+            path.MoveTo(cx + size, cy);
             path.LineTo(cx - size, cy - size);
+            path.LineTo(cx - size, cy + size);
         }
         path.Close();
 
@@ -260,13 +301,13 @@ public class PianoKeyboardDrawable : IDrawable
     public void OnTouchEnd(float x, float y)
     {
         var p = new PointF(x, y);
-        if (_upArrowRect.Contains(p))
-        {
-            ShiftRequested?.Invoke(this, +12);
-        }
-        else if (_downArrowRect.Contains(p))
+        if (_leftArrowRect.Contains(p))
         {
             ShiftRequested?.Invoke(this, -12);
+        }
+        else if (_rightArrowRect.Contains(p))
+        {
+            ShiftRequested?.Invoke(this, +12);
         }
         _draggingStrip = false;
 

@@ -9,8 +9,8 @@ public class PianoRangeManager
     private const int GlobalMin = 21;  // A0
     private const int GlobalMax = 108; // C8
 
-    private readonly int _instrumentMin;
-    private readonly int _instrumentMax;
+    private int _instrumentMin;
+    private int _instrumentMax;
 
     private int _desiredSpan; // number of notes in window
     private int _start;       // inclusive start of visible window
@@ -19,17 +19,34 @@ public class PianoRangeManager
     {
         _instrumentMin = Math.Clamp(instrumentMin, GlobalMin, GlobalMax);
         _instrumentMax = Math.Clamp(instrumentMax, GlobalMin, GlobalMax);
-        SetOrientation(isLandscape);
+        SetOrientation(isLandscape, preserveStart: false);
+    }
+
+    /// <summary>
+    /// Updates instrument limits and clamps current window.
+    /// </summary>
+    public void UpdateInstrumentRange(int instrumentMin, int instrumentMax)
+    {
+        _instrumentMin = Math.Clamp(instrumentMin, GlobalMin, GlobalMax);
+        _instrumentMax = Math.Clamp(instrumentMax, GlobalMin, GlobalMax);
+        SetStart(_start);
     }
 
     /// <summary>
     /// Sets orientation; portrait = 13-note window (C3-C4), landscape = 25-note window (C2-C4).
     /// </summary>
-    public void SetOrientation(bool isLandscape)
+    public void SetOrientation(bool isLandscape, bool preserveStart = true)
     {
         _desiredSpan = isLandscape ? 25 : 13;
         int suggestedStart = isLandscape ? 36 : 48; // C2 or C3
-        SetStart(suggestedStart);
+        if (preserveStart)
+        {
+            SetStart(_start);
+        }
+        else
+        {
+            SetStart(suggestedStart);
+        }
     }
 
     /// <summary>
