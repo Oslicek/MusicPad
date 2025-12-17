@@ -56,6 +56,7 @@ public class PadreaService : IPadreaService
             NoteFilter = NoteFilterType.HeptatonicScale,
             ScaleType = ScaleType.Major,
             RootNote = 0, // C
+            Kind = PadreaKind.Grid,
             // Warm base, halftones highlighted
             PadColor = "#CD8B5A",
             PadPressedColor = "#F4B27A",
@@ -63,6 +64,21 @@ public class PadreaService : IPadreaService
             PadAltPressedColor = "#FF9966"
         };
         _padreas.Add(scalesPadrea);
+
+        // Piano padrea - chromatic keyboard
+        var pianoPadrea = new Padrea
+        {
+            Id = "piano",
+            Name = "Piano",
+            Description = "Chromatic piano keyboard view",
+            NoteFilter = NoteFilterType.Chromatic,
+            Kind = PadreaKind.Piano,
+            PadColor = "#FFFFFF",
+            PadPressedColor = "#FFDD88",
+            PadAltColor = "#666666",
+            PadAltPressedColor = "#FFAA55"
+        };
+        _padreas.Add(pianoPadrea);
         
         CurrentPadrea = fullRangePadrea;
     }

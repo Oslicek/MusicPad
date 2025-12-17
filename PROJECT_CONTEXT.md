@@ -118,6 +118,8 @@ MusicPad/
 |--------|-------------|
 | Full Range | All chromatic notes from instrument range |
 | Pentatonic | Major pentatonic scale (C, D, E, G, A) |
+| Scales | Heptatonic scales with selectable root/scale (default C Major) |
+| Piano | Chromatic piano keyboard view (C3–C4 portrait, C2–C4 landscape) |
 
 Features:
 - Note filtering (chromatic, pentatonic major/minor)
@@ -131,7 +133,9 @@ Features:
 - **Navigation Arrows**: Compact, neon-green arrows next to pads
 - **Volume Knob**: Rotary control with drag interaction
 - **Instrument Picker**: Dropdown for SFZ instrument selection
-- **Padrea Picker**: Dropdown for pad configuration
+- **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano)
+- **Scale Picker**: Shown when Scales padrea selected (roots + common scales)
+- **Piano Padrea**: Piano keyboard (one octave+1 portrait, two octaves+1 landscape), strip with 88-key highlight, arrows/drag to shift range
 - **Aggressive Colors**: High-contrast pressed states (white, yellow, hot pink)
 
 ## Tests
@@ -169,7 +173,6 @@ Features:
 - [x] GitHub repository connected
 
 **Pending:**
-- [ ] More padrea types (natural minor, modes)
 - [ ] Save/load custom padreas
 - [ ] Effects (reverb, delay)
 - [ ] Recording functionality

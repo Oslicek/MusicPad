@@ -48,6 +48,11 @@ public class Padrea
     /// The note filter type that determines which notes are shown.
     /// </summary>
     public NoteFilterType NoteFilter { get; set; } = NoteFilterType.Chromatic;
+
+    /// <summary>
+    /// Visual style of the padrea.
+    /// </summary>
+    public PadreaKind Kind { get; set; } = PadreaKind.Grid;
     
     /// <summary>
     /// The scale type for HeptatonicScale filter.
@@ -267,6 +272,15 @@ public enum NoteFilterType
     
     /// <summary>Heptatonic scale: 7 notes per octave based on ScaleType and RootNote.</summary>
     HeptatonicScale
+}
+
+/// <summary>
+/// Visual style of padrea.
+/// </summary>
+public enum PadreaKind
+{
+    Grid,
+    Piano
 }
 
 /// <summary>

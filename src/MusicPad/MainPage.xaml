@@ -54,19 +54,32 @@
                       HorizontalOptions="Center"
                       Margin="0,8" />
         
-        <!-- Pad Matrix Container -->
-        <Grid x:Name="PadContainer" 
+        <!-- Pad Area -->
+        <Grid x:Name="PadAreaGrid"
               Grid.Row="2"
               Margin="0,4"
+              ColumnDefinitions="Auto,*"
               HorizontalOptions="Fill"
               VerticalOptions="Fill">
-            
-            <Label x:Name="LoadingLabel"
-                   Text="Loading..."
-                   FontSize="18"
-                   TextColor="#666"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center" />
+
+            <ContentView x:Name="VolumeLeftHost"
+                         Grid.Column="0"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Center" />
+
+            <!-- Pad Container -->
+            <Grid x:Name="PadContainer" 
+                  Grid.Column="1"
+                  HorizontalOptions="Fill"
+                  VerticalOptions="Fill">
+                
+                <Label x:Name="LoadingLabel"
+                       Text="Loading..."
+                       FontSize="18"
+                       TextColor="#666"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Grid>
         </Grid>
         
         <!-- Status Bar -->
