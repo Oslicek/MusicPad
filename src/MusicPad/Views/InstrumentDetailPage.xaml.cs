@@ -85,13 +85,6 @@ public partial class InstrumentDetailPage : ContentPage
         ConverterLabel.Text = metadata.Converter ?? "Unknown";
         ConversionDateLabel.Text = metadata.ConversionDate ?? "Unknown";
         CopyrightLabel.Text = metadata.ConverterCopyright ?? "Unknown";
-        
-        // Update button text if already selected
-        if (_sfzService.CurrentInstrumentName == _instrumentName)
-        {
-            SelectButton.Text = "✓ Currently Selected";
-            SelectButton.BackgroundColor = Color.FromArgb("#2A6A3A");
-        }
     }
 
     private static string? GetFileName(string? path)

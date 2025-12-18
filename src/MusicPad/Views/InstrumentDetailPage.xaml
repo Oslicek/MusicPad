@@ -29,37 +29,35 @@
                         Stroke="#2A2A2E"
                         BackgroundColor="#1A1A1D"
                         Padding="16">
-                    <StackLayout Spacing="12">
+                    <StackLayout Spacing="8">
                         <Label Text="Credits" 
                                FontSize="16" 
                                FontAttributes="Bold"
-                               TextColor="#4A90D9"/>
+                               TextColor="#4A90D9"
+                               Margin="0,0,0,4"/>
                         
-                        <Grid ColumnDefinitions="Auto,*" RowSpacing="8" ColumnSpacing="12">
-                            <!-- Sound Engineer -->
-                            <Label Grid.Row="0" Grid.Column="0" 
-                                   Text="Sound Engineer:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="SoundEngineerLabel" 
-                                   Grid.Row="0" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
+                        <StackLayout Spacing="6">
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Sound Engineer:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="SoundEngineerLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
                             
-                            <!-- Creation Date -->
-                            <Label Grid.Row="1" Grid.Column="0" 
-                                   Text="Created:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="CreationDateLabel" 
-                                   Grid.Row="1" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Created:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="CreationDateLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
                             
-                            <!-- Editor -->
-                            <Label Grid.Row="2" Grid.Column="0" 
-                                   Text="Editor:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="EditorLabel" 
-                                   Grid.Row="2" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
-                        </Grid>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Editor:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="EditorLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
+                        </StackLayout>
                     </StackLayout>
                 </Border>
                 
@@ -68,54 +66,50 @@
                         Stroke="#2A2A2E"
                         BackgroundColor="#1A1A1D"
                         Padding="16">
-                    <StackLayout Spacing="12">
+                    <StackLayout Spacing="8">
                         <Label Text="Technical Information" 
                                FontSize="16" 
                                FontAttributes="Bold"
-                               TextColor="#4A90D9"/>
+                               TextColor="#4A90D9"
+                               Margin="0,0,0,4"/>
                         
-                        <Grid ColumnDefinitions="Auto,*" RowSpacing="8" ColumnSpacing="12">
-                            <!-- Internal Name -->
-                            <Label Grid.Row="0" Grid.Column="0" 
-                                   Text="Internal Name:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="InternalNameLabel" 
-                                   Grid.Row="0" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
+                        <StackLayout Spacing="6">
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Internal Name:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="InternalNameLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
                             
-                            <!-- Source File -->
-                            <Label Grid.Row="1" Grid.Column="0" 
-                                   Text="Source:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="SourceFileLabel" 
-                                   Grid.Row="1" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"
-                                   LineBreakMode="TailTruncation"/>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Source:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="SourceFileLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"
+                                       LineBreakMode="TailTruncation"/>
+                            </StackLayout>
                             
-                            <!-- Soundfont Version -->
-                            <Label Grid.Row="2" Grid.Column="0" 
-                                   Text="Soundfont:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="SoundfontVersionLabel" 
-                                   Grid.Row="2" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Soundfont:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="SoundfontVersionLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
                             
-                            <!-- Key Range -->
-                            <Label Grid.Row="3" Grid.Column="0" 
-                                   Text="Key Range:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="KeyRangeLabel" 
-                                   Grid.Row="3" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Key Range:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="KeyRangeLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
                             
-                            <!-- Region Count -->
-                            <Label Grid.Row="4" Grid.Column="0" 
-                                   Text="Regions:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="RegionCountLabel" 
-                                   Grid.Row="4" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
-                        </Grid>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Regions:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="RegionCountLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
+                        </StackLayout>
                     </StackLayout>
                 </Border>
                 
@@ -124,44 +118,42 @@
                         Stroke="#2A2A2E"
                         BackgroundColor="#1A1A1D"
                         Padding="16">
-                    <StackLayout Spacing="12">
+                    <StackLayout Spacing="8">
                         <Label Text="Conversion Info" 
                                FontSize="16" 
                                FontAttributes="Bold"
-                               TextColor="#4A90D9"/>
+                               TextColor="#4A90D9"
+                               Margin="0,0,0,4"/>
                         
-                        <Grid ColumnDefinitions="Auto,*" RowSpacing="8" ColumnSpacing="12">
-                            <!-- Converter -->
-                            <Label Grid.Row="0" Grid.Column="0" 
-                                   Text="Converter:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="ConverterLabel" 
-                                   Grid.Row="0" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
+                        <StackLayout Spacing="6">
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Converter:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="ConverterLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
                             
-                            <!-- Conversion Date -->
-                            <Label Grid.Row="1" Grid.Column="0" 
-                                   Text="Converted:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="ConversionDateLabel" 
-                                   Grid.Row="1" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"/>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Converted:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="ConversionDateLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"/>
+                            </StackLayout>
                             
-                            <!-- Copyright -->
-                            <Label Grid.Row="2" Grid.Column="0" 
-                                   Text="Copyright:" 
-                                   FontSize="14" TextColor="#888"/>
-                            <Label x:Name="CopyrightLabel" 
-                                   Grid.Row="2" Grid.Column="1" 
-                                   FontSize="14" TextColor="#EAEAEC"
-                                   LineBreakMode="WordWrap"/>
-                        </Grid>
+                            <StackLayout Orientation="Horizontal" Spacing="8">
+                                <Label Text="Copyright:" 
+                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                <Label x:Name="CopyrightLabel" 
+                                       FontSize="14" TextColor="#EAEAEC"
+                                       LineBreakMode="WordWrap"/>
+                            </StackLayout>
+                        </StackLayout>
                     </StackLayout>
                 </Border>
                 
                 <!-- Select Button -->
                 <Button x:Name="SelectButton"
-                        Text="Select This Instrument"
+                        Text="Select Instrument"
                         BackgroundColor="#4A90D9"
                         TextColor="White"
                         FontAttributes="Bold"
@@ -173,4 +165,3 @@
         </StackLayout>
     </ScrollView>
 </ContentPage>
-
