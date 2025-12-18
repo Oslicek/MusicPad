@@ -1,8 +1,11 @@
+using System.Diagnostics;
+
 namespace MusicPad.Core.Sfz;
 
 /// <summary>
 /// Plays SFZ instruments by generating audio samples.
 /// Supports polyphonic playback with configurable max voices.
+/// Uses a fixed voice pool with intelligent allocation like real acoustic instruments.
 /// </summary>
 public class SfzPlayer
 {
@@ -11,17 +14,24 @@ public class SfzPlayer
     private readonly int _sampleRate;
     private readonly int _maxVoices;
     private SfzInstrument? _instrument;
-    private readonly List<Voice> _voices = new();
+    private readonly Voice[] _voices;
     private readonly object _lock = new();
 
     public SfzPlayer(int sampleRate, int maxVoices = DefaultMaxVoices)
     {
         _sampleRate = sampleRate;
         _maxVoices = Math.Max(1, maxVoices);
+        
+        // Pre-create voice pool
+        _voices = new Voice[_maxVoices];
+        for (int i = 0; i < _maxVoices; i++)
+        {
+            _voices[i] = new Voice();
+        }
     }
 
     /// <summary>
-    /// Gets the number of currently active voices.
+    /// Gets the number of currently active (non-idle) voices.
     /// </summary>
     public int ActiveVoiceCount
     {
@@ -29,7 +39,7 @@ public class SfzPlayer
         {
             lock (_lock)
             {
-                return _voices.Count;
+                return _voices.Count(v => v.EnvelopePhase != EnvelopePhase.Idle);
             }
         }
     }
@@ -42,8 +52,72 @@ public class SfzPlayer
         lock (_lock)
         {
             _instrument = instrument;
-            _voices.Clear();
+            // Reset all voices to idle
+            foreach (var voice in _voices)
+            {
+                voice.EnvelopePhase = EnvelopePhase.Idle;
+                voice.IsFinished = false;
+            }
         }
+    }
+
+    /// <summary>
+    /// Allocates a voice for a new note using the priority:
+    /// 1. Idle voice (preferred - no interruption)
+    /// 2. Oldest voice in release phase (minimal disruption)
+    /// 3. Oldest playing voice (last resort - voice stealing)
+    /// </summary>
+    private Voice AllocateVoice()
+    {
+        // 1. Prefer an idle voice
+        foreach (var voice in _voices)
+        {
+            if (voice.EnvelopePhase == EnvelopePhase.Idle)
+                return voice;
+        }
+
+        // 2. Prefer the oldest voice in release phase (released first)
+        Voice? oldestReleasing = null;
+        long oldestReleaseTicks = long.MaxValue;
+        
+        foreach (var voice in _voices)
+        {
+            if (voice.EnvelopePhase == EnvelopePhase.Release && voice.ReleaseStartTicks < oldestReleaseTicks)
+            {
+                oldestReleaseTicks = voice.ReleaseStartTicks;
+                oldestReleasing = voice;
+            }
+        }
+        
+        if (oldestReleasing != null)
+        {
+            // Immediately silence and reuse
+            oldestReleasing.EnvelopePhase = EnvelopePhase.Idle;
+            return oldestReleasing;
+        }
+
+        // 3. Steal the oldest playing voice (started first)
+        Voice? oldestPlaying = null;
+        long oldestStartTicks = long.MaxValue;
+        
+        foreach (var voice in _voices)
+        {
+            if (voice.StartTimeTicks < oldestStartTicks)
+            {
+                oldestStartTicks = voice.StartTimeTicks;
+                oldestPlaying = voice;
+            }
+        }
+        
+        if (oldestPlaying != null)
+        {
+            // Force immediate cutoff and reuse
+            oldestPlaying.EnvelopePhase = EnvelopePhase.Idle;
+            return oldestPlaying;
+        }
+
+        // Fallback (should never reach here)
+        return _voices[0];
     }
 
     /// <summary>
@@ -54,10 +128,6 @@ public class SfzPlayer
         lock (_lock)
         {
             if (_instrument == null)
-                return;
-
-            // Check if this note is already playing
-            if (_voices.Any(v => v.MidiNote == midiNote && v.EnvelopePhase != EnvelopePhase.Release))
                 return;
 
             // Find matching regions
@@ -73,10 +143,24 @@ public class SfzPlayer
             if (samples == null || samples.Length == 0)
                 return;
 
-            // Voice stealing if at max polyphony
-            if (_voices.Count >= _maxVoices)
+            // Check if this note is already playing (not idle, not releasing) - retrigger in place
+            Voice? voice = null;
+            foreach (var existingVoice in _voices)
             {
-                _voices.RemoveAt(0); // Remove oldest voice
+                if (existingVoice.MidiNote == midiNote && 
+                    existingVoice.EnvelopePhase != EnvelopePhase.Idle &&
+                    existingVoice.EnvelopePhase != EnvelopePhase.Release)
+                {
+                    // Reuse this voice for retriggering
+                    voice = existingVoice;
+                    break;
+                }
+            }
+            
+            // If not retriggering, allocate a new voice
+            if (voice == null)
+            {
+                voice = AllocateVoice();
             }
 
             // Calculate pitch ratio
@@ -103,29 +187,29 @@ public class SfzPlayer
             int loopStart = region.LoopStart;
             int loopEnd = region.LoopEnd > 0 ? region.LoopEnd : (region.End > 0 ? region.End : samples.Length - 1);
             
-            // Create voice
-            var voice = new Voice
-            {
-                MidiNote = midiNote,
-                Samples = samples,
-                Position = region.Offset,
-                EndPosition = region.End > 0 ? region.End : samples.Length - 1,
-                PitchRatio = clampedPitchRatio,
-                Volume = DbToLinear(region.Volume),
-                LoopMode = region.LoopMode,
-                LoopStart = loopStart,
-                LoopEnd = loopEnd,
-                AttackSamples = attackSamples,
-                HoldSamples = holdSamples,
-                DecaySamples = decaySamples,
-                ReleaseSamples = releaseSamples,
-                SustainLevel = sustainLevel,
-                EnvelopePhase = EnvelopePhase.Attack,
-                EnvelopePosition = 0,
-                EnvelopeLevel = 0
-            };
-
-            _voices.Add(voice);
+            // Configure the voice with new note
+            voice.MidiNote = midiNote;
+            voice.Samples = samples;
+            voice.Position = region.Offset;
+            voice.EndPosition = region.End > 0 ? region.End : samples.Length - 1;
+            voice.FractionalPosition = 0;
+            voice.PitchRatio = clampedPitchRatio;
+            voice.Volume = DbToLinear(region.Volume);
+            voice.LoopMode = region.LoopMode;
+            voice.LoopStart = loopStart;
+            voice.LoopEnd = loopEnd;
+            voice.AttackSamples = attackSamples;
+            voice.HoldSamples = holdSamples;
+            voice.DecaySamples = decaySamples;
+            voice.ReleaseSamples = releaseSamples;
+            voice.SustainLevel = sustainLevel;
+            voice.EnvelopePhase = EnvelopePhase.Attack;
+            voice.EnvelopePosition = 0;
+            voice.EnvelopeLevel = 0;
+            voice.ReleaseStartLevel = 0;
+            voice.StartTimeTicks = Stopwatch.GetTimestamp();
+            voice.ReleaseStartTicks = 0;
+            voice.IsFinished = false;
         }
     }
 
@@ -136,14 +220,21 @@ public class SfzPlayer
     {
         lock (_lock)
         {
-            // Find all voices with this note that aren't already releasing
-            var voices = _voices.Where(v => v.MidiNote == midiNote && v.EnvelopePhase != EnvelopePhase.Release).ToList();
-            foreach (var voice in voices)
+            long now = Stopwatch.GetTimestamp();
+            
+            // Find all voices with this note that aren't already releasing or idle
+            foreach (var voice in _voices)
             {
-                voice.EnvelopePhase = EnvelopePhase.Release;
-                voice.EnvelopePosition = 0;
-                // Ensure release starts from at least a small level to prevent stuck silent voices
-                voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
+                if (voice.MidiNote == midiNote && 
+                    voice.EnvelopePhase != EnvelopePhase.Release && 
+                    voice.EnvelopePhase != EnvelopePhase.Idle)
+                {
+                    voice.EnvelopePhase = EnvelopePhase.Release;
+                    voice.EnvelopePosition = 0;
+                    voice.ReleaseStartTicks = now;
+                    // Ensure release starts from at least a small level to prevent stuck silent voices
+                    voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
+                }
             }
         }
     }
@@ -155,12 +246,15 @@ public class SfzPlayer
     {
         lock (_lock)
         {
+            long now = Stopwatch.GetTimestamp();
+            
             foreach (var voice in _voices)
             {
-                if (voice.EnvelopePhase != EnvelopePhase.Release)
+                if (voice.EnvelopePhase != EnvelopePhase.Release && voice.EnvelopePhase != EnvelopePhase.Idle)
                 {
                     voice.EnvelopePhase = EnvelopePhase.Release;
                     voice.EnvelopePosition = 0;
+                    voice.ReleaseStartTicks = now;
                     voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
                 }
             }
@@ -174,7 +268,11 @@ public class SfzPlayer
     {
         lock (_lock)
         {
-            _voices.Clear();
+            foreach (var voice in _voices)
+            {
+                voice.EnvelopePhase = EnvelopePhase.Idle;
+                voice.IsFinished = false;
+            }
         }
     }
 
@@ -191,9 +289,6 @@ public class SfzPlayer
             snapshot = _voices.ToArray();
         }
 
-        if (snapshot.Length == 0)
-            return;
-
         // Mix all voices
         for (int i = 0; i < buffer.Length; i++)
         {
@@ -201,7 +296,7 @@ public class SfzPlayer
 
             foreach (var voice in snapshot)
             {
-                if (voice.IsFinished)
+                if (voice.EnvelopePhase == EnvelopePhase.Idle)
                     continue;
 
                 // Get sample with linear interpolation
@@ -239,7 +334,7 @@ public class SfzPlayer
                     }
                     else if (voice.Position >= voice.EndPosition)
                     {
-                        voice.IsFinished = true;
+                        voice.EnvelopePhase = EnvelopePhase.Idle;
                     }
                 }
                 else
@@ -247,7 +342,7 @@ public class SfzPlayer
                     // No loop or one-shot: end when reaching end position
                     if (voice.Position >= voice.EndPosition)
                     {
-                        voice.IsFinished = true;
+                        voice.EnvelopePhase = EnvelopePhase.Idle;
                     }
                 }
             }
@@ -255,14 +350,15 @@ public class SfzPlayer
             buffer[i] = sample;
         }
 
-        // Remove finished voices
+        // Mark finished voices as idle (instead of removing)
         lock (_lock)
         {
-            for (int v = _voices.Count - 1; v >= 0; v--)
+            foreach (var voice in _voices)
             {
-                if (_voices[v].IsFinished)
+                if (voice.IsFinished)
                 {
-                    _voices.RemoveAt(v);
+                    voice.EnvelopePhase = EnvelopePhase.Idle;
+                    voice.IsFinished = false;
                 }
             }
         }
@@ -358,9 +454,13 @@ public class SfzPlayer
                     if (voice.EnvelopePosition >= voice.ReleaseSamples)
                     {
                         level = 0;
-                        voice.IsFinished = true;
+                        voice.EnvelopePhase = EnvelopePhase.Idle;
                     }
                 }
+                break;
+                
+            case EnvelopePhase.Idle:
+                level = 0;
                 break;
         }
 
@@ -396,16 +496,21 @@ public class SfzPlayer
         public int DecaySamples { get; set; }
         public int ReleaseSamples { get; set; }
         public float SustainLevel { get; set; } = 1f;
-        public EnvelopePhase EnvelopePhase { get; set; }
+        public EnvelopePhase EnvelopePhase { get; set; } = EnvelopePhase.Idle;
         public int EnvelopePosition { get; set; }
         public float EnvelopeLevel { get; set; }
         public float ReleaseStartLevel { get; set; }
+        
+        // Timing for voice allocation
+        public long StartTimeTicks { get; set; }
+        public long ReleaseStartTicks { get; set; }
         
         public bool IsFinished { get; set; }
     }
 
     private enum EnvelopePhase
     {
+        Idle,       // Voice available for assignment
         Attack,
         Hold,
         Decay,
