@@ -22,6 +22,8 @@ public class PadreaService : IPadreaService
             Name = "Full Range",
             Description = "Shows all chromatic notes from the instrument's range",
             NoteFilter = NoteFilterType.Chromatic,
+            Columns = 6,           // 6 pads per row (half octave)
+            RowsPerViewpage = 4,   // 4 rows = 24 notes = 2 octaves per page
             // Teal/cyan - pressed is bright white for aggressive contrast
             PadColor = "#4ECDC4",
             PadPressedColor = "#FFFFFF",      // Bright white - aggressive contrast
@@ -56,6 +58,8 @@ public class PadreaService : IPadreaService
             NoteFilter = NoteFilterType.HeptatonicScale,
             ScaleType = ScaleType.Major,
             RootNote = 0, // C
+            Columns = 7,           // 7 pads per row (one octave of scale)
+            RowsPerViewpage = 4,   // 4 rows = 28 notes = 4 octaves per page
             Kind = PadreaKind.Grid,
             // Warm base, halftones highlighted
             PadColor = "#CD8B5A",
