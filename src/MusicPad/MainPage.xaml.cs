@@ -280,9 +280,9 @@ public partial class MainPage : ContentPage
             VolumeKnob.VerticalOptions = LayoutOptions.Start;
             VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
-            // Calculate sizes - efarea has a fixed height
+            // Calculate sizes - efarea needs height for 4 effect buttons (25px each + spacing)
             double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
-            double efareaHeight = 100; // Fixed height for effect controls
+            double efareaHeight = 125; // Height for 4 buttons: 4*25 + 3*4 spacing + 2*4 margins = 120+
             
             _effectAreaDrawable.SetOrientation(false); // Vertical buttons on left
             _effectAreaDrawable.SetLandscapeSquare(false);
