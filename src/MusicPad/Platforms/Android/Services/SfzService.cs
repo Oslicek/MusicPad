@@ -1,5 +1,7 @@
 using Android.Content.Res;
 using Android.Media;
+using MusicPad.Core.Audio;
+using MusicPad.Core.Models;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -13,6 +15,11 @@ public class SfzService : ISfzService, IDisposable
     
     private readonly AssetManager _assets;
     private readonly SfzPlayer _player;
+    private readonly LowPassFilter _lpf;
+    private readonly Equalizer _eq;
+    private readonly Chorus _chorus;
+    private readonly Delay _delay;
+    private readonly Reverb _reverb;
     private readonly List<string> _instrumentNames = new();
     private readonly Dictionary<string, (string folder, string sfzFile)> _instrumentPaths = new();
     
@@ -32,13 +39,101 @@ public class SfzService : ISfzService, IDisposable
         set => _volume = Math.Clamp(value, 0f, 1f);
     }
 
+    public bool LpfEnabled
+    {
+        get => _lpf.IsEnabled;
+        set => _lpf.IsEnabled = value;
+    }
+    
+    public float LpfCutoff
+    {
+        get => _lpf.Cutoff;
+        set => _lpf.Cutoff = value;
+    }
+    
+    public float LpfResonance
+    {
+        get => _lpf.Resonance;
+        set => _lpf.Resonance = value;
+    }
+
     public SfzService()
     {
         _assets = Android.App.Application.Context.Assets!;
         _player = new SfzPlayer(SampleRate);
+        _lpf = new LowPassFilter(SampleRate);
+        _eq = new Equalizer(SampleRate);
+        _chorus = new Chorus(SampleRate);
+        _delay = new Delay(SampleRate);
+        _reverb = new Reverb(SampleRate);
         
         // Discover available instruments from assets
         DiscoverInstruments();
+    }
+    
+    public void SetEqBandGain(int band, float normalizedGain)
+    {
+        _eq.SetGain(band, normalizedGain);
+    }
+    
+    public bool ChorusEnabled
+    {
+        get => _chorus.IsEnabled;
+        set => _chorus.IsEnabled = value;
+    }
+    
+    public float ChorusDepth
+    {
+        get => _chorus.Depth;
+        set => _chorus.Depth = value;
+    }
+    
+    public float ChorusRate
+    {
+        get => _chorus.Rate;
+        set => _chorus.Rate = value;
+    }
+    
+    public bool DelayEnabled
+    {
+        get => _delay.IsEnabled;
+        set => _delay.IsEnabled = value;
+    }
+    
+    public float DelayTime
+    {
+        get => _delay.Time;
+        set => _delay.Time = value;
+    }
+    
+    public float DelayFeedback
+    {
+        get => _delay.Feedback;
+        set => _delay.Feedback = value;
+    }
+    
+    public float DelayLevel
+    {
+        get => _delay.Level;
+        set => _delay.Level = value;
+    }
+    
+    public bool ReverbEnabled
+    {
+        get => _reverb.IsEnabled;
+        set => _reverb.IsEnabled = value;
+    }
+    
+    public float ReverbLevel
+    {
+        get => _reverb.Level;
+        set => _reverb.Level = value;
+    }
+    
+    public ReverbType ReverbType
+    {
+        get => _reverb.Type;
+        set => _reverb.Type = value;
     }
 
     private void DiscoverInstruments()
@@ -227,6 +322,13 @@ public class SfzService : ISfzService, IDisposable
         while (!token.IsCancellationRequested)
         {
             _player.GenerateSamples(buffer);
+
+            // Apply effects in order: LPF -> EQ -> Chorus -> Delay -> Reverb
+            _lpf.Process(buffer);
+            _eq.Process(buffer);
+            _chorus.Process(buffer);
+            _delay.Process(buffer);
+            _reverb.Process(buffer);
 
             // Apply volume and soft limiting
             float vol = _volume;

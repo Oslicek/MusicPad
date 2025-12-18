@@ -95,16 +95,85 @@ public partial class MainPage : ContentPage
     {
         EffectArea.Drawable = _effectAreaDrawable;
         
+        // Wire up LPF settings to audio service
+        var lpfSettings = _effectAreaDrawable.LpfSettings;
+        lpfSettings.EnabledChanged += (s, enabled) => _sfzService.LpfEnabled = enabled;
+        lpfSettings.CutoffChanged += (s, cutoff) => _sfzService.LpfCutoff = cutoff;
+        lpfSettings.ResonanceChanged += (s, resonance) => _sfzService.LpfResonance = resonance;
+        
+        // Wire up EQ settings to audio service
+        var eqSettings = _effectAreaDrawable.EqSettings;
+        eqSettings.BandChanged += (s, e) => _sfzService.SetEqBandGain(e.BandIndex, e.NewGain);
+        
+        // Wire up Chorus settings to audio service
+        var chorusSettings = _effectAreaDrawable.ChorusSettings;
+        chorusSettings.EnabledChanged += (s, enabled) => _sfzService.ChorusEnabled = enabled;
+        chorusSettings.DepthChanged += (s, depth) => _sfzService.ChorusDepth = depth;
+        chorusSettings.RateChanged += (s, rate) => _sfzService.ChorusRate = rate;
+        
+        // Wire up Delay settings to audio service
+        var delaySettings = _effectAreaDrawable.DelaySettings;
+        delaySettings.EnabledChanged += (s, enabled) => _sfzService.DelayEnabled = enabled;
+        delaySettings.TimeChanged += (s, time) => _sfzService.DelayTime = time;
+        delaySettings.FeedbackChanged += (s, feedback) => _sfzService.DelayFeedback = feedback;
+        delaySettings.LevelChanged += (s, level) => _sfzService.DelayLevel = level;
+        
+        // Wire up Reverb settings to audio service
+        var reverbSettings = _effectAreaDrawable.ReverbSettings;
+        reverbSettings.EnabledChanged += (s, enabled) => _sfzService.ReverbEnabled = enabled;
+        reverbSettings.LevelChanged += (s, level) => _sfzService.ReverbLevel = level;
+        reverbSettings.TypeChanged += (s, type) => _sfzService.ReverbType = type;
+        
+        // Apply initial values
+        _sfzService.LpfEnabled = lpfSettings.IsEnabled;
+        _sfzService.LpfCutoff = lpfSettings.Cutoff;
+        _sfzService.LpfResonance = lpfSettings.Resonance;
+        for (int i = 0; i < 4; i++)
+        {
+            _sfzService.SetEqBandGain(i, eqSettings.GetGain(i));
+        }
+        _sfzService.ChorusEnabled = chorusSettings.IsEnabled;
+        _sfzService.ChorusDepth = chorusSettings.Depth;
+        _sfzService.ChorusRate = chorusSettings.Rate;
+        _sfzService.DelayEnabled = delaySettings.IsEnabled;
+        _sfzService.DelayTime = delaySettings.Time;
+        _sfzService.DelayFeedback = delaySettings.Feedback;
+        _sfzService.DelayLevel = delaySettings.Level;
+        _sfzService.ReverbEnabled = reverbSettings.IsEnabled;
+        _sfzService.ReverbLevel = reverbSettings.Level;
+        _sfzService.ReverbType = reverbSettings.Type;
+        
+        // Handle invalidation requests from LPF/EQ controls
+        _effectAreaDrawable.InvalidateRequested += (s, e) => EffectArea.Invalidate();
+        
         EffectArea.StartInteraction += (s, e) =>
         {
             var touch = e.Touches.FirstOrDefault();
             if (touch != default)
             {
-                if (_effectAreaDrawable.OnTouch((float)touch.X, (float)touch.Y))
+                if (_effectAreaDrawable.OnTouchStart((float)touch.X, (float)touch.Y))
                 {
                     EffectArea.Invalidate();
                 }
             }
+        };
+        
+        EffectArea.DragInteraction += (s, e) =>
+        {
+            var touch = e.Touches.FirstOrDefault();
+            if (touch != default)
+            {
+                if (_effectAreaDrawable.OnTouchMove((float)touch.X, (float)touch.Y))
+                {
+                    EffectArea.Invalidate();
+                }
+            }
+        };
+        
+        EffectArea.EndInteraction += (s, e) =>
+        {
+            _effectAreaDrawable.OnTouchEnd();
+            EffectArea.Invalidate();
         };
     }
 
@@ -143,23 +212,24 @@ public partial class MainPage : ContentPage
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
-                // Effect area: top-right, next to volume knob
+                // Piano at bottom - compact height in landscape
+                double pianoHeight = _pageHeight * 0.45;
+                double topAreaHeight = _pageHeight - pianoHeight - padding;
+
+                // Effect area: positioned in top-right, constrained to top area
                 double efareaLeft = controlsWidth + volumeSize + 24;
                 double efareaWidth = _pageWidth - efareaLeft - padding;
-                double efareaHeight = Math.Max(controlsHeight, volumeSize);
                 
                 _effectAreaDrawable.SetOrientation(false); // Vertical buttons
-                EffectArea.HorizontalOptions = LayoutOptions.End;
+                _effectAreaDrawable.SetLandscapeSquare(false); // Not square padrea layout
+                EffectArea.HorizontalOptions = LayoutOptions.Start;
                 EffectArea.VerticalOptions = LayoutOptions.Start;
-                EffectArea.WidthRequest = efareaWidth;
-                EffectArea.HeightRequest = efareaHeight;
-                EffectArea.Margin = new Thickness(0);
+                EffectArea.WidthRequest = Math.Max(40, efareaWidth);
+                EffectArea.HeightRequest = topAreaHeight;
+                EffectArea.Margin = new Thickness(efareaLeft, 0, 0, 0);
 
-                // Piano at bottom
                 PadContainer.HorizontalOptions = LayoutOptions.Fill;
                 PadContainer.VerticalOptions = LayoutOptions.End;
-                double topAreaHeight = efareaHeight + padding;
-                double pianoHeight = _pageHeight - topAreaHeight - padding * 2;
                 PadContainer.HeightRequest = Math.Max(100, pianoHeight);
                 PadContainer.WidthRequest = -1;
                 PadContainer.Margin = new Thickness(0);
@@ -185,22 +255,23 @@ public partial class MainPage : ContentPage
                 PadContainer.HeightRequest = padreaSize;
                 PadContainer.Margin = new Thickness(0);
 
-                // Effect area on the right side
+                // Effect area on the right side - constrained width
                 double padreaCenterX = _pageWidth / 2;
                 double padreaRight = padreaCenterX + padreaSize / 2;
                 double efareaWidth = _pageWidth - padreaRight - padding * 2;
                 
                 _effectAreaDrawable.SetOrientation(true); // Horizontal buttons at top
-                EffectArea.HorizontalOptions = LayoutOptions.End;
-                EffectArea.VerticalOptions = LayoutOptions.Fill;
-                EffectArea.WidthRequest = Math.Max(80, efareaWidth);
-                EffectArea.HeightRequest = -1;
-                EffectArea.Margin = new Thickness(0);
+                _effectAreaDrawable.SetLandscapeSquare(true); // EQ under LPF layout
+                EffectArea.HorizontalOptions = LayoutOptions.Start;
+                EffectArea.VerticalOptions = LayoutOptions.Start;
+                EffectArea.WidthRequest = Math.Max(40, efareaWidth);
+                EffectArea.HeightRequest = _pageHeight - padding * 2;
+                EffectArea.Margin = new Thickness(padreaRight + padding, 0, 0, 0);
             }
         }
         else
         {
-            // Portrait: pickers top-left, volume to right, efarea in middle, padrea at bottom
+            // Portrait: pickers top-left, volume to right, efarea below controls, padrea at bottom
             ControlsStack.HorizontalOptions = LayoutOptions.Start;
             ControlsStack.VerticalOptions = LayoutOptions.Start;
             ControlsStack.Margin = new Thickness(0);
@@ -209,41 +280,34 @@ public partial class MainPage : ContentPage
             VolumeKnob.VerticalOptions = LayoutOptions.Start;
             VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
-            // Calculate sizes
+            // Calculate sizes - efarea has a fixed height
             double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
+            double efareaHeight = 100; // Fixed height for effect controls
+            
+            _effectAreaDrawable.SetOrientation(false); // Vertical buttons on left
+            _effectAreaDrawable.SetLandscapeSquare(false);
+            EffectArea.HorizontalOptions = LayoutOptions.Fill;
+            EffectArea.VerticalOptions = LayoutOptions.Start;
+            EffectArea.WidthRequest = _pageWidth - padding * 2;
+            EffectArea.HeightRequest = efareaHeight;
+            EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
+            
+            double padreaTop = topAreaHeight + efareaHeight + padding * 2;
+            double availableForPadrea = _pageHeight - padreaTop - padding;
             
             if (isPiano)
             {
-                // Piano padrea
-                double pianoHeight = _pageHeight * 0.42;
-                double efareaHeight = _pageHeight - topAreaHeight - pianoHeight - padding * 3;
-                
-                _effectAreaDrawable.SetOrientation(false); // Vertical buttons
-                EffectArea.HorizontalOptions = LayoutOptions.Fill;
-                EffectArea.VerticalOptions = LayoutOptions.Start;
-                EffectArea.WidthRequest = -1;
-                EffectArea.HeightRequest = Math.Max(80, efareaHeight);
-                EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
-
+                // Piano padrea - full width
                 PadContainer.HorizontalOptions = LayoutOptions.Fill;
                 PadContainer.VerticalOptions = LayoutOptions.End;
                 PadContainer.WidthRequest = _pageWidth - padding * 2;
-                PadContainer.HeightRequest = pianoHeight;
+                PadContainer.HeightRequest = Math.Min(_pageHeight * 0.42, availableForPadrea);
                 PadContainer.Margin = new Thickness(0);
             }
             else
             {
-                // Square padrea
-                double availableForPadrea = _pageHeight - topAreaHeight - padding * 2;
-                double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea * 0.65);
-                double efareaHeight = availableForPadrea - padreaSize - padding;
-                
-                _effectAreaDrawable.SetOrientation(false); // Vertical buttons on left
-                EffectArea.HorizontalOptions = LayoutOptions.Fill;
-                EffectArea.VerticalOptions = LayoutOptions.Start;
-                EffectArea.WidthRequest = -1;
-                EffectArea.HeightRequest = Math.Max(80, efareaHeight);
-                EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
+                // Square padrea - centered
+                double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea);
 
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.End;

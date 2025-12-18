@@ -11,6 +11,19 @@ public class EffectAreaDrawable : IDrawable
     private readonly EffectSelector _selector = new();
     private readonly List<RectF> _buttonRects = new();
     private bool _isHorizontal;
+    private bool _isLandscapeSquare; // Special layout for landscape with square padrea
+
+    // LPF, EQ, Chorus, Delay, and Reverb controls
+    private readonly LpfDrawable _lpfDrawable;
+    private readonly EqDrawable _eqDrawable;
+    private readonly ChorusDrawable _chorusDrawable;
+    private readonly DelayDrawable _delayDrawable;
+    private readonly ReverbDrawable _reverbDrawable;
+    private RectF _lpfRect;
+    private RectF _eqRect;
+    private RectF _chorusRect;
+    private RectF _delayRect;
+    private RectF _reverbRect;
 
     // Colors
     private static readonly Color ButtonBackgroundColor = Color.FromArgb("#2a2a4e");
@@ -20,6 +33,22 @@ public class EffectAreaDrawable : IDrawable
     private static readonly Color EffectAreaBackground = Color.FromArgb("#1e1e3a");
 
     public event EventHandler<EffectType>? EffectSelected;
+    public event EventHandler? InvalidateRequested;
+
+    public EffectAreaDrawable()
+    {
+        _lpfDrawable = new LpfDrawable(new LowPassFilterSettings());
+        _eqDrawable = new EqDrawable(new EqualizerSettings());
+        _chorusDrawable = new ChorusDrawable(new ChorusSettings());
+        _delayDrawable = new DelayDrawable(new DelaySettings());
+        _reverbDrawable = new ReverbDrawable(new ReverbSettings());
+        
+        _lpfDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
+        _eqDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
+        _chorusDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
+        _delayDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
+        _reverbDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>
     /// Gets the effect selector for external access.
@@ -27,11 +56,44 @@ public class EffectAreaDrawable : IDrawable
     public EffectSelector Selector => _selector;
 
     /// <summary>
+    /// Gets the LPF settings for external access.
+    /// </summary>
+    public LowPassFilterSettings LpfSettings => _lpfDrawable.Settings;
+
+    /// <summary>
+    /// Gets the EQ settings for external access.
+    /// </summary>
+    public EqualizerSettings EqSettings => _eqDrawable.Settings;
+
+    /// <summary>
+    /// Gets the Chorus settings for external access.
+    /// </summary>
+    public ChorusSettings ChorusSettings => _chorusDrawable.Settings;
+
+    /// <summary>
+    /// Gets the Delay settings for external access.
+    /// </summary>
+    public DelaySettings DelaySettings => _delayDrawable.Settings;
+
+    /// <summary>
+    /// Gets the Reverb settings for external access.
+    /// </summary>
+    public ReverbSettings ReverbSettings => _reverbDrawable.Settings;
+
+    /// <summary>
     /// Sets whether buttons should be arranged horizontally (landscape) or vertically (portrait).
     /// </summary>
     public void SetOrientation(bool isHorizontal)
     {
         _isHorizontal = isHorizontal;
+    }
+
+    /// <summary>
+    /// Sets whether we're in landscape with square padrea (special layout: EQ under LPF).
+    /// </summary>
+    public void SetLandscapeSquare(bool isLandscapeSquare)
+    {
+        _isLandscapeSquare = isLandscapeSquare;
     }
 
     public void Draw(ICanvas canvas, RectF dirtyRect)
@@ -43,16 +105,15 @@ public class EffectAreaDrawable : IDrawable
         canvas.FillRectangle(dirtyRect);
 
         // Calculate button layout
-        float buttonSize = 50f;
-        float buttonSpacing = 8f;
-        float buttonMargin = 8f;
+        float buttonSize = 25f;
+        float buttonSpacing = 4f;
+        float buttonMargin = 4f;
 
         var effects = EffectSelector.AllEffects;
 
         if (_isHorizontal)
         {
             // Horizontal layout - buttons at top
-            float totalWidth = effects.Count * buttonSize + (effects.Count - 1) * buttonSpacing;
             float startX = dirtyRect.X + buttonMargin;
             float startY = dirtyRect.Y + buttonMargin;
 
@@ -79,22 +140,157 @@ public class EffectAreaDrawable : IDrawable
             }
         }
 
-        // Draw placeholder text for effect controls area
-        canvas.FontSize = 14;
-        canvas.FontColor = Color.FromArgb("#666666");
-        string selectedName = _selector.SelectedEffect.ToString();
+        // Draw controls based on selected effect
+        switch (_selector.SelectedEffect)
+        {
+            case EffectType.EQ:
+                DrawEQControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                break;
+            case EffectType.Chorus:
+                DrawChorusControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                break;
+            case EffectType.Delay:
+                DrawDelayControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                break;
+            case EffectType.Reverb:
+                DrawReverbControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                break;
+            default:
+                // Draw placeholder text for unimplemented effects
+                canvas.FontSize = 12;
+                canvas.FontColor = Color.FromArgb("#666666");
+                string selectedName = _selector.SelectedEffect.ToString();
+                
+                if (_isHorizontal)
+                {
+                    float controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
+                    var controlsRect = new RectF(dirtyRect.X, controlsY, dirtyRect.Width, dirtyRect.Height - controlsY);
+                    canvas.DrawString($"{selectedName} controls", controlsRect, HorizontalAlignment.Center, VerticalAlignment.Center);
+                }
+                else
+                {
+                    float controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
+                    var controlsRect = new RectF(controlsX, dirtyRect.Y, dirtyRect.Width - controlsX, dirtyRect.Height);
+                    canvas.DrawString($"{selectedName} controls", controlsRect, HorizontalAlignment.Center, VerticalAlignment.Center);
+                }
+                break;
+        }
+    }
+
+    private void DrawChorusControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    {
+        float controlsX, controlsY, controlsWidth, controlsHeight;
         
         if (_isHorizontal)
         {
-            float controlsY = dirtyRect.Y + buttonMargin + 50 + buttonSpacing;
-            var controlsRect = new RectF(dirtyRect.X, controlsY, dirtyRect.Width, dirtyRect.Height - controlsY);
-            canvas.DrawString($"{selectedName} controls", controlsRect, HorizontalAlignment.Center, VerticalAlignment.Center);
+            controlsX = dirtyRect.X;
+            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
+            controlsWidth = dirtyRect.Width;
+            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
         }
         else
         {
-            float controlsX = dirtyRect.X + buttonMargin + 50 + buttonSpacing;
-            var controlsRect = new RectF(controlsX, dirtyRect.Y, dirtyRect.Width - controlsX, dirtyRect.Height);
-            canvas.DrawString($"{selectedName} controls", controlsRect, HorizontalAlignment.Center, VerticalAlignment.Center);
+            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
+            controlsY = dirtyRect.Y;
+            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
+            controlsHeight = dirtyRect.Height;
+        }
+
+        _chorusRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _chorusDrawable.Draw(canvas, _chorusRect);
+    }
+
+    private void DrawDelayControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    {
+        float controlsX, controlsY, controlsWidth, controlsHeight;
+        
+        if (_isHorizontal)
+        {
+            controlsX = dirtyRect.X;
+            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
+            controlsWidth = dirtyRect.Width;
+            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
+        }
+        else
+        {
+            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
+            controlsY = dirtyRect.Y;
+            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
+            controlsHeight = dirtyRect.Height;
+        }
+
+        _delayRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _delayDrawable.Draw(canvas, _delayRect);
+    }
+
+    private void DrawReverbControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    {
+        float controlsX, controlsY, controlsWidth, controlsHeight;
+        
+        if (_isHorizontal)
+        {
+            controlsX = dirtyRect.X;
+            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
+            controlsWidth = dirtyRect.Width;
+            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
+        }
+        else
+        {
+            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
+            controlsY = dirtyRect.Y;
+            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
+            controlsHeight = dirtyRect.Height;
+        }
+
+        _reverbRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _reverbDrawable.Draw(canvas, _reverbRect);
+    }
+
+    private void DrawEQControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    {
+        // Controls area starts after buttons
+        float controlsX, controlsY, controlsWidth, controlsHeight;
+        
+        if (_isHorizontal)
+        {
+            // Horizontal layout - controls below buttons
+            controlsX = dirtyRect.X;
+            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
+            controlsWidth = dirtyRect.Width;
+            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
+        }
+        else
+        {
+            // Vertical layout - controls to the right of buttons
+            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
+            controlsY = dirtyRect.Y;
+            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
+            controlsHeight = dirtyRect.Height;
+        }
+
+        if (_isLandscapeSquare)
+        {
+            // Landscape square: Vertical stack - LPF knobs on top, EQ sliders at bottom
+            float lpfHeight = controlsHeight * 0.55f;
+            float eqHeight = controlsHeight - lpfHeight - buttonSpacing;
+            
+            _lpfRect = new RectF(controlsX, controlsY, controlsWidth, lpfHeight);
+            _lpfDrawable.Draw(canvas, _lpfRect, true); // Vertical layout for knobs
+            
+            _eqRect = new RectF(controlsX, controlsY + lpfHeight + buttonSpacing, controlsWidth, eqHeight);
+            _eqDrawable.Draw(canvas, _eqRect);
+        }
+        else
+        {
+            // Other layouts: LPF and EQ side by side
+            float lpfWidth = Math.Min(controlsWidth * 0.45f, 150f);
+            float eqWidth = controlsWidth - lpfWidth - buttonSpacing;
+            
+            _lpfRect = new RectF(controlsX, controlsY, lpfWidth, controlsHeight);
+            _lpfDrawable.Draw(canvas, _lpfRect, false); // Horizontal layout for knobs
+            
+            _eqRect = new RectF(controlsX + lpfWidth + buttonSpacing, controlsY, eqWidth, controlsHeight);
+            _eqDrawable.Draw(canvas, _eqRect);
         }
     }
 
@@ -111,9 +307,9 @@ public class EffectAreaDrawable : IDrawable
         canvas.StrokeSize = isSelected ? 2 : 1;
         canvas.DrawRoundedRectangle(rect, 8);
 
-        // Draw icon
+        // Draw icon - minimal padding for small buttons
         Color iconColor = isSelected ? ButtonIconSelectedColor : ButtonIconColor;
-        float iconPadding = 12f;
+        float iconPadding = 4f;
         var iconRect = new RectF(
             rect.X + iconPadding,
             rect.Y + iconPadding,
@@ -253,13 +449,14 @@ public class EffectAreaDrawable : IDrawable
     }
 
     /// <summary>
-    /// Handles touch events to select effects.
+    /// Handles touch start events.
     /// </summary>
-    public bool OnTouch(float x, float y)
+    public bool OnTouchStart(float x, float y)
     {
         var point = new PointF(x, y);
         var effects = EffectSelector.AllEffects;
 
+        // Check effect selection buttons
         for (int i = 0; i < _buttonRects.Count && i < effects.Count; i++)
         {
             if (_buttonRects[i].Contains(point))
@@ -270,7 +467,79 @@ public class EffectAreaDrawable : IDrawable
             }
         }
 
+        // Handle control touches based on selected effect
+        switch (_selector.SelectedEffect)
+        {
+            case EffectType.EQ:
+                if (_lpfRect.Contains(point) && _lpfDrawable.OnTouch(x, y, true))
+                    return true;
+                if (_eqRect.Contains(point) && _eqDrawable.OnTouch(x, y, true))
+                    return true;
+                break;
+            case EffectType.Chorus:
+                if (_chorusRect.Contains(point) && _chorusDrawable.OnTouch(x, y, true))
+                    return true;
+                break;
+            case EffectType.Delay:
+                if (_delayRect.Contains(point) && _delayDrawable.OnTouch(x, y, true))
+                    return true;
+                break;
+            case EffectType.Reverb:
+                if (_reverbRect.Contains(point) && _reverbDrawable.OnTouch(x, y, true))
+                    return true;
+                break;
+        }
+
         return false;
+    }
+
+    /// <summary>
+    /// Handles touch move events.
+    /// </summary>
+    public bool OnTouchMove(float x, float y)
+    {
+        switch (_selector.SelectedEffect)
+        {
+            case EffectType.EQ:
+                if (_lpfDrawable.OnTouch(x, y, false))
+                    return true;
+                if (_eqDrawable.OnTouch(x, y, false))
+                    return true;
+                break;
+            case EffectType.Chorus:
+                if (_chorusDrawable.OnTouch(x, y, false))
+                    return true;
+                break;
+            case EffectType.Delay:
+                if (_delayDrawable.OnTouch(x, y, false))
+                    return true;
+                break;
+            case EffectType.Reverb:
+                if (_reverbDrawable.OnTouch(x, y, false))
+                    return true;
+                break;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Handles touch end events.
+    /// </summary>
+    public void OnTouchEnd()
+    {
+        _lpfDrawable.OnTouchEnd();
+        _eqDrawable.OnTouchEnd();
+        _chorusDrawable.OnTouchEnd();
+        _delayDrawable.OnTouchEnd();
+        _reverbDrawable.OnTouchEnd();
+    }
+
+    /// <summary>
+    /// Legacy touch handler for compatibility.
+    /// </summary>
+    public bool OnTouch(float x, float y)
+    {
+        return OnTouchStart(x, y);
     }
 }
 

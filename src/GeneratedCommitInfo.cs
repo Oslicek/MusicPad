@@ -1,5 +1,5 @@
 namespace MusicPad;
 public static class BuildInfo
 {
-public const string CommitHash = "9a098f0";
+public const string CommitHash = "6b6a565";
 }
