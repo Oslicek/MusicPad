@@ -31,6 +31,7 @@ public class SfzService : ISfzService, IDisposable
     public IReadOnlyList<string> AvailableInstruments => _instrumentNames;
     public string? CurrentInstrumentName => _currentInstrument?.Name;
     public (int minKey, int maxKey) CurrentKeyRange => _currentInstrument?.GetKeyRange() ?? (0, 127);
+    public SfzInstrument? CurrentInstrument => _currentInstrument;
     
     private float _volume = 0.75f;
     public float Volume

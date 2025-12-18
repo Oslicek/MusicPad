@@ -921,4 +921,17 @@ public partial class MainPage : ContentPage
         _pianoRangeManager.SetStartAbsolute(newStart);
         SetupPadMatrix();
     }
+
+    private async void OnHamburgerMenuClicked(object? sender, EventArgs e)
+    {
+        // Show action sheet with menu options
+        var action = await DisplayActionSheet("Menu", "Cancel", null, "Instruments");
+        
+        switch (action)
+        {
+            case "Instruments":
+                await Shell.Current.GoToAsync(nameof(Views.InstrumentsPage));
+                break;
+        }
+    }
 }

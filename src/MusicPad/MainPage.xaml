@@ -9,14 +9,32 @@
     <Grid x:Name="MainGrid" Padding="8">
         <!-- Layout will be configured dynamically in code-behind -->
         
-        <!-- Commit hash label - always top right -->
-        <Label x:Name="CommitHashLabel"
-               Text="{x:Static local:BuildInfo.CommitHash}"
-               FontSize="8"
-               TextColor="#CC0000"
-               VerticalOptions="Start"
-               HorizontalOptions="End"
-               Margin="4,0" />
+        <!-- Hamburger Menu Button and Commit Label - top right corner -->
+        <StackLayout VerticalOptions="Start"
+                     HorizontalOptions="End"
+                     Spacing="2"
+                     Margin="4,0">
+            <Border x:Name="HamburgerButton"
+                    StrokeShape="RoundRectangle 6"
+                    Stroke="#444"
+                    BackgroundColor="#2a2a4e"
+                    Padding="8,6"
+                    HorizontalOptions="End">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnHamburgerMenuClicked" />
+                </Border.GestureRecognizers>
+                <Label Text="☰"
+                       FontSize="20"
+                       TextColor="#EAEAEC"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Border>
+            <Label x:Name="CommitHashLabel"
+                   Text="{x:Static local:BuildInfo.CommitHash}"
+                   FontSize="8"
+                   TextColor="#CC0000"
+                   HorizontalOptions="End" />
+        </StackLayout>
         
         <!-- Controls container (pickers stacked vertically) -->
         <StackLayout x:Name="ControlsStack"

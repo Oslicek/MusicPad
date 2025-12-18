@@ -11,6 +11,11 @@ public class SfzInstrument
     public List<SfzRegion> Regions { get; } = new();
     
     /// <summary>
+    /// Metadata extracted from SFZ file comments (credits, author, etc.).
+    /// </summary>
+    public SfzMetadata Metadata { get; set; } = new();
+    
+    /// <summary>
     /// Pre-loaded sample data (for instruments loaded into memory).
     /// Key is the sample file path, value is the audio data.
     /// </summary>

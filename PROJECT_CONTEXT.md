@@ -33,6 +33,9 @@ MusicPad/
 │   │   │   ├── ChorusDrawable.cs    # Chorus effect controls
 │   │   │   ├── DelayDrawable.cs     # Delay effect controls
 │   │   │   └── ReverbDrawable.cs    # Reverb effect controls
+│   │   ├── Views/
+│   │   │   ├── InstrumentsPage.xaml # List of available instruments
+│   │   │   └── InstrumentDetailPage.xaml # Instrument metadata/credits
 │   │   ├── Platforms/
 │   │   │   └── Android/
 │   │   │       ├── Assets/instruments/ # Bundled SFZ instruments
@@ -75,6 +78,7 @@ MusicPad/
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
 │           ├── SfzInstrument.cs      # Instrument data model
 │           ├── SfzRegion.cs          # Region data model
+│           ├── SfzMetadata.cs        # Instrument metadata (credits, etc.)
 │           └── WavLoader.cs          # WAV file loader
 │
 ├── tests/
@@ -82,6 +86,7 @@ MusicPad/
 │       ├── Sfz/
 │       │   ├── SfzParserTests.cs
 │       │   ├── SfzPlayerTests.cs
+│       │   ├── SfzMetadataTests.cs
 │       │   └── WavLoaderTests.cs
 │       ├── Models/
 │       │   ├── PadreaTests.cs
@@ -133,6 +138,7 @@ MusicPad/
 |-----------|----------|---------|
 | `SfzParser` | Core/Sfz | Parses SFZ instrument files |
 | `SfzPlayer` | Core/Sfz | Polyphonic sample playback with envelope |
+| `SfzMetadata` | Core/Sfz | Parses instrument metadata (credits, etc.) |
 | `WavLoader` | Core/Sfz | Loads WAV audio samples |
 | `Padrea` | Core/Models | Configurable pad area with note filtering |
 | `Harmony` | Core/NoteProcessing | Auto harmony (chord generation) |
@@ -143,6 +149,8 @@ MusicPad/
 | `ISfzService` | Services | SFZ playback interface |
 | `PadreaService` | Services | Padrea management (Full Range, Pentatonic) |
 | `MainPage` | MusicPad | Synth UI with pads, pickers, volume knob |
+| `InstrumentsPage` | Views | List of available instruments |
+| `InstrumentDetailPage` | Views | Instrument metadata display |
 
 ## Note Processing
 
@@ -193,6 +201,7 @@ Features:
 
 ## UI Features
 
+- **Hamburger Menu**: Top-right menu button (☰) with dropdown actions
 - **Effect Area**: First button (ArpHarmony) with note processing, followed by EQ/Chorus/Delay/Reverb
 - **Pad Matrix**: Touch grid with multi-touch polyphony
 - **Navigation Arrows**: Compact, neon-green arrows next to pads
@@ -201,6 +210,8 @@ Features:
 - **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano)
 - **Scale Picker**: Shown when Scales padrea selected (roots + common scales)
 - **Piano Padrea**: Piano keyboard (one octave+1 portrait, two octaves+1 landscape), strip with 88-key highlight, arrows/drag to shift range
+- **Instruments Page**: Browse all instruments with navigation to detail view
+- **Instrument Detail Page**: Shows SFZ metadata, credits, and technical info
 - **Aggressive Colors**: High-contrast pressed states (white, yellow, hot pink)
 
 ## Tests
@@ -209,6 +220,7 @@ Features:
 |------------|---------|
 | `SfzParserTests` | SFZ parsing, region inheritance |
 | `SfzPlayerTests` | Playback, envelope, looping |
+| `SfzMetadataTests` | Metadata extraction (credits, etc.) |
 | `WavLoaderTests` | WAV loading (16-bit, 24-bit) |
 | `PadreaTests` | Padrea model properties |
 | `HarmonySettingsTests` | Harmony settings model |
@@ -242,7 +254,9 @@ Features:
 - [x] Audio effects (LPF, EQ, Chorus, Delay, Reverb)
 - [x] Auto Harmony (Octave, Fifth, Major, Minor)
 - [x] Arpeggiator (Up, Down, UpDown, Random patterns)
-- [x] Unit tests passing (426 tests)
+- [x] Hamburger menu with navigation
+- [x] Instruments page with metadata display
+- [x] Unit tests passing (442 tests)
 - [x] GitHub repository connected
 
 **Pending:**

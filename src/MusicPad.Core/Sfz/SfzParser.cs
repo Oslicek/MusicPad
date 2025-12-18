@@ -14,10 +14,14 @@ public static partial class SfzParser
 
     public static SfzInstrument Parse(string sfzContent, string? name = null, string? basePath = null)
     {
+        // Extract metadata from comments BEFORE removing them
+        var metadata = SfzMetadata.Parse(sfzContent);
+        
         var instrument = new SfzInstrument
         {
             Name = name ?? "Untitled",
-            BasePath = basePath ?? string.Empty
+            BasePath = basePath ?? string.Empty,
+            Metadata = metadata
         };
 
         // Remove comments

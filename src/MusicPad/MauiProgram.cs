@@ -1,4 +1,5 @@
 using MusicPad.Services;
+using MusicPad.Views;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -27,7 +28,11 @@ public static class MauiProgram
         builder.Services.AddSingleton<ITonePlayer, TonePlayer>();
         builder.Services.AddSingleton<ISfzService, SfzService>();
         builder.Services.AddSingleton<IPadreaService, PadreaService>();
+        
+        // Register pages
         builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<InstrumentsPage>();
+        builder.Services.AddTransient<InstrumentDetailPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

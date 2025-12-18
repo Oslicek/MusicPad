@@ -1,6 +1,7 @@
 #if !ANDROID
 
 using MusicPad.Core.Models;
+using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
 
@@ -12,6 +13,7 @@ public class SfzService : ISfzService
     public IReadOnlyList<string> AvailableInstruments => Array.Empty<string>();
     public string? CurrentInstrumentName => null;
     public (int minKey, int maxKey) CurrentKeyRange => (0, 127);
+    public SfzInstrument? CurrentInstrument => null;
     public float Volume { get; set; } = 0.75f;
     public bool LpfEnabled { get; set; } = false;
     public float LpfCutoff { get; set; } = 1.0f;

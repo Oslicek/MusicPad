@@ -1,3 +1,5 @@
+using MusicPad.Core.Sfz;
+
 namespace MusicPad.Services;
 
 /// <summary>
@@ -19,6 +21,11 @@ public interface ISfzService
     /// Gets the key range (min, max) of the current instrument.
     /// </summary>
     (int minKey, int maxKey) CurrentKeyRange { get; }
+    
+    /// <summary>
+    /// Gets the currently loaded instrument with full metadata.
+    /// </summary>
+    SfzInstrument? CurrentInstrument { get; }
     
     /// <summary>
     /// Loads an SFZ instrument by name.

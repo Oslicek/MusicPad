@@ -1,3 +1,5 @@
+using MusicPad.Views;
+
 namespace MusicPad;
 
 public partial class AppShell : Shell
@@ -5,6 +7,10 @@ public partial class AppShell : Shell
     public AppShell()
     {
         InitializeComponent();
+        
+        // Register routes for navigation
+        Routing.RegisterRoute(nameof(InstrumentsPage), typeof(InstrumentsPage));
+        Routing.RegisterRoute(nameof(InstrumentDetailPage), typeof(InstrumentDetailPage));
     }
 }
 
