@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last Updated:** 2025-12-17
+> **Last Updated:** 2025-12-18
 
 ## Overview
 
@@ -25,7 +25,14 @@ MusicPad/
 │   ├── MusicPad/                    # MAUI application
 │   │   ├── Controls/
 │   │   │   ├── PadMatrixDrawable.cs # Touch pad grid with multi-touch
-│   │   │   └── RotaryKnobDrawable.cs # Volume knob control
+│   │   │   ├── RotaryKnobDrawable.cs # Volume knob control
+│   │   │   ├── EffectAreaDrawable.cs # Effect controls panel
+│   │   │   ├── ArpHarmonyDrawable.cs # Arp + Harmony controls
+│   │   │   ├── LpfDrawable.cs       # Low-pass filter controls
+│   │   │   ├── EqDrawable.cs        # Equalizer controls
+│   │   │   ├── ChorusDrawable.cs    # Chorus effect controls
+│   │   │   ├── DelayDrawable.cs     # Delay effect controls
+│   │   │   └── ReverbDrawable.cs    # Reverb effect controls
 │   │   ├── Platforms/
 │   │   │   └── Android/
 │   │   │       ├── Assets/instruments/ # Bundled SFZ instruments
@@ -47,9 +54,22 @@ MusicPad/
 │       ├── Audio/
 │       │   ├── WaveTableGenerator.cs # Wavetable generation
 │       │   ├── VoiceMixer.cs         # Polyphonic mixing with release
-│       │   └── AHDSHRSettings.cs     # Envelope settings
+│       │   ├── AHDSHRSettings.cs     # Envelope settings
+│       │   ├── LowPassFilter.cs      # LPF DSP
+│       │   ├── Equalizer.cs          # 4-band EQ DSP
+│       │   ├── Chorus.cs             # Chorus DSP
+│       │   ├── Delay.cs              # Delay DSP
+│       │   └── Reverb.cs             # Reverb DSP
 │       ├── Models/
-│       │   └── Padrea.cs             # Pad area configuration
+│       │   ├── Padrea.cs             # Pad area configuration
+│       │   ├── EffectType.cs         # Effect types enum
+│       │   ├── HarmonyType.cs        # Harmony types enum
+│       │   ├── HarmonySettings.cs    # Harmony settings model
+│       │   ├── ArpPattern.cs         # Arpeggiator patterns enum
+│       │   └── ArpeggiatorSettings.cs# Arpeggiator settings model
+│       ├── NoteProcessing/
+│       │   ├── Harmony.cs            # Auto harmony processor
+│       │   └── Arpeggiator.cs        # Arpeggiator processor
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -64,7 +84,13 @@ MusicPad/
 │       │   ├── SfzPlayerTests.cs
 │       │   └── WavLoaderTests.cs
 │       ├── Models/
-│       │   └── PadreaTests.cs
+│       │   ├── PadreaTests.cs
+│       │   ├── HarmonySettingsTests.cs
+│       │   ├── ArpeggiatorSettingsTests.cs
+│       │   └── EffectSelectorTests.cs
+│       ├── NoteProcessing/
+│       │   ├── HarmonyTests.cs
+│       │   └── ArpeggiatorTests.cs
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │
@@ -96,6 +122,11 @@ MusicPad/
 - Synthesis: SFZ sample-based with AHDSR envelope
 - Polyphony: Up to 10 simultaneous voices
 
+**Signal Chain:**
+```
+[Note Input] → [Harmony] → [Arpeggiator] → [Audio Engine] → [LPF] → [EQ] → [Chorus] → [Delay] → [Reverb] → [Volume] → [Output]
+```
+
 ## Key Components
 
 | Component | Location | Purpose |
@@ -104,11 +135,44 @@ MusicPad/
 | `SfzPlayer` | Core/Sfz | Polyphonic sample playback with envelope |
 | `WavLoader` | Core/Sfz | Loads WAV audio samples |
 | `Padrea` | Core/Models | Configurable pad area with note filtering |
+| `Harmony` | Core/NoteProcessing | Auto harmony (chord generation) |
+| `Arpeggiator` | Core/NoteProcessing | Arpeggiator with patterns |
 | `PadMatrixDrawable` | Controls | Touch pad grid with multi-touch support |
 | `RotaryKnobDrawable` | Controls | Volume knob with drag rotation |
+| `EffectAreaDrawable` | Controls | Effect selection and controls |
 | `ISfzService` | Services | SFZ playback interface |
 | `PadreaService` | Services | Padrea management (Full Range, Pentatonic) |
 | `MainPage` | MusicPad | Synth UI with pads, pickers, volume knob |
+
+## Note Processing
+
+**Auto Harmony** - Generates chords from single notes:
+| Type | Intervals | Result |
+|------|-----------|--------|
+| Octave | +12 | Root + Octave |
+| Fifth | +7 | Root + Perfect 5th |
+| Major | +4, +7 | Major triad |
+| Minor | +3, +7 | Minor triad |
+
+**Arpeggiator** - Cycles through held notes:
+| Pattern | Description |
+|---------|-------------|
+| Up (▲) | Low to high |
+| Down (▼) | High to low |
+| UpDown (↕) | Ping-pong |
+| Random (?) | Random order |
+
+Rate knob controls speed (125ms to 500ms between notes).
+
+## Audio Effects
+
+| Effect | Controls | Purpose |
+|--------|----------|---------|
+| **LPF** | Cutoff, Resonance | Low-pass filter for warmth |
+| **EQ** | 4-band (Low/LowMid/HighMid/High) | Tone shaping |
+| **Chorus** | Depth, Rate | Stereo width, detuning |
+| **Delay** | Time, Feedback, Level | Echo effect |
+| **Reverb** | Level, Type (Room/Hall/Plate/Church) | Space/ambience |
 
 ## Padrea System
 
@@ -129,6 +193,7 @@ Features:
 
 ## UI Features
 
+- **Effect Area**: First button (ArpHarmony) with note processing, followed by EQ/Chorus/Delay/Reverb
 - **Pad Matrix**: Touch grid with multi-touch polyphony
 - **Navigation Arrows**: Compact, neon-green arrows next to pads
 - **Volume Knob**: Rotary control with drag interaction
@@ -146,6 +211,11 @@ Features:
 | `SfzPlayerTests` | Playback, envelope, looping |
 | `WavLoaderTests` | WAV loading (16-bit, 24-bit) |
 | `PadreaTests` | Padrea model properties |
+| `HarmonySettingsTests` | Harmony settings model |
+| `HarmonyTests` | Harmony note processing |
+| `ArpeggiatorSettingsTests` | Arpeggiator settings model |
+| `ArpeggiatorTests` | Arpeggiator patterns |
+| `EffectSelectorTests` | Effect selection |
 | `WaveTableGeneratorTests` | Wavetable shape/amplitude |
 | `VoiceMixerTests` | Polyphony, release handling |
 
@@ -157,7 +227,7 @@ Features:
 
 ## Current State
 
-**Phase:** Core Functionality Complete
+**Phase:** Full Feature Set
 
 **Completed:**
 - [x] Project setup with .NET 10 LTS and MAUI 10
@@ -166,16 +236,19 @@ Features:
 - [x] Sample looping (loop_continuous, loop_sustain)
 - [x] Touch pad matrix with multi-touch
 - [x] Viewpage navigation for large instruments
-- [x] Padrea system (Full Range, Pentatonic)
+- [x] Padrea system (Full Range, Pentatonic, Scales, Piano)
 - [x] Volume knob control
 - [x] 8 bundled SFZ instruments
-- [x] Unit tests passing
+- [x] Audio effects (LPF, EQ, Chorus, Delay, Reverb)
+- [x] Auto Harmony (Octave, Fifth, Major, Minor)
+- [x] Arpeggiator (Up, Down, UpDown, Random patterns)
+- [x] Unit tests passing (426 tests)
 - [x] GitHub repository connected
 
 **Pending:**
 - [ ] Save/load custom padreas
-- [ ] Effects (reverb, delay)
 - [ ] Recording functionality
+- [ ] MIDI support
 
 ## Notes
 

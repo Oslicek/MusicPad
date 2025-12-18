@@ -6,11 +6,11 @@ namespace MusicPad.Tests.Models;
 public class EffectSelectorTests
 {
     [Fact]
-    public void DefaultSelection_IsEQ()
+    public void DefaultSelection_IsArpHarmony()
     {
         var selector = new EffectSelector();
         
-        Assert.Equal(EffectType.EQ, selector.SelectedEffect);
+        Assert.Equal(EffectType.ArpHarmony, selector.SelectedEffect);
     }
 
     [Fact]
@@ -18,7 +18,8 @@ public class EffectSelectorTests
     {
         var selector = new EffectSelector();
         
-        Assert.True(selector.IsSelected(EffectType.EQ));
+        Assert.True(selector.IsSelected(EffectType.ArpHarmony));
+        Assert.False(selector.IsSelected(EffectType.EQ));
         Assert.False(selector.IsSelected(EffectType.Chorus));
         Assert.False(selector.IsSelected(EffectType.Delay));
         Assert.False(selector.IsSelected(EffectType.Reverb));
@@ -33,7 +34,7 @@ public class EffectSelectorTests
         
         Assert.Equal(EffectType.Chorus, selector.SelectedEffect);
         Assert.True(selector.IsSelected(EffectType.Chorus));
-        Assert.False(selector.IsSelected(EffectType.EQ));
+        Assert.False(selector.IsSelected(EffectType.ArpHarmony));
     }
 
     [Fact]
@@ -55,7 +56,7 @@ public class EffectSelectorTests
         int eventCount = 0;
         selector.SelectionChanged += (s, e) => eventCount++;
         
-        selector.SelectedEffect = EffectType.EQ; // Same as default
+        selector.SelectedEffect = EffectType.ArpHarmony; // Same as default
         
         Assert.Equal(0, eventCount);
     }
@@ -86,11 +87,11 @@ public class EffectSelectorTests
     {
         var effects = EffectSelector.AllEffects;
         
-        Assert.Equal(4, effects.Count);
-        Assert.Equal(EffectType.EQ, effects[0]);
-        Assert.Equal(EffectType.Chorus, effects[1]);
-        Assert.Equal(EffectType.Delay, effects[2]);
-        Assert.Equal(EffectType.Reverb, effects[3]);
+        Assert.Equal(5, effects.Count);
+        Assert.Equal(EffectType.ArpHarmony, effects[0]);
+        Assert.Equal(EffectType.EQ, effects[1]);
+        Assert.Equal(EffectType.Chorus, effects[2]);
+        Assert.Equal(EffectType.Delay, effects[3]);
+        Assert.Equal(EffectType.Reverb, effects[4]);
     }
 }
-

@@ -2,14 +2,15 @@ namespace MusicPad.Core.Models;
 
 /// <summary>
 /// Types of audio effects available in the effect area.
-/// Order matches the signal chain: EQ -> Chorus -> Delay -> Reverb
+/// Order: ArpHarmony (note processing) -> EQ -> Chorus -> Delay -> Reverb (audio effects)
 /// </summary>
 public enum EffectType
 {
-    EQ = 0,
-    Chorus = 1,
-    Delay = 2,
-    Reverb = 3
+    ArpHarmony = 0,
+    EQ = 1,
+    Chorus = 2,
+    Delay = 3,
+    Reverb = 4
 }
 
 /// <summary>
@@ -17,7 +18,7 @@ public enum EffectType
 /// </summary>
 public class EffectSelector
 {
-    private EffectType _selectedEffect = EffectType.EQ;
+    private EffectType _selectedEffect = EffectType.ArpHarmony;
 
     /// <summary>
     /// Gets or sets the currently selected effect.
@@ -50,6 +51,7 @@ public class EffectSelector
     /// </summary>
     public static IReadOnlyList<EffectType> AllEffects { get; } = new[]
     {
+        EffectType.ArpHarmony,
         EffectType.EQ,
         EffectType.Chorus,
         EffectType.Delay,

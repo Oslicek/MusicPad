@@ -1,5 +1,6 @@
 using MusicPad.Controls;
 using MusicPad.Core.Models;
+using MusicPad.Core.NoteProcessing;
 using MusicPad.Services;
 
 namespace MusicPad;
@@ -19,6 +20,12 @@ public partial class MainPage : ContentPage
     private bool _isLandscape;
     private double _pageWidth;
     private double _pageHeight;
+    
+    // Harmony and Arpeggiator
+    private readonly Harmony _harmony = new();
+    private readonly Arpeggiator _arpeggiator = new();
+    private IDispatcherTimer? _arpTimer;
+    private int? _lastArpNote;
 
     public MainPage(ISfzService sfzService, IPadreaService padreaService)
     {
@@ -49,6 +56,9 @@ public partial class MainPage : ContentPage
         _effectAreaDrawable = new EffectAreaDrawable();
         _effectAreaDrawable.EffectSelected += OnEffectSelected;
         SetupEffectArea();
+        
+        // Setup Harmony and Arpeggiator from effect area settings
+        SetupHarmonyAndArpeggiator();
     }
 
     private void SetupVolumeKnob()
@@ -175,6 +185,108 @@ public partial class MainPage : ContentPage
             _effectAreaDrawable.OnTouchEnd();
             EffectArea.Invalidate();
         };
+    }
+
+    private void SetupHarmonyAndArpeggiator()
+    {
+        // Wire up Harmony settings
+        var harmonySettings = _effectAreaDrawable.HarmonySettings;
+        harmonySettings.EnabledChanged += (s, enabled) =>
+        {
+            _harmony.IsEnabled = enabled;
+            if (!enabled)
+            {
+                _harmony.Reset();
+            }
+        };
+        harmonySettings.TypeChanged += (s, type) => _harmony.Type = type;
+        
+        // Apply initial harmony settings
+        _harmony.IsEnabled = harmonySettings.IsEnabled;
+        _harmony.Type = harmonySettings.Type;
+        
+        // Wire up Arpeggiator settings
+        var arpSettings = _effectAreaDrawable.ArpSettings;
+        arpSettings.EnabledChanged += (s, enabled) =>
+        {
+            _arpeggiator.IsEnabled = enabled;
+            if (enabled)
+            {
+                StartArpeggiator();
+            }
+            else
+            {
+                StopArpeggiator();
+            }
+        };
+        arpSettings.RateChanged += (s, rate) =>
+        {
+            _arpeggiator.Rate = rate;
+            UpdateArpTimerInterval();
+        };
+        arpSettings.PatternChanged += (s, pattern) => _arpeggiator.Pattern = pattern;
+        
+        // Apply initial arpeggiator settings
+        _arpeggiator.IsEnabled = arpSettings.IsEnabled;
+        _arpeggiator.Rate = arpSettings.Rate;
+        _arpeggiator.Pattern = arpSettings.Pattern;
+    }
+
+    private void StartArpeggiator()
+    {
+        if (_arpTimer != null) return;
+        
+        _arpTimer = Dispatcher.CreateTimer();
+        UpdateArpTimerInterval();
+        _arpTimer.Tick += OnArpTimerTick;
+        _arpTimer.Start();
+    }
+
+    private void StopArpeggiator()
+    {
+        if (_arpTimer == null) return;
+        
+        _arpTimer.Stop();
+        _arpTimer.Tick -= OnArpTimerTick;
+        _arpTimer = null;
+        
+        // Stop the last arpeggiated note
+        if (_lastArpNote.HasValue)
+        {
+            _sfzService.NoteOff(_lastArpNote.Value);
+            _lastArpNote = null;
+        }
+    }
+
+    private void UpdateArpTimerInterval()
+    {
+        if (_arpTimer != null)
+        {
+            _arpTimer.Interval = TimeSpan.FromMilliseconds(_arpeggiator.GetIntervalMs());
+        }
+    }
+
+    private void OnArpTimerTick(object? sender, EventArgs e)
+    {
+        if (!_arpeggiator.IsEnabled) return;
+        
+        // Stop the previous note
+        if (_lastArpNote.HasValue)
+        {
+            _sfzService.NoteOff(_lastArpNote.Value);
+        }
+        
+        // Get and play the next note
+        var nextNote = _arpeggiator.GetNextNote();
+        if (nextNote.HasValue)
+        {
+            _sfzService.NoteOn(nextNote.Value);
+            _lastArpNote = nextNote;
+        }
+        else
+        {
+            _lastArpNote = null;
+        }
     }
 
     private void OnEffectSelected(object? sender, EffectType effect)
@@ -667,12 +779,48 @@ public partial class MainPage : ContentPage
 
     private void OnNoteOn(object? sender, int midiNote)
     {
-        _sfzService.NoteOn(midiNote);
+        // Apply harmony (generates chord from single note)
+        var notes = _harmony.ProcessNoteOn(midiNote);
+        
+        if (_arpeggiator.IsEnabled)
+        {
+            // When arpeggiator is enabled, add notes to it (don't play directly)
+            foreach (var note in notes)
+            {
+                _arpeggiator.AddNote(note);
+            }
+        }
+        else
+        {
+            // Play notes directly
+            foreach (var note in notes)
+            {
+                _sfzService.NoteOn(note);
+            }
+        }
     }
 
     private void OnNoteOff(object? sender, int midiNote)
     {
-        _sfzService.NoteOff(midiNote);
+        // Get all notes that were generated for this root note
+        var notes = _harmony.ProcessNoteOff(midiNote);
+        
+        if (_arpeggiator.IsEnabled)
+        {
+            // Remove notes from arpeggiator
+            foreach (var note in notes)
+            {
+                _arpeggiator.RemoveNote(note);
+            }
+        }
+        else
+        {
+            // Stop notes directly
+            foreach (var note in notes)
+            {
+                _sfzService.NoteOff(note);
+            }
+        }
     }
 
     private void OnNavigateUp(object? sender, EventArgs e)

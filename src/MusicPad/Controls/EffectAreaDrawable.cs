@@ -13,12 +13,14 @@ public class EffectAreaDrawable : IDrawable
     private bool _isHorizontal;
     private bool _isLandscapeSquare; // Special layout for landscape with square padrea
 
-    // LPF, EQ, Chorus, Delay, and Reverb controls
+    // ArpHarmony, LPF, EQ, Chorus, Delay, and Reverb controls
+    private readonly ArpHarmonyDrawable _arpHarmonyDrawable;
     private readonly LpfDrawable _lpfDrawable;
     private readonly EqDrawable _eqDrawable;
     private readonly ChorusDrawable _chorusDrawable;
     private readonly DelayDrawable _delayDrawable;
     private readonly ReverbDrawable _reverbDrawable;
+    private RectF _arpHarmonyRect;
     private RectF _lpfRect;
     private RectF _eqRect;
     private RectF _chorusRect;
@@ -37,12 +39,14 @@ public class EffectAreaDrawable : IDrawable
 
     public EffectAreaDrawable()
     {
+        _arpHarmonyDrawable = new ArpHarmonyDrawable(new HarmonySettings(), new ArpeggiatorSettings());
         _lpfDrawable = new LpfDrawable(new LowPassFilterSettings());
         _eqDrawable = new EqDrawable(new EqualizerSettings());
         _chorusDrawable = new ChorusDrawable(new ChorusSettings());
         _delayDrawable = new DelayDrawable(new DelaySettings());
         _reverbDrawable = new ReverbDrawable(new ReverbSettings());
         
+        _arpHarmonyDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
         _lpfDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
         _eqDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
         _chorusDrawable.InvalidateRequested += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
@@ -54,6 +58,16 @@ public class EffectAreaDrawable : IDrawable
     /// Gets the effect selector for external access.
     /// </summary>
     public EffectSelector Selector => _selector;
+
+    /// <summary>
+    /// Gets the Harmony settings for external access.
+    /// </summary>
+    public HarmonySettings HarmonySettings => _arpHarmonyDrawable.HarmonySettings;
+
+    /// <summary>
+    /// Gets the Arpeggiator settings for external access.
+    /// </summary>
+    public ArpeggiatorSettings ArpSettings => _arpHarmonyDrawable.ArpSettings;
 
     /// <summary>
     /// Gets the LPF settings for external access.
@@ -143,6 +157,9 @@ public class EffectAreaDrawable : IDrawable
         // Draw controls based on selected effect
         switch (_selector.SelectedEffect)
         {
+            case EffectType.ArpHarmony:
+                DrawArpHarmonyControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                break;
             case EffectType.EQ:
                 DrawEQControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
                 break;
@@ -175,6 +192,29 @@ public class EffectAreaDrawable : IDrawable
                 }
                 break;
         }
+    }
+
+    private void DrawArpHarmonyControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    {
+        float controlsX, controlsY, controlsWidth, controlsHeight;
+        
+        if (_isHorizontal)
+        {
+            controlsX = dirtyRect.X;
+            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
+            controlsWidth = dirtyRect.Width;
+            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
+        }
+        else
+        {
+            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
+            controlsY = dirtyRect.Y;
+            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
+            controlsHeight = dirtyRect.Height;
+        }
+
+        _arpHarmonyRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _arpHarmonyDrawable.Draw(canvas, _arpHarmonyRect);
     }
 
     private void DrawChorusControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
@@ -318,6 +358,9 @@ public class EffectAreaDrawable : IDrawable
 
         switch (effect)
         {
+            case EffectType.ArpHarmony:
+                DrawArpHarmonyIcon(canvas, iconRect, iconColor);
+                break;
             case EffectType.EQ:
                 DrawEQIcon(canvas, iconRect, iconColor);
                 break;
@@ -331,6 +374,35 @@ public class EffectAreaDrawable : IDrawable
                 DrawReverbIcon(canvas, iconRect, iconColor);
                 break;
         }
+    }
+
+    private void DrawArpHarmonyIcon(ICanvas canvas, RectF rect, Color color)
+    {
+        // Stacked notes with ascending arrow - represents chord + arpeggio
+        canvas.StrokeColor = color;
+        canvas.FillColor = color;
+        canvas.StrokeSize = 2;
+        canvas.StrokeLineCap = LineCap.Round;
+
+        float noteSize = rect.Height * 0.2f;
+        float spacing = rect.Height * 0.25f;
+        
+        // Draw 3 stacked note heads (ellipses)
+        for (int i = 0; i < 3; i++)
+        {
+            float y = rect.Bottom - (i + 0.5f) * spacing;
+            float x = rect.X + rect.Width * 0.3f;
+            canvas.FillEllipse(x - noteSize * 0.6f, y - noteSize * 0.4f, noteSize * 1.2f, noteSize * 0.8f);
+        }
+        
+        // Draw ascending arrow on the right
+        float arrowX = rect.X + rect.Width * 0.7f;
+        float arrowBottom = rect.Bottom - spacing * 0.3f;
+        float arrowTop = rect.Top + spacing * 0.3f;
+        
+        canvas.DrawLine(arrowX, arrowBottom, arrowX, arrowTop);
+        canvas.DrawLine(arrowX - noteSize * 0.5f, arrowTop + noteSize, arrowX, arrowTop);
+        canvas.DrawLine(arrowX + noteSize * 0.5f, arrowTop + noteSize, arrowX, arrowTop);
     }
 
     private void DrawEQIcon(ICanvas canvas, RectF rect, Color color)
@@ -470,6 +542,10 @@ public class EffectAreaDrawable : IDrawable
         // Handle control touches based on selected effect
         switch (_selector.SelectedEffect)
         {
+            case EffectType.ArpHarmony:
+                if (_arpHarmonyRect.Contains(point) && _arpHarmonyDrawable.OnTouch(x, y, true))
+                    return true;
+                break;
             case EffectType.EQ:
                 if (_lpfRect.Contains(point) && _lpfDrawable.OnTouch(x, y, true))
                     return true;
@@ -500,6 +576,10 @@ public class EffectAreaDrawable : IDrawable
     {
         switch (_selector.SelectedEffect)
         {
+            case EffectType.ArpHarmony:
+                if (_arpHarmonyDrawable.OnTouch(x, y, false))
+                    return true;
+                break;
             case EffectType.EQ:
                 if (_lpfDrawable.OnTouch(x, y, false))
                     return true;
@@ -527,6 +607,7 @@ public class EffectAreaDrawable : IDrawable
     /// </summary>
     public void OnTouchEnd()
     {
+        _arpHarmonyDrawable.OnTouchEnd();
         _lpfDrawable.OnTouchEnd();
         _eqDrawable.OnTouchEnd();
         _chorusDrawable.OnTouchEnd();
