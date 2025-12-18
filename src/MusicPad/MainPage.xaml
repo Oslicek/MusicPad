@@ -55,6 +55,9 @@
                       HeightRequest="120"
                       WidthRequest="120" />
         
+        <!-- Effect Area - positioned dynamically -->
+        <GraphicsView x:Name="EffectArea" />
+        
         <!-- Pad Container - positioned dynamically -->
         <Grid x:Name="PadContainer">
             <Label x:Name="LoadingLabel"

@@ -10,6 +10,7 @@ public partial class MainPage : ContentPage
     private readonly IPadreaService _padreaService;
     private readonly PadMatrixDrawable _padDrawable;
     private readonly RotaryKnobDrawable _volumeKnobDrawable;
+    private readonly EffectAreaDrawable _effectAreaDrawable;
     private readonly List<ScaleOption> _scaleOptions = new();
     private readonly PianoKeyboardDrawable _pianoDrawable = new();
     private PianoRangeManager? _pianoRangeManager;
@@ -43,6 +44,11 @@ public partial class MainPage : ContentPage
         _volumeKnobDrawable = new RotaryKnobDrawable { Label = "VOL", Value = 0.75f };
         _volumeKnobDrawable.ValueChanged += OnVolumeChanged;
         SetupVolumeKnob();
+        
+        // Setup effect area
+        _effectAreaDrawable = new EffectAreaDrawable();
+        _effectAreaDrawable.EffectSelected += OnEffectSelected;
+        SetupEffectArea();
     }
 
     private void SetupVolumeKnob()
@@ -85,6 +91,29 @@ public partial class MainPage : ContentPage
         _sfzService.Volume = _volumeKnobDrawable.Value;
     }
 
+    private void SetupEffectArea()
+    {
+        EffectArea.Drawable = _effectAreaDrawable;
+        
+        EffectArea.StartInteraction += (s, e) =>
+        {
+            var touch = e.Touches.FirstOrDefault();
+            if (touch != default)
+            {
+                if (_effectAreaDrawable.OnTouch((float)touch.X, (float)touch.Y))
+                {
+                    EffectArea.Invalidate();
+                }
+            }
+        };
+    }
+
+    private void OnEffectSelected(object? sender, EffectType effect)
+    {
+        // Effect selection changed - redraw to show new selection
+        EffectArea.Invalidate();
+    }
+
     private void OnVolumeChanged(object? sender, float volume)
     {
         _sfzService.Volume = volume;
@@ -105,7 +134,7 @@ public partial class MainPage : ContentPage
         {
             if (isPiano)
             {
-                // Landscape Piano: pickers top-left, volume next to pickers, piano at bottom full width
+                // Landscape Piano: pickers top-left, volume next to pickers, efarea top-right, piano at bottom
                 ControlsStack.HorizontalOptions = LayoutOptions.Start;
                 ControlsStack.VerticalOptions = LayoutOptions.Start;
                 ControlsStack.Margin = new Thickness(0);
@@ -114,19 +143,30 @@ public partial class MainPage : ContentPage
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
+                // Effect area: top-right, next to volume knob
+                double efareaLeft = controlsWidth + volumeSize + 24;
+                double efareaWidth = _pageWidth - efareaLeft - padding;
+                double efareaHeight = Math.Max(controlsHeight, volumeSize);
+                
+                _effectAreaDrawable.SetOrientation(false); // Vertical buttons
+                EffectArea.HorizontalOptions = LayoutOptions.End;
+                EffectArea.VerticalOptions = LayoutOptions.Start;
+                EffectArea.WidthRequest = efareaWidth;
+                EffectArea.HeightRequest = efareaHeight;
+                EffectArea.Margin = new Thickness(0);
+
+                // Piano at bottom
                 PadContainer.HorizontalOptions = LayoutOptions.Fill;
                 PadContainer.VerticalOptions = LayoutOptions.End;
-                
-                // Piano height: fill from below controls/volume to bottom
-                double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
+                double topAreaHeight = efareaHeight + padding;
                 double pianoHeight = _pageHeight - topAreaHeight - padding * 2;
                 PadContainer.HeightRequest = Math.Max(100, pianoHeight);
-                PadContainer.WidthRequest = -1; // auto
-                PadContainer.Margin = new Thickness(0, topAreaHeight, 0, 0);
+                PadContainer.WidthRequest = -1;
+                PadContainer.Margin = new Thickness(0);
             }
             else
             {
-                // Landscape Square Padrea: pickers top-left, volume below pickers, padrea right centered
+                // Landscape Square Padrea: pickers top-left, volume below pickers, padrea center, efarea right
                 ControlsStack.HorizontalOptions = LayoutOptions.Start;
                 ControlsStack.VerticalOptions = LayoutOptions.Start;
                 ControlsStack.Margin = new Thickness(0);
@@ -135,22 +175,32 @@ public partial class MainPage : ContentPage
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(30, controlsHeight + 16, 0, 0);
 
-                // Square padrea on the right, vertically centered
-                double leftColumnWidth = Math.Max(controlsWidth, volumeSize + 60);
-                double availableWidth = _pageWidth - leftColumnWidth - padding * 3;
-                double availableHeight = _pageHeight - padding * 2;
-                double padreaSize = Math.Min(availableWidth, availableHeight);
+                // Square padrea centered on page
+                double availableHeight = _pageHeight - padding * 4;
+                double padreaSize = availableHeight;
 
-                PadContainer.HorizontalOptions = LayoutOptions.End;
+                PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.Center;
                 PadContainer.WidthRequest = padreaSize;
                 PadContainer.HeightRequest = padreaSize;
                 PadContainer.Margin = new Thickness(0);
+
+                // Effect area on the right side
+                double padreaCenterX = _pageWidth / 2;
+                double padreaRight = padreaCenterX + padreaSize / 2;
+                double efareaWidth = _pageWidth - padreaRight - padding * 2;
+                
+                _effectAreaDrawable.SetOrientation(true); // Horizontal buttons at top
+                EffectArea.HorizontalOptions = LayoutOptions.End;
+                EffectArea.VerticalOptions = LayoutOptions.Fill;
+                EffectArea.WidthRequest = Math.Max(80, efareaWidth);
+                EffectArea.HeightRequest = -1;
+                EffectArea.Margin = new Thickness(0);
             }
         }
         else
         {
-            // Portrait: pickers top-left, volume to right of pickers, padrea at bottom full width
+            // Portrait: pickers top-left, volume to right, efarea in middle, padrea at bottom
             ControlsStack.HorizontalOptions = LayoutOptions.Start;
             ControlsStack.VerticalOptions = LayoutOptions.Start;
             ControlsStack.Margin = new Thickness(0);
@@ -159,26 +209,51 @@ public partial class MainPage : ContentPage
             VolumeKnob.VerticalOptions = LayoutOptions.Start;
             VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
-            // Padrea at bottom, full width for square, or set height for piano
-            double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding * 2;
-            double availableHeight = _pageHeight - topAreaHeight - padding;
-            double padreaSize = Math.Min(_pageWidth - padding * 2, availableHeight);
-
-            PadContainer.HorizontalOptions = LayoutOptions.Center;
-            PadContainer.VerticalOptions = LayoutOptions.End;
+            // Calculate sizes
+            double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
             
             if (isPiano)
             {
+                // Piano padrea
+                double pianoHeight = _pageHeight * 0.42;
+                double efareaHeight = _pageHeight - topAreaHeight - pianoHeight - padding * 3;
+                
+                _effectAreaDrawable.SetOrientation(false); // Vertical buttons
+                EffectArea.HorizontalOptions = LayoutOptions.Fill;
+                EffectArea.VerticalOptions = LayoutOptions.Start;
+                EffectArea.WidthRequest = -1;
+                EffectArea.HeightRequest = Math.Max(80, efareaHeight);
+                EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
+
+                PadContainer.HorizontalOptions = LayoutOptions.Fill;
+                PadContainer.VerticalOptions = LayoutOptions.End;
                 PadContainer.WidthRequest = _pageWidth - padding * 2;
-                PadContainer.HeightRequest = _pageHeight * 0.35;
+                PadContainer.HeightRequest = pianoHeight;
+                PadContainer.Margin = new Thickness(0);
             }
             else
             {
+                // Square padrea
+                double availableForPadrea = _pageHeight - topAreaHeight - padding * 2;
+                double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea * 0.65);
+                double efareaHeight = availableForPadrea - padreaSize - padding;
+                
+                _effectAreaDrawable.SetOrientation(false); // Vertical buttons on left
+                EffectArea.HorizontalOptions = LayoutOptions.Fill;
+                EffectArea.VerticalOptions = LayoutOptions.Start;
+                EffectArea.WidthRequest = -1;
+                EffectArea.HeightRequest = Math.Max(80, efareaHeight);
+                EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
+
+                PadContainer.HorizontalOptions = LayoutOptions.Center;
+                PadContainer.VerticalOptions = LayoutOptions.End;
                 PadContainer.WidthRequest = padreaSize;
                 PadContainer.HeightRequest = padreaSize;
+                PadContainer.Margin = new Thickness(0);
             }
-            PadContainer.Margin = new Thickness(0);
         }
+        
+        EffectArea.Invalidate();
     }
 
     private double GetControlsStackHeight()
