@@ -1,0 +1,1227 @@
+/*
+// **********************************************************************
+// Converted with SF22SFZ Converter v1.929
+// Copyright Jun 17 2019 , Plogue Art et Technologie, Inc
+// **********************************************************************
+// Conversion Date: Thu Dec 18 20:42:00 2025
+// **********************************************************************
+// Parent file    : C:/Users/opica/Downloads/Petrof.sf2
+// Soundfont      : 2.0
+// Internal Name  : Grandioso
+// Optimised for  : EMU8000
+// Editor Used    : Samplit
+// Creation Date  : Tue Jun 20 11:29:25 2023
+*/
+
+<control>
+ hint_load_method=1
+ set_cc1=0     //Power-on Default Values: Modulation
+ set_cc11=127  //Power-on Default Values: Expression
+ set_cc64=0    //Power-on Default Values: Sustain Pedal
+
+<global>
+ sample=sf2_smpl.wav
+ //8.4.2 MIDI Note-On Velocity to Filter Cutoff
+ //8.4.8 MIDI Continuous Controller 91 to Reverb Effects Send
+ //8.4.9 MIDI Continuous Controller 93 to Chorus Effects Send
+ //8.4.10 MIDI Pitch Wheel to Initial Pitch Controlled by MIDI Pitch Wheel Sensitivity
+ lfo06_wave=0
+ lfo06_pitch=0 lfo06_pitch_oncc129=50 lfo06_pitch_oncc1=50
+ lfo06_freq=8.176
+
+ amplitude_oncc11=100 amplitude_curvecc11=7
+
+
+<master>
+<region>
+ lokey=24 hikey=26
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C0_114-L
+ pitch_keycenter=24 tune=0 offset=0 end=475260
+ //bad loop! loop_start=0 loop_end=0
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=24 hikey=26
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C0_114-R
+ pitch_keycenter=24 tune=0 offset=475282 end=950542
+ //bad loop! loop_start=475282 loop_end=475282
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=27 hikey=29
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_D#0_114-L
+ pitch_keycenter=27 tune=0 offset=950564 end=1415003
+ //bad loop! loop_start=950564 loop_end=950564
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=27 hikey=29
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_D#0_114-R
+ pitch_keycenter=27 tune=0 offset=1415025 end=1879464
+ //bad loop! loop_start=1415025 loop_end=1415025
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=30 hikey=32
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_F#0_114-L
+ pitch_keycenter=30 tune=0 offset=1879486 end=2344569
+ //bad loop! loop_start=1879486 loop_end=1879486
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=30 hikey=32
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_F#0_114-R
+ pitch_keycenter=30 tune=0 offset=2344591 end=2809674
+ //bad loop! loop_start=2344591 loop_end=2344591
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=33 hikey=35
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_A0_114-L
+ pitch_keycenter=33 tune=0 offset=2809696 end=3270587
+ //bad loop! loop_start=2809696 loop_end=2809696
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=33 hikey=35
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_A0_114-R
+ pitch_keycenter=33 tune=0 offset=3270609 end=3731500
+ //bad loop! loop_start=3270609 loop_end=3270609
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=36 hikey=38
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C1_114-L
+ pitch_keycenter=36 tune=0 offset=3731522 end=4190938
+ //bad loop! loop_start=3731522 loop_end=3731522
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=36 hikey=38
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C1_114-R
+ pitch_keycenter=36 tune=0 offset=4190960 end=4650376
+ //bad loop! loop_start=4190960 loop_end=4190960
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=39 hikey=41
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_D#1_114-L
+ pitch_keycenter=39 tune=0 offset=4650398 end=5107681
+ //bad loop! loop_start=4650398 loop_end=4650398
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=39 hikey=41
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_D#1_114-R
+ pitch_keycenter=39 tune=0 offset=5107703 end=5564986
+ //bad loop! loop_start=5107703 loop_end=5107703
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=42 hikey=44
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_F#1_114-L
+ pitch_keycenter=42 tune=0 offset=5565008 end=6022668
+ //bad loop! loop_start=5565008 loop_end=5565008
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=42 hikey=44
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_F#1_114-R
+ pitch_keycenter=42 tune=0 offset=6022690 end=6480350
+ //bad loop! loop_start=6022690 loop_end=6022690
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=45 hikey=47
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_A1_114-L
+ pitch_keycenter=45 tune=0 offset=6480372 end=6926756
+ //bad loop! loop_start=6480372 loop_end=6480372
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=45 hikey=47
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_A1_114-R
+ pitch_keycenter=45 tune=0 offset=6926778 end=7373162
+ //bad loop! loop_start=6926778 loop_end=6926778
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=48 hikey=50
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C2_114-L
+ pitch_keycenter=48 tune=0 offset=7373184 end=7807278
+ //bad loop! loop_start=7373184 loop_end=7373184
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=48 hikey=50
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C2_114-R
+ pitch_keycenter=48 tune=0 offset=7807300 end=8241394
+ //bad loop! loop_start=7807300 loop_end=7807300
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=51 hikey=53
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_D#2_114-L
+ pitch_keycenter=51 tune=0 offset=8241416 end=8571665
+ //bad loop! loop_start=8241416 loop_end=8241416
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=51 hikey=53
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_D#2_114-R
+ pitch_keycenter=51 tune=0 offset=8571687 end=8901936
+ //bad loop! loop_start=8571687 loop_end=8571687
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=54 hikey=56
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_F#2_114-L
+ pitch_keycenter=54 tune=0 offset=8901958 end=9225781
+ //bad loop! loop_start=8901958 loop_end=8901958
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=54 hikey=56
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_F#2_114-R
+ pitch_keycenter=54 tune=0 offset=9225803 end=9549626
+ //bad loop! loop_start=9225803 loop_end=9225803
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=57 hikey=59
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_A2_114-L
+ pitch_keycenter=57 tune=0 offset=9549648 end=9843384
+ //bad loop! loop_start=9549648 loop_end=9549648
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=57 hikey=59
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_A2_114-R
+ pitch_keycenter=57 tune=0 offset=9843406 end=10137142
+ //bad loop! loop_start=9843406 loop_end=9843406
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=60 hikey=62
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C3_114-L
+ pitch_keycenter=60 tune=0 offset=10137164 end=10483955
+ //bad loop! loop_start=10137164 loop_end=10137164
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=60 hikey=62
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C3_114-R
+ pitch_keycenter=60 tune=0 offset=10483977 end=10830768
+ //bad loop! loop_start=10483977 loop_end=10483977
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=63 hikey=65
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_D#3_114-L
+ pitch_keycenter=63 tune=0 offset=10830790 end=11144002
+ //bad loop! loop_start=10830790 loop_end=10830790
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=63 hikey=65
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_D#3_114-R
+ pitch_keycenter=63 tune=0 offset=11144024 end=11457236
+ //bad loop! loop_start=11144024 loop_end=11144024
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=66 hikey=68
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_F#3_114-L
+ pitch_keycenter=66 tune=0 offset=11457258 end=11700183
+ //bad loop! loop_start=11457258 loop_end=11457258
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=66 hikey=68
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_F#3_114-R
+ pitch_keycenter=66 tune=0 offset=11700205 end=11943130
+ //bad loop! loop_start=11700205 loop_end=11700205
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=69 hikey=71
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_A3_114-L
+ pitch_keycenter=69 tune=0 offset=11943152 end=12142026
+ //bad loop! loop_start=11943152 loop_end=11943152
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=69 hikey=71
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_A3_114-R
+ pitch_keycenter=69 tune=0 offset=12142048 end=12340922
+ //bad loop! loop_start=12142048 loop_end=12142048
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=72 hikey=74
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C4_114-L
+ pitch_keycenter=72 tune=0 offset=12340944 end=12534048
+ //bad loop! loop_start=12340944 loop_end=12340944
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=72 hikey=74
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C4_114-R
+ pitch_keycenter=72 tune=0 offset=12534070 end=12727174
+ //bad loop! loop_start=12534070 loop_end=12534070
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=75 hikey=77
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_D#4_114-L
+ pitch_keycenter=75 tune=0 offset=12727196 end=12901414
+ //bad loop! loop_start=12727196 loop_end=12727196
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=75 hikey=77
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_D#4_114-R
+ pitch_keycenter=75 tune=0 offset=12901436 end=13075654
+ //bad loop! loop_start=12901436 loop_end=12901436
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=78 hikey=80
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_F#4_114-L
+ pitch_keycenter=78 tune=0 offset=13075676 end=13186376
+ //bad loop! loop_start=13075676 loop_end=13075676
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=78 hikey=80
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_F#4_114-R
+ pitch_keycenter=78 tune=0 offset=13186398 end=13297098
+ //bad loop! loop_start=13186398 loop_end=13186398
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=81 hikey=83
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_A4_114-L
+ pitch_keycenter=81 tune=0 offset=13297120 end=13428306
+ //bad loop! loop_start=13297120 loop_end=13297120
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=81 hikey=83
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_A4_114-R
+ pitch_keycenter=81 tune=0 offset=13428328 end=13559514
+ //bad loop! loop_start=13428328 loop_end=13428328
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=84 hikey=86
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C5_114-L
+ pitch_keycenter=84 tune=0 offset=13559536 end=13704036
+ //bad loop! loop_start=13559536 loop_end=13559536
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=84 hikey=86
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C5_114-R
+ pitch_keycenter=84 tune=0 offset=13704058 end=13848558
+ //bad loop! loop_start=13704058 loop_end=13704058
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=87 hikey=89
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_D#5_114-L
+ pitch_keycenter=87 tune=0 offset=13848580 end=13987396
+ //bad loop! loop_start=13848580 loop_end=13848580
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=87 hikey=89
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_D#5_114-R
+ pitch_keycenter=87 tune=0 offset=13987418 end=14126234
+ //bad loop! loop_start=13987418 loop_end=13987418
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=90 hikey=92
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_F#5_114-L
+ pitch_keycenter=90 tune=0 offset=14126256 end=14225247
+ //bad loop! loop_start=14126256 loop_end=14126256
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=90 hikey=92
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_F#5_114-R
+ pitch_keycenter=90 tune=0 offset=14225269 end=14324260
+ //bad loop! loop_start=14225269 loop_end=14225269
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=93 hikey=95
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_A5_114-L
+ pitch_keycenter=93 tune=0 offset=14324282 end=14416649
+ //bad loop! loop_start=14324282 loop_end=14324282
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=93 hikey=95
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_A5_114-R
+ pitch_keycenter=93 tune=0 offset=14416671 end=14509038
+ //bad loop! loop_start=14416671 loop_end=14416671
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=96 hikey=98
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C6_114-L
+ pitch_keycenter=96 tune=0 offset=14509060 end=14565534
+ //bad loop! loop_start=14509060 loop_end=14509060
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=96 hikey=98
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C6_114-R
+ pitch_keycenter=96 tune=0 offset=14565556 end=14622030
+ //bad loop! loop_start=14565556 loop_end=14565556
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=99 hikey=101
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_D#6_114-L
+ pitch_keycenter=99 tune=0 offset=14622052 end=14673954
+ //bad loop! loop_start=14622052 loop_end=14622052
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=99 hikey=101
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_D#6_114-R
+ pitch_keycenter=99 tune=0 offset=14673976 end=14725878
+ //bad loop! loop_start=14673976 loop_end=14673976
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=102 hikey=104
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_F#6_114-L
+ pitch_keycenter=102 tune=0 offset=14725900 end=14758901
+ //bad loop! loop_start=14725900 loop_end=14725900
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=102 hikey=104
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_F#6_114-R
+ pitch_keycenter=102 tune=0 offset=14758923 end=14791924
+ //bad loop! loop_start=14758923 loop_end=14758923
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=105 hikey=107
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_A6_114-L
+ pitch_keycenter=105 tune=0 offset=14791946 end=14823887
+ //bad loop! loop_start=14791946 loop_end=14791946
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ lokey=105 hikey=107
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_A6_114-R
+ pitch_keycenter=105 tune=0 offset=14823909 end=14855850
+ //bad loop! loop_start=14823909 loop_end=14823909
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ key=108
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=-100
+ region_label=Grandioso_C7_114-L
+ pitch_keycenter=108 tune=0 offset=14855872 end=14884747
+ //bad loop! loop_start=14855872 loop_end=14855872
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+<region>
+ key=108
+ lovel=1 hivel=127
+ loop_mode=no_loop
+ pitch_keytrack=100
+ volume=-0
+ ampeg_attack=6.02385e-09
+ ampeg_decay=6.02385e-09
+ ampeg_sustain=31.6228
+ ampeg_release=1
+ pan=100
+ region_label=Grandioso_C7_114-R
+ pitch_keycenter=108 tune=0 offset=14884769 end=14913644
+ //bad loop! loop_start=14884769 loop_end=14884769
+ fil_type=lpf_2p
+ cutoff=20004.8
+ resonance=0.5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<curve>//7 GMCurves::ConvaveLin
+ v000=0            v001=6.20001e-05  v002=0.000248     v003=0.000558001  v004=0.000992002 
+ v005=0.00155      v006=0.002232     v007=0.00303801   v008=0.00396801   v009=0.00502201  
+ v010=0.00620001   v011=0.00750202   v012=0.00892802   v013=0.010478     v014=0.012152    
+ v015=0.01395      v016=0.015872     v017=0.017918     v018=0.020088     v019=0.022382    
+ v020=0.0248       v021=0.0273421    v022=0.0300081    v023=0.0327981    v024=0.0357121   
+ v025=0.0387501    v026=0.0419121    v027=0.0451981    v028=0.0486081    v029=0.0521421   
+ v030=0.0558001    v031=0.0595821    v032=0.0634881    v033=0.0675181    v034=0.0716721   
+ v035=0.0759502    v036=0.0803522    v037=0.0848782    v038=0.0895282    v039=0.0943022   
+ v040=0.0992002    v041=0.104222     v042=0.109368     v043=0.114638     v044=0.120032    
+ v045=0.12555      v046=0.131192     v047=0.136958     v048=0.142848     v049=0.148862    
+ v050=0.155        v051=0.161262     v052=0.167648     v053=0.174158     v054=0.180792    
+ v055=0.18755      v056=0.194432     v057=0.201438     v058=0.208568     v059=0.215822    
+ v060=0.2232       v061=0.230702     v062=0.238328     v063=0.246078     v064=0.253953    
+ v065=0.261951     v066=0.270073     v067=0.278319     v068=0.286689     v069=0.295183    
+ v070=0.303801     v071=0.312543     v072=0.321409     v073=0.330399     v074=0.339513    
+ v075=0.348751     v076=0.358113     v077=0.367599     v078=0.377209     v079=0.386943    
+ v080=0.396801     v081=0.406783     v082=0.416889     v083=0.427119     v084=0.437473    
+ v085=0.447951     v086=0.458553     v087=0.469279     v088=0.480129     v089=0.491103    
+ v090=0.502201     v091=0.513423     v092=0.524769     v093=0.536239     v094=0.547833    
+ v095=0.559551     v096=0.571393     v097=0.583359     v098=0.595449     v099=0.607663    
+ v100=0.620001     v101=0.632463     v102=0.645049     v103=0.657759     v104=0.670593    
+ v105=0.683551     v106=0.696633     v107=0.709839     v108=0.723169     v109=0.736623    
+ v110=0.750202     v111=0.763904     v112=0.77773      v113=0.79168      v114=0.805754    
+ v115=0.819952     v116=0.834274     v117=0.84872      v118=0.86329      v119=0.877984    
+ v120=0.892802     v121=0.907744     v122=0.92281      v123=0.938        v124=0.953314    
+ v125=0.968752     v126=0.984314     v127=1           
+

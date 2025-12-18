@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Android.Content.Res;
 using Android.Media;
 using MusicPad.Core.Audio;
@@ -141,66 +142,100 @@ public class SfzService : ISfzService, IDisposable
     {
         try
         {
-            var folders = _assets.List("instruments");
-            if (folders != null)
-            {
-                foreach (var folder in folders)
-                {
-                    var files = _assets.List($"instruments/{folder}");
-                    if (files == null) continue;
-                    
-                    // Find all SFZ files in the folder
-                    var sfzFiles = files
-                        .Where(f => f.EndsWith(".sfz", StringComparison.OrdinalIgnoreCase))
-                        .OrderBy(f => f)
-                        .ToList();
-                    
-                    foreach (var sfzFile in sfzFiles)
-                    {
-                        // Create a nice display name from the SFZ filename
-                        // Remove leading numbers and extension, e.g. "000_Good_flute.sfz" -> "Good flute"
-                        var displayName = GetDisplayName(sfzFile);
-                        
-                        // Ensure unique names
-                        var uniqueName = displayName;
-                        int counter = 2;
-                        while (_instrumentNames.Contains(uniqueName))
-                        {
-                            uniqueName = $"{displayName} ({counter++})";
-                        }
-                        
-                        _instrumentNames.Add(uniqueName);
-                        _instrumentPaths[uniqueName] = (folder, sfzFile);
-                    }
-                }
-            }
+            // Try to load instruments from config file first
+            if (LoadInstrumentsFromConfig())
+                return;
+            
+            // Fallback: auto-discover from folders
+            DiscoverInstrumentsFromFolders();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error discovering instruments: {ex.Message}");
         }
     }
+
+    private bool LoadInstrumentsFromConfig()
+    {
+        try
+        {
+            using var stream = _assets.Open("instruments/instruments.json");
+            using var reader = new StreamReader(stream);
+            var json = reader.ReadToEnd();
+            
+            var config = JsonSerializer.Deserialize<InstrumentsConfig>(json);
+            if (config?.Instruments == null || config.Instruments.Count == 0)
+                return false;
+            
+            foreach (var entry in config.Instruments)
+            {
+                // Verify the instrument file exists
+                var files = _assets.List($"instruments/{entry.Folder}");
+                if (files == null || !files.Contains(entry.SfzFile))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Instrument not found: {entry.Folder}/{entry.SfzFile}");
+                    continue;
+                }
+                
+                _instrumentNames.Add(entry.DisplayName);
+                _instrumentPaths[entry.DisplayName] = (entry.Folder, entry.SfzFile);
+            }
+            
+            return _instrumentNames.Count > 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading instruments config: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void DiscoverInstrumentsFromFolders()
+    {
+        var folders = _assets.List("instruments");
+        if (folders == null) return;
+        
+        foreach (var folder in folders)
+        {
+            if (folder.EndsWith(".json")) continue; // Skip config file
+            
+            var files = _assets.List($"instruments/{folder}");
+            if (files == null) continue;
+            
+            var sfzFiles = files
+                .Where(f => f.EndsWith(".sfz", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(f => f)
+                .ToList();
+            
+            foreach (var sfzFile in sfzFiles)
+            {
+                var displayName = GetDisplayName(sfzFile);
+                
+                var uniqueName = displayName;
+                int counter = 2;
+                while (_instrumentNames.Contains(uniqueName))
+                {
+                    uniqueName = $"{displayName} ({counter++})";
+                }
+                
+                _instrumentNames.Add(uniqueName);
+                _instrumentPaths[uniqueName] = (folder, sfzFile);
+            }
+        }
+    }
     
     private static string GetDisplayName(string sfzFileName)
     {
-        // Remove .sfz extension
         var name = Path.GetFileNameWithoutExtension(sfzFileName);
         
-        // Remove leading numbers and underscores (e.g., "000_", "001_")
         while (name.Length > 0 && (char.IsDigit(name[0]) || name[0] == '_'))
         {
             name = name.Substring(1);
         }
         
-        // Replace underscores with spaces
-        name = name.Replace('_', ' ').Replace('-', ' ');
+        name = name.Replace('_', ' ').Replace('-', ' ').Trim();
         
-        // Trim and ensure not empty
-        name = name.Trim();
-        if (string.IsNullOrEmpty(name))
-            name = sfzFileName;
-            
-        return name;
+        return string.IsNullOrEmpty(name) ? sfzFileName : name;
     }
 
     public async Task LoadInstrumentAsync(string instrumentName)

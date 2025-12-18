@@ -1,0 +1,56 @@
+{
+  "description": "Configuration for bundled instruments - display names and order",
+  "instruments": [
+    {
+      "folder": "Petrof_sf2",
+      "sfzFile": "000_Grandioso.sfz",
+      "displayName": "Piano"
+    },
+    {
+      "folder": "Polysyn_sf2",
+      "sfzFile": "000_Polysynth.sfz",
+      "displayName": "Synth"
+    },
+    {
+      "folder": "Simmons_SDS7_sf2",
+      "sfzFile": "000_Simmon_SD57.sfz",
+      "displayName": "Drums"
+    },
+    {
+      "folder": "acoustic_guitars_sf2",
+      "sfzFile": "000_Acoustic_Guitar.sfz",
+      "displayName": "Acoustic Guitar"
+    },
+    {
+      "folder": "Studbass_sf2",
+      "sfzFile": "000_Studio_Bass.sfz",
+      "displayName": "Electric Bass"
+    },
+    {
+      "folder": "good_flutes_sf2",
+      "sfzFile": "000_Good_flute.sfz",
+      "displayName": "Flute"
+    },
+    {
+      "folder": "Violin_sf2",
+      "sfzFile": "000_VIOLIN.sfz",
+      "displayName": "Violin"
+    },
+    {
+      "folder": "VocalsPapel_sf2",
+      "sfzFile": "000_S-IrinaBrochin.sfz",
+      "displayName": "Vocal Soprano"
+    },
+    {
+      "folder": "Gothorgn_sf2",
+      "sfzFile": "000_Gothic_Organ_I.sfz",
+      "displayName": "Gothic Organ"
+    },
+    {
+      "folder": "glockenspiel_sf2",
+      "sfzFile": "000_Ethan's_Glock.sfz",
+      "displayName": "Glockenspiel"
+    }
+  ]
+}
+
