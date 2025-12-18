@@ -90,41 +90,102 @@ public partial class MainPage : ContentPage
         _sfzService.Volume = volume;
     }
 
-    private void AdjustVolumeLayout()
+    private void UpdateLayout()
     {
         var currentPadrea = _padreaService.CurrentPadrea;
         bool isPiano = currentPadrea?.Kind == PadreaKind.Piano;
-        bool isSquarePadrea = currentPadrea?.Kind == PadreaKind.Grid;
+
+        // Calculate available space
+        double controlsWidth = 180 + 16; // picker width + margins
+        double controlsHeight = GetControlsStackHeight();
+        double volumeSize = 120;
+        double padding = 8;
 
         if (_isLandscape)
         {
             if (isPiano)
             {
-                // Piano in landscape: volume knob at left edge, top
+                // Landscape Piano: pickers top-left, volume next to pickers, piano at bottom full width
+                ControlsStack.HorizontalOptions = LayoutOptions.Start;
+                ControlsStack.VerticalOptions = LayoutOptions.Start;
+                ControlsStack.Margin = new Thickness(0);
+
                 VolumeKnob.HorizontalOptions = LayoutOptions.Start;
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
-                VolumeKnob.Margin = new Thickness(8, 8, 0, 0);
+                VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
+
+                PadContainer.HorizontalOptions = LayoutOptions.Fill;
+                PadContainer.VerticalOptions = LayoutOptions.End;
+                
+                // Piano height: fill from below controls/volume to bottom
+                double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
+                double pianoHeight = _pageHeight - topAreaHeight - padding * 2;
+                PadContainer.HeightRequest = Math.Max(100, pianoHeight);
+                PadContainer.WidthRequest = -1; // auto
+                PadContainer.Margin = new Thickness(0, topAreaHeight, 0, 0);
             }
-            else if (isSquarePadrea)
+            else
             {
-                // Square padrea in landscape: volume knob at top, centered between left edge and padrea
-                // The padrea will be centered, so we position volume knob in the left space
+                // Landscape Square Padrea: pickers top-left, volume below pickers, padrea right centered
+                ControlsStack.HorizontalOptions = LayoutOptions.Start;
+                ControlsStack.VerticalOptions = LayoutOptions.Start;
+                ControlsStack.Margin = new Thickness(0);
+
                 VolumeKnob.HorizontalOptions = LayoutOptions.Start;
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
-                // Calculate left margin to center it in the space left of the padrea
-                double padreaSize = Math.Min(_pageWidth, _pageHeight - 60); // Approximate padrea size
-                double leftSpace = (_pageWidth - padreaSize) / 2;
-                double knobCenterX = (leftSpace - 120) / 2; // 120 is knob width
-                VolumeKnob.Margin = new Thickness(Math.Max(8, knobCenterX), 8, 0, 0);
+                VolumeKnob.Margin = new Thickness(30, controlsHeight + 16, 0, 0);
+
+                // Square padrea on the right, vertically centered
+                double leftColumnWidth = Math.Max(controlsWidth, volumeSize + 60);
+                double availableWidth = _pageWidth - leftColumnWidth - padding * 3;
+                double availableHeight = _pageHeight - padding * 2;
+                double padreaSize = Math.Min(availableWidth, availableHeight);
+
+                PadContainer.HorizontalOptions = LayoutOptions.End;
+                PadContainer.VerticalOptions = LayoutOptions.Center;
+                PadContainer.WidthRequest = padreaSize;
+                PadContainer.HeightRequest = padreaSize;
+                PadContainer.Margin = new Thickness(0);
             }
         }
         else
         {
-            // Portrait: volume knob at top center
-            VolumeKnob.HorizontalOptions = LayoutOptions.Center;
+            // Portrait: pickers top-left, volume to right of pickers, padrea at bottom full width
+            ControlsStack.HorizontalOptions = LayoutOptions.Start;
+            ControlsStack.VerticalOptions = LayoutOptions.Start;
+            ControlsStack.Margin = new Thickness(0);
+
+            VolumeKnob.HorizontalOptions = LayoutOptions.Start;
             VolumeKnob.VerticalOptions = LayoutOptions.Start;
-            VolumeKnob.Margin = new Thickness(0, 8, 0, 8);
+            VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
+
+            // Padrea at bottom, full width for square, or set height for piano
+            double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding * 2;
+            double availableHeight = _pageHeight - topAreaHeight - padding;
+            double padreaSize = Math.Min(_pageWidth - padding * 2, availableHeight);
+
+            PadContainer.HorizontalOptions = LayoutOptions.Center;
+            PadContainer.VerticalOptions = LayoutOptions.End;
+            
+            if (isPiano)
+            {
+                PadContainer.WidthRequest = _pageWidth - padding * 2;
+                PadContainer.HeightRequest = _pageHeight * 0.35;
+            }
+            else
+            {
+                PadContainer.WidthRequest = padreaSize;
+                PadContainer.HeightRequest = padreaSize;
+            }
+            PadContainer.Margin = new Thickness(0);
         }
+    }
+
+    private double GetControlsStackHeight()
+    {
+        // Approximate height: 3 pickers at ~44 each + spacing
+        int visiblePickers = ScalePicker.IsVisible ? 3 : 2;
+        return visiblePickers * 44 + (visiblePickers - 1) * 4;
     }
 
     private void BuildScaleOptions()
@@ -194,9 +255,9 @@ public partial class MainPage : ContentPage
             }
         }
         
-        AdjustVolumeLayout();
+        UpdateLayout();
         
-        // Re-run layout for size-dependent padrea
+        // Re-run pad setup for size-dependent elements
         if (_sfzService.CurrentInstrumentName != null)
         {
             SetupPadMatrix();
@@ -235,7 +296,7 @@ public partial class MainPage : ContentPage
         {
             _padreaService.CurrentPadrea = selectedPadrea;
             UpdateScalePickerForPadrea(selectedPadrea);
-            AdjustVolumeLayout();
+            UpdateLayout();
             UpdatePadMatrixForPadrea();
         }
     }
@@ -369,21 +430,7 @@ public partial class MainPage : ContentPage
             _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
         }
 
-        // Calculate square size for grid padreas
-        double availableHeight = _pageHeight - 60 - 140; // Header and volume knob
-        double availableWidth = _pageWidth - 16; // Padding
-        double padreaSize = Math.Min(availableWidth, availableHeight);
-
         EnsurePadGraphicsView(_padDrawable);
-        
-        // Square padreas: set size and center horizontally in landscape
-        if (_padGraphicsView != null)
-        {
-            _padGraphicsView.WidthRequest = padreaSize;
-            _padGraphicsView.HeightRequest = padreaSize;
-            _padGraphicsView.HorizontalOptions = _isLandscape ? LayoutOptions.Center : LayoutOptions.Fill;
-            _padGraphicsView.VerticalOptions = LayoutOptions.End;
-        }
     }
 
     private void SetupPianoPadrea(Padrea padrea, int instrumentMinKey, int instrumentMaxKey)
@@ -402,26 +449,6 @@ public partial class MainPage : ContentPage
         _pianoDrawable.SetRange(start, end, instrumentMinKey, instrumentMaxKey, _isLandscape);
         
         EnsurePadGraphicsView(_pianoDrawable);
-        
-        // Piano padrea: full width, shorter height in portrait
-        if (_padGraphicsView != null)
-        {
-            _padGraphicsView.WidthRequest = -1; // Auto width
-            
-            if (_isLandscape)
-            {
-                // Landscape: use available height minus header/volume space
-                _padGraphicsView.HeightRequest = _pageHeight - 60 - 140;
-            }
-            else
-            {
-                // Portrait: make it shorter (about 35% of screen height)
-                _padGraphicsView.HeightRequest = _pageHeight * 0.35;
-            }
-            
-            _padGraphicsView.HorizontalOptions = LayoutOptions.Fill;
-            _padGraphicsView.VerticalOptions = LayoutOptions.End;
-        }
     }
 
     private void UpdatePadMatrixForPadrea()
@@ -537,6 +564,10 @@ public partial class MainPage : ContentPage
     {
         bool isScalePadrea = padrea.Id == "scales" || padrea.NoteFilter == NoteFilterType.HeptatonicScale;
         ScalePicker.IsVisible = isScalePadrea;
+        
+        // Update layout after visibility change
+        UpdateLayout();
+        
         if (isScalePadrea)
         {
             // Ensure a selection (default to C Major)
@@ -571,7 +602,11 @@ public partial class MainPage : ContentPage
     {
         if (_padGraphicsView == null)
         {
-            _padGraphicsView = new GraphicsView();
+            _padGraphicsView = new GraphicsView
+            {
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
 
             // Setup touch handlers
             _padGraphicsView.StartInteraction += OnStartInteraction;
