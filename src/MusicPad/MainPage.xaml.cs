@@ -577,8 +577,24 @@ public partial class MainPage : ContentPage
             }
 
             InstrumentPicker.ItemsSource = instruments.ToList();
-            InstrumentPicker.SelectedIndex = 0;
             
+            // Check if there's already a loaded instrument (e.g., from Instrument Detail page)
+            var currentInstrument = _sfzService.CurrentInstrumentName;
+            if (!string.IsNullOrEmpty(currentInstrument))
+            {
+                var index = instruments.ToList().IndexOf(currentInstrument);
+                if (index >= 0)
+                {
+                    InstrumentPicker.SelectedIndex = index;
+                    // Just update the UI, don't reload the instrument
+                    SetupPadMatrix();
+                    LoadingLabel.IsVisible = false;
+                    return;
+                }
+            }
+            
+            // No instrument loaded yet, select first one
+            InstrumentPicker.SelectedIndex = 0;
             await LoadSelectedInstrumentAsync();
         }
         catch (Exception ex)
