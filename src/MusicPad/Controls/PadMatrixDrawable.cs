@@ -254,28 +254,40 @@ public class PadMatrixDrawable : IDrawable
         Color normalColor = isAltNote ? _padAltColor : _padColor;
         Color activeColor = isAltNote ? _padAltPressedColor : _padPressedColor;
         
-        // Interpolate color based on envelope level
+        // Calculate glow color (accent orange blended with pad color based on envelope)
+        Color glowColor = EnvelopeGlowColor;
+        
+        // The pad itself glows - interpolate from normal color towards glow color
+        // Use a power curve for more dramatic effect at higher levels
+        float glowIntensity = isActive ? (float)Math.Pow(envelopeLevel, 0.7) : 0f;
         Color bgColor = isActive 
-            ? InterpolateColor(normalColor, activeColor, envelopeLevel)
+            ? InterpolateColor(normalColor, glowColor, glowIntensity * 0.6f)
             : normalColor;
 
-        // Draw envelope glow effect behind the pad when active
-        if (isActive)
-        {
-            DrawEnvelopeGlow(canvas, x, y, envelopeLevel);
-        }
-
-        // Draw pad background
+        // Draw pad background with glow
         canvas.FillColor = bgColor;
         canvas.FillRoundedRectangle(x, y, _padSize, _padSize, 8);
 
-        // Draw border - brighter when active, scaled by envelope
-        float borderBrightness = isActive ? 0.3f + 0.7f * envelopeLevel : 0.7f;
-        canvas.StrokeColor = isActive 
-            ? Colors.White.WithAlpha(borderBrightness)
-            : bgColor.WithAlpha(0.7f);
-        canvas.StrokeSize = isActive ? 2 + envelopeLevel * 2 : 2;
-        canvas.DrawRoundedRectangle(x, y, _padSize, _padSize, 8);
+        // Draw border - glows with the envelope, more prominent when active
+        if (isActive)
+        {
+            // Glowing outline effect - draw multiple layers for glow
+            float outlineGlow = glowIntensity * 0.8f;
+            canvas.StrokeColor = EnvelopeGlowColor.WithAlpha(outlineGlow);
+            canvas.StrokeSize = 2 + envelopeLevel * 3;
+            canvas.DrawRoundedRectangle(x, y, _padSize, _padSize, 8);
+            
+            // Inner bright line
+            canvas.StrokeColor = Colors.White.WithAlpha(0.3f + glowIntensity * 0.5f);
+            canvas.StrokeSize = 1;
+            canvas.DrawRoundedRectangle(x + 1, y + 1, _padSize - 2, _padSize - 2, 7);
+        }
+        else
+        {
+            canvas.StrokeColor = bgColor.WithAlpha(0.7f);
+            canvas.StrokeSize = 2;
+            canvas.DrawRoundedRectangle(x, y, _padSize, _padSize, 8);
+        }
 
         // Draw note name
         string noteName = GetNoteName(midiNote);
@@ -289,31 +301,6 @@ public class PadMatrixDrawable : IDrawable
         canvas.FontColor = TextColor;
         canvas.DrawString(noteName, x, y, _padSize, _padSize, 
             HorizontalAlignment.Center, VerticalAlignment.Center);
-    }
-    
-    private void DrawEnvelopeGlow(ICanvas canvas, float x, float y, float level)
-    {
-        // Draw outer glow that expands/contracts with envelope level
-        float maxGlowSize = _padSize * 0.2f;
-        float glowSize = maxGlowSize * level;
-        
-        if (glowSize > 1)
-        {
-            // Multiple glow layers for smooth falloff
-            for (int i = 3; i >= 0; i--)
-            {
-                float layerSize = glowSize * (1 + i * 0.3f);
-                float alpha = level * (0.4f - i * 0.1f);
-                
-                canvas.FillColor = EnvelopeGlowColor.WithAlpha(Math.Max(0, alpha));
-                canvas.FillRoundedRectangle(
-                    x - layerSize, 
-                    y - layerSize, 
-                    _padSize + layerSize * 2, 
-                    _padSize + layerSize * 2, 
-                    8 + layerSize);
-            }
-        }
     }
     
     private static Color InterpolateColor(Color a, Color b, float t)

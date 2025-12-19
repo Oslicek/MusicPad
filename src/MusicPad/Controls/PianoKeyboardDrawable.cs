@@ -10,12 +10,16 @@ public class PianoKeyboardDrawable : IDrawable
 {
     private const int GlobalMin = 21;  // A0
     private const int GlobalMax = 108; // C8
+    
+    // Envelope glow color - follows the sound's amplitude envelope
+    private static readonly Color EnvelopeGlowColor = Color.FromArgb(AppColors.Accent);
 
     private int _rangeStart;
     private int _rangeEnd;
     private int _instrumentMin;
     private int _instrumentMax;
     private bool _isLandscape;
+    private Func<int, float>? _envelopeLevelGetter; // Gets envelope level for a note (0-1)
 
     private readonly List<KeyRect> _keyRects = new();
     private readonly HashSet<int> _activeNotes = new();
@@ -39,6 +43,15 @@ public class PianoKeyboardDrawable : IDrawable
         _instrumentMin = Math.Clamp(instrumentMin, GlobalMin, GlobalMax);
         _instrumentMax = Math.Clamp(instrumentMax, GlobalMin, GlobalMax);
         _isLandscape = isLandscape;
+    }
+    
+    /// <summary>
+    /// Sets the envelope level getter for visual feedback that follows the sound's amplitude.
+    /// The function should return 0-1 based on the current envelope level of the note.
+    /// </summary>
+    public void SetEnvelopeLevelGetter(Func<int, float>? getter)
+    {
+        _envelopeLevelGetter = getter;
     }
 
     public void Draw(ICanvas canvas, RectF dirtyRect)
@@ -169,15 +182,51 @@ public class PianoKeyboardDrawable : IDrawable
 
             var keyRect = new RectF(currentX, rect.Y, whiteWidth, whiteHeight);
             bool disabled = note < _instrumentMin || note > _instrumentMax;
-            bool pressed = _activeNotes.Contains(note);
+            
+            // Get envelope level for this note
+            float envelopeLevel = _envelopeLevelGetter?.Invoke(note) ?? 0f;
+            bool isActive = envelopeLevel > 0.001f;
+            
+            // Calculate glow intensity with power curve for more dramatic effect
+            float glowIntensity = isActive ? (float)Math.Pow(envelopeLevel, 0.7) : 0f;
+            
+            // Determine key color
+            Color keyColor;
+            if (disabled)
+            {
+                keyColor = Color.FromArgb(AppColors.DisabledDark);
+            }
+            else if (isActive)
+            {
+                // Interpolate from white towards glow color based on envelope
+                keyColor = InterpolateColor(Colors.White, EnvelopeGlowColor, glowIntensity * 0.7f);
+            }
+            else
+            {
+                keyColor = Colors.White;
+            }
 
-            canvas.FillColor = disabled ? Color.FromArgb(AppColors.DisabledDark)
-                                        : pressed ? Color.FromArgb(AppColors.PianoWhiteKeyPressed) : Colors.White;
+            canvas.FillColor = keyColor;
             canvas.FillRectangle(keyRect);
 
-            canvas.StrokeColor = Color.FromArgb(AppColors.BorderDark);
-            canvas.StrokeSize = 1;
-            canvas.DrawRectangle(keyRect);
+            // Draw border - glows with envelope when active
+            if (isActive && !disabled)
+            {
+                canvas.StrokeColor = EnvelopeGlowColor.WithAlpha(glowIntensity * 0.9f);
+                canvas.StrokeSize = 2 + envelopeLevel * 2;
+                canvas.DrawRectangle(keyRect);
+                
+                // Inner highlight
+                canvas.StrokeColor = EnvelopeGlowColor.WithAlpha(0.3f + glowIntensity * 0.4f);
+                canvas.StrokeSize = 1;
+                canvas.DrawRectangle(keyRect.X + 1, keyRect.Y + 1, keyRect.Width - 2, keyRect.Height - 2);
+            }
+            else
+            {
+                canvas.StrokeColor = Color.FromArgb(AppColors.BorderDark);
+                canvas.StrokeSize = 1;
+                canvas.DrawRectangle(keyRect);
+            }
 
             // Label
             canvas.FontSize = 12;
@@ -200,15 +249,46 @@ public class PianoKeyboardDrawable : IDrawable
                 float bx = rect.X + whitesBefore * whiteWidth + whiteWidth - blackWidth / 2;
                 var keyRect = new RectF(bx, rect.Y, blackWidth, blackHeight);
                 bool disabled = note < _instrumentMin || note > _instrumentMax;
-                bool pressed = _activeNotes.Contains(note);
+                
+                // Get envelope level for this note
+                float envelopeLevel = _envelopeLevelGetter?.Invoke(note) ?? 0f;
+                bool isActive = envelopeLevel > 0.001f;
+                
+                // Calculate glow intensity
+                float glowIntensity = isActive ? (float)Math.Pow(envelopeLevel, 0.7) : 0f;
+                
+                // Determine key color
+                Color keyColor;
+                if (disabled)
+                {
+                    keyColor = Color.FromArgb(AppColors.DisabledDarker);
+                }
+                else if (isActive)
+                {
+                    // Interpolate from dark towards glow color
+                    keyColor = InterpolateColor(Color.FromArgb(AppColors.PianoBlackKeyDark), EnvelopeGlowColor, glowIntensity * 0.6f);
+                }
+                else
+                {
+                    keyColor = Color.FromArgb(AppColors.PianoBlackKeyDark);
+                }
 
-                canvas.FillColor = disabled ? Color.FromArgb(AppColors.DisabledDarker)
-                                            : pressed ? Color.FromArgb(AppColors.PianoBlackKeyPressed) : Color.FromArgb(AppColors.PianoBlackKeyDark);
+                canvas.FillColor = keyColor;
                 canvas.FillRectangle(keyRect);
 
-                canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
-                canvas.StrokeSize = 1;
-                canvas.DrawRectangle(keyRect);
+                // Draw border - glows with envelope when active
+                if (isActive && !disabled)
+                {
+                    canvas.StrokeColor = EnvelopeGlowColor.WithAlpha(glowIntensity * 0.9f);
+                    canvas.StrokeSize = 2 + envelopeLevel * 2;
+                    canvas.DrawRectangle(keyRect);
+                }
+                else
+                {
+                    canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
+                    canvas.StrokeSize = 1;
+                    canvas.DrawRectangle(keyRect);
+                }
 
                 canvas.FontSize = 10;
                 canvas.FontColor = disabled ? Color.FromArgb(AppColors.TextDim) : Colors.White;
@@ -221,6 +301,17 @@ public class PianoKeyboardDrawable : IDrawable
         // Arrows
         DrawArrow(canvas, _leftArrowRect, left: true);
         DrawArrow(canvas, _rightArrowRect, left: false);
+    }
+    
+    private static Color InterpolateColor(Color a, Color b, float t)
+    {
+        t = Math.Clamp(t, 0f, 1f);
+        return new Color(
+            a.Red + (b.Red - a.Red) * t,
+            a.Green + (b.Green - a.Green) * t,
+            a.Blue + (b.Blue - a.Blue) * t,
+            a.Alpha + (b.Alpha - a.Alpha) * t
+        );
     }
 
     private void DrawArrow(ICanvas canvas, RectF rect, bool left)

@@ -145,6 +145,7 @@ MusicPad/
 | `Harmony` | Core/NoteProcessing | Auto harmony (chord generation) |
 | `Arpeggiator` | Core/NoteProcessing | Arpeggiator with patterns |
 | `PadMatrixDrawable` | Controls | Touch pad grid with envelope-following glow |
+| `PianoKeyboardDrawable` | Controls | Piano keyboard with envelope glow |
 | `PitchVolumeDrawable` | Controls | Continuous pitch-volume surface |
 | `RotaryKnobDrawable` | Controls | Volume knob with drag rotation |
 | `EffectAreaDrawable` | Controls | Effect selection and controls |
@@ -206,7 +207,8 @@ Features:
 
 - **Hamburger Menu**: Top-right menu button (☰) with dropdown actions
 - **Effect Area**: First button (ArpHarmony) with note processing, followed by EQ/Chorus/Delay/Reverb
-- **Pad Matrix**: Touch grid with multi-touch, envelope-following glow effect
+- **Pad Matrix**: Touch grid with multi-touch, envelope-following glow effect (pad and outline glow)
+- **Piano Keyboard**: Keys glow with envelope level (same visual feedback as pads)
 - **Pitch-Volume Surface**: Continuous control (X=pitch, Y=volume), circular touch glow
 - **Navigation Arrows**: Compact, amber arrows next to pads
 - **Volume Knob**: Rotary control with drag interaction
@@ -261,7 +263,7 @@ Features:
 - [x] Hamburger menu with navigation
 - [x] Instruments page with metadata display
 - [x] Pitch-Volume padrea with continuous control
-- [x] Envelope-following glow on square pads
+- [x] Envelope-following glow on all pads and piano keys
 - [x] Unit tests passing
 - [x] GitHub repository connected
 

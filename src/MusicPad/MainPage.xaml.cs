@@ -330,10 +330,9 @@ public partial class MainPage : ContentPage
     
     private void OnEnvelopeAnimationTick(object? sender, EventArgs e)
     {
-        // Only refresh if we're showing a grid padrea (not piano or pitch-volume)
-        if (_padGraphicsView != null && 
-            !IsCurrentPadreaPiano() && 
-            !IsCurrentPadreaPitchVolume())
+        // Refresh for grid padreas and piano (both use envelope glow)
+        // Skip only pitch-volume padrea which has its own touch glow
+        if (_padGraphicsView != null && !IsCurrentPadreaPitchVolume())
         {
             _padGraphicsView.Invalidate();
         }
@@ -776,8 +775,10 @@ public partial class MainPage : ContentPage
         var (start, end) = _pianoRangeManager.GetRange();
 
         _pianoDrawable.SetRange(start, end, instrumentMinKey, instrumentMaxKey, _isLandscape);
+        _pianoDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
         
         EnsurePadGraphicsView(_pianoDrawable);
+        EnsureEnvelopeAnimationTimer();
     }
 
     private void UpdatePadMatrixForPadrea()
