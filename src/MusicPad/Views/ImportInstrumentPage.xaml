@@ -32,20 +32,23 @@
         <ScrollView Grid.Row="1" Padding="20,0,20,20">
             <VerticalStackLayout Spacing="20">
             
-            <!-- File Selection -->
+            <!-- SFZ File Selection -->
             <Frame BackgroundColor="{StaticResource Surface}"
                    BorderColor="{StaticResource SurfaceBorder}"
                    CornerRadius="12"
                    Padding="16">
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="Select SFZ File"
+                    <Label Text="1. Select SFZ File"
                            FontSize="16"
                            FontAttributes="Bold"
                            TextColor="{StaticResource TextSecondary}"/>
+                    <Label Text="The SFZ file contains instrument definitions"
+                           FontSize="12"
+                           TextColor="{StaticResource TextMuted}"/>
                     
                     <Grid ColumnDefinitions="*,Auto">
-                        <Label x:Name="SelectedFileLabel"
-                               Text="No file selected"
+                        <Label x:Name="SelectedSfzFileLabel"
+                               Text="No SFZ file selected"
                                FontSize="14"
                                TextColor="{StaticResource TextMuted}"
                                VerticalOptions="Center"
@@ -57,7 +60,40 @@
                                 FontSize="14"
                                 CornerRadius="8"
                                 Padding="16,8"
-                                Clicked="OnBrowseClicked"/>
+                                Clicked="OnBrowseSfzClicked"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- WAV File Selection -->
+            <Frame BackgroundColor="{StaticResource Surface}"
+                   BorderColor="{StaticResource SurfaceBorder}"
+                   CornerRadius="12"
+                   Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="2. Select WAV File"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"/>
+                    <Label Text="The WAV file contains the audio samples"
+                           FontSize="12"
+                           TextColor="{StaticResource TextMuted}"/>
+                    
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label x:Name="SelectedWavFileLabel"
+                               Text="No WAV file selected"
+                               FontSize="14"
+                               TextColor="{StaticResource TextMuted}"
+                               VerticalOptions="Center"
+                               LineBreakMode="TailTruncation"/>
+                        <Button Grid.Column="1"
+                                Text="Browse..."
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="{StaticResource TextWhite}"
+                                FontSize="14"
+                                CornerRadius="8"
+                                Padding="16,8"
+                                Clicked="OnBrowseWavClicked"/>
                     </Grid>
                 </VerticalStackLayout>
             </Frame>

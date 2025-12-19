@@ -10,7 +10,8 @@ namespace MusicPad.Views;
 public partial class ImportInstrumentPage : ContentPage
 {
     private readonly IInstrumentConfigService _configService;
-    private string? _selectedFilePath;
+    private string? _selectedSfzPath;
+    private string? _selectedWavPath;
     private List<SfzInstrumentInfo> _detectedInstruments = new();
     private readonly Dictionary<int, (CheckBox checkbox, Entry nameEntry)> _instrumentControls = new();
 
@@ -43,7 +44,7 @@ public partial class ImportInstrumentPage : ContentPage
         HeaderLabel.TextColor = textPrimary;
     }
 
-    private async void OnBrowseClicked(object? sender, EventArgs e)
+    private async void OnBrowseSfzClicked(object? sender, EventArgs e)
     {
         try
         {
@@ -61,8 +62,9 @@ public partial class ImportInstrumentPage : ContentPage
             var result = await FilePicker.Default.PickAsync(options);
             if (result != null)
             {
-                _selectedFilePath = result.FullPath;
-                SelectedFileLabel.Text = result.FileName;
+                _selectedSfzPath = result.FullPath;
+                SelectedSfzFileLabel.Text = result.FileName;
+                SelectedSfzFileLabel.TextColor = Color.FromArgb(AppColors.TextPrimary);
                 
                 // Analyze the SFZ file
                 await AnalyzeSfzFileAsync(result);
@@ -70,7 +72,38 @@ public partial class ImportInstrumentPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to pick file: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Failed to pick SFZ file: {ex.Message}", "OK");
+        }
+    }
+    
+    private async void OnBrowseWavClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var options = new PickOptions
+            {
+                PickerTitle = "Select WAV Sample File",
+                FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    { DevicePlatform.Android, new[] { "audio/wav", "audio/x-wav", "*/*" } },
+                    { DevicePlatform.iOS, new[] { "public.audio" } },
+                    { DevicePlatform.WinUI, new[] { ".wav" } }
+                })
+            };
+
+            var result = await FilePicker.Default.PickAsync(options);
+            if (result != null)
+            {
+                _selectedWavPath = result.FullPath;
+                SelectedWavFileLabel.Text = result.FileName;
+                SelectedWavFileLabel.TextColor = Color.FromArgb(AppColors.TextPrimary);
+                
+                UpdateImportButtonState();
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to pick WAV file: {ex.Message}", "OK");
         }
     }
 
@@ -137,14 +170,21 @@ public partial class ImportInstrumentPage : ContentPage
     private void UpdateImportButtonState()
     {
         var anySelected = _instrumentControls.Values.Any(c => c.checkbox.IsChecked);
-        ImportButton.IsEnabled = anySelected && !string.IsNullOrEmpty(_selectedFilePath);
+        var bothFilesSelected = !string.IsNullOrEmpty(_selectedSfzPath) && !string.IsNullOrEmpty(_selectedWavPath);
+        ImportButton.IsEnabled = anySelected && bothFilesSelected;
     }
 
     private async void OnImportClicked(object? sender, EventArgs e)
     {
-        if (string.IsNullOrEmpty(_selectedFilePath))
+        if (string.IsNullOrEmpty(_selectedSfzPath))
         {
-            await DisplayAlert("Error", "No file selected", "OK");
+            await DisplayAlert("Error", "No SFZ file selected", "OK");
+            return;
+        }
+        
+        if (string.IsNullOrEmpty(_selectedWavPath))
+        {
+            await DisplayAlert("Error", "No WAV file selected", "OK");
             return;
         }
         
@@ -187,7 +227,7 @@ public partial class ImportInstrumentPage : ContentPage
             ImportButton.IsEnabled = false;
             ImportButton.Text = "Importing...";
             
-            var createdConfigs = await _configService.ImportSfzAsync(_selectedFilePath, instrumentsToImport);
+            var createdConfigs = await _configService.ImportSfzAsync(_selectedSfzPath, _selectedWavPath, instrumentsToImport);
             
             await DisplayAlert("Success", 
                 $"Successfully imported {createdConfigs.Count} instrument(s)!", 

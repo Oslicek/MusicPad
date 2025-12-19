@@ -49,10 +49,21 @@ public interface IInstrumentConfigService
     Task SaveOrderAsync(List<string> orderedFileNames);
     
     /// <summary>
-    /// Imports an SFZ file and creates instrument configuration(s).
+    /// Imports SFZ and WAV files and creates instrument configuration(s).
     /// Returns the list of created config file names.
     /// </summary>
-    Task<List<string>> ImportSfzAsync(string sfzSourcePath, List<InstrumentImportInfo> instruments);
+    Task<List<string>> ImportSfzAsync(string sfzSourcePath, string wavSourcePath, List<InstrumentImportInfo> instruments);
+    
+    /// <summary>
+    /// Saves a settings override for a bundled instrument.
+    /// Creates a user-side override file that preserves the bundled instrument but allows changing settings.
+    /// </summary>
+    Task SaveBundledSettingsOverrideAsync(string displayName, VoicingType voicing, PitchType pitchType);
+    
+    /// <summary>
+    /// Gets any saved settings override for a bundled instrument.
+    /// </summary>
+    Task<(VoicingType voicing, PitchType pitchType)?> GetBundledSettingsOverrideAsync(string displayName);
     
     /// <summary>
     /// Analyzes an SFZ file and returns the instruments it contains.

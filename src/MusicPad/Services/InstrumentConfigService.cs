@@ -13,6 +13,7 @@ public class InstrumentConfigService : IInstrumentConfigService
     private const string UserInstrumentsFolder = "instruments";
     private const string OrderFileName = "instrument-order.json";
     private const string UserOrderFileName = "user-instrument-order.json";
+    private const string BundledSettingsOverrideFolder = "bundled-settings-overrides";
     
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -243,7 +244,7 @@ public class InstrumentConfigService : IInstrumentConfigService
         await File.WriteAllTextAsync(bundledOrderOverridePath, JsonSerializer.Serialize(bundledOrderData, JsonOptions));
     }
     
-    public async Task<List<string>> ImportSfzAsync(string sfzSourcePath, List<InstrumentImportInfo> instruments)
+    public async Task<List<string>> ImportSfzAsync(string sfzSourcePath, string wavSourcePath, List<InstrumentImportInfo> instruments)
     {
         var createdConfigs = new List<string>();
         
@@ -253,7 +254,7 @@ public class InstrumentConfigService : IInstrumentConfigService
             var baseFileName = importInfo.DisplayName;
             var fileName = await GetUniqueFileNameAsync(baseFileName);
             
-            // Create folder for the SFZ
+            // Create folder for the instrument
             var sfzFolderName = Path.GetFileNameWithoutExtension(fileName);
             var sfzFolder = Path.Combine(_userInstrumentsPath, sfzFolderName);
             Directory.CreateDirectory(sfzFolder);
@@ -263,16 +264,10 @@ public class InstrumentConfigService : IInstrumentConfigService
             var destSfzPath = Path.Combine(sfzFolder, sfzFileName);
             File.Copy(sfzSourcePath, destSfzPath, overwrite: true);
             
-            // Copy associated WAV files (look for sf2_smpl.wav or other referenced files)
-            var sourceDir = Path.GetDirectoryName(sfzSourcePath);
-            if (!string.IsNullOrEmpty(sourceDir))
-            {
-                foreach (var wavFile in Directory.GetFiles(sourceDir, "*.wav"))
-                {
-                    var destWavPath = Path.Combine(sfzFolder, Path.GetFileName(wavFile));
-                    File.Copy(wavFile, destWavPath, overwrite: true);
-                }
-            }
+            // Copy the WAV file
+            var wavFileName = Path.GetFileName(wavSourcePath);
+            var destWavPath = Path.Combine(sfzFolder, wavFileName);
+            File.Copy(wavSourcePath, destWavPath, overwrite: true);
             
             // Create config
             var config = new InstrumentConfig
@@ -293,6 +288,64 @@ public class InstrumentConfigService : IInstrumentConfigService
         }
         
         return createdConfigs;
+    }
+    
+    public async Task SaveBundledSettingsOverrideAsync(string displayName, VoicingType voicing, PitchType pitchType)
+    {
+        var overridesFolder = Path.Combine(_userInstrumentsPath, BundledSettingsOverrideFolder);
+        if (!Directory.Exists(overridesFolder))
+        {
+            Directory.CreateDirectory(overridesFolder);
+        }
+        
+        var safeName = Regex.Replace(displayName, @"[<>:""/\\|?*]", "_");
+        var filePath = Path.Combine(overridesFolder, $"{safeName}.json");
+        
+        var overrideData = new
+        {
+            displayName,
+            voicing = voicing.ToString(),
+            pitchType = pitchType.ToString()
+        };
+        
+        var json = JsonSerializer.Serialize(overrideData, JsonOptions);
+        await File.WriteAllTextAsync(filePath, json);
+    }
+    
+    public async Task<(VoicingType voicing, PitchType pitchType)?> GetBundledSettingsOverrideAsync(string displayName)
+    {
+        var overridesFolder = Path.Combine(_userInstrumentsPath, BundledSettingsOverrideFolder);
+        if (!Directory.Exists(overridesFolder))
+        {
+            return null;
+        }
+        
+        var safeName = Regex.Replace(displayName, @"[<>:""/\\|?*]", "_");
+        var filePath = Path.Combine(overridesFolder, $"{safeName}.json");
+        
+        if (!File.Exists(filePath))
+        {
+            return null;
+        }
+        
+        try
+        {
+            var json = await File.ReadAllTextAsync(filePath);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            
+            var voicingStr = root.GetProperty("voicing").GetString() ?? "Polyphonic";
+            var pitchTypeStr = root.GetProperty("pitchType").GetString() ?? "Pitched";
+            
+            var voicing = Enum.TryParse<VoicingType>(voicingStr, out var v) ? v : VoicingType.Polyphonic;
+            var pitchType = Enum.TryParse<PitchType>(pitchTypeStr, out var p) ? p : PitchType.Pitched;
+            
+            return (voicing, pitchType);
+        }
+        catch
+        {
+            return null;
+        }
     }
     
     public Task<List<SfzInstrumentInfo>> AnalyzeSfzAsync(Stream sfzStream, string fileName)

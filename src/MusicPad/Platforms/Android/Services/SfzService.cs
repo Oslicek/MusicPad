@@ -23,6 +23,7 @@ public class SfzService : ISfzService, IDisposable
     private readonly Reverb _reverb;
     private readonly List<string> _instrumentNames = new();
     private readonly Dictionary<string, (string folder, string sfzFile)> _instrumentPaths = new();
+    private readonly HashSet<string> _userInstrumentFolders = new();
     
     private AudioTrack? _audioTrack;
     private CancellationTokenSource? _cts;
@@ -142,6 +143,7 @@ public class SfzService : ISfzService, IDisposable
     {
         _instrumentNames.Clear();
         _instrumentPaths.Clear();
+        _userInstrumentFolders.Clear();
         DiscoverInstruments();
     }
     
@@ -149,37 +151,120 @@ public class SfzService : ISfzService, IDisposable
     {
         try
         {
-            // Try to load instruments from config file first
-            if (LoadInstrumentsFromConfig())
-                return;
+            // Load user instruments first
+            LoadUserInstruments();
             
-            // Fallback: auto-discover from folders
-            DiscoverInstrumentsFromFolders();
+            // Then load bundled instruments (with order override support)
+            LoadBundledInstruments();
+            
+            // Fallback: if no instruments found, auto-discover from folders
+            if (_instrumentNames.Count == 0)
+            {
+                DiscoverInstrumentsFromFolders();
+            }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error discovering instruments: {ex.Message}");
         }
     }
-
-    private bool LoadInstrumentsFromConfig()
+    
+    private void LoadUserInstruments()
     {
         try
         {
-            // Load instrument order
-            using var orderStream = _assets.Open("instruments/instrument-order.json");
-            using var orderReader = new StreamReader(orderStream);
-            var orderJson = orderReader.ReadToEnd();
+            var userInstrumentsPath = Path.Combine(FileSystem.AppDataDirectory, "instruments");
+            if (!Directory.Exists(userInstrumentsPath))
+                return;
             
-            var orderConfig = JsonSerializer.Deserialize<InstrumentOrderConfig>(orderJson);
-            if (orderConfig?.Order == null || orderConfig.Order.Count == 0)
-                return false;
+            // Try to load user order first
+            var userOrderPath = Path.Combine(userInstrumentsPath, "user-instrument-order.json");
+            var orderedFiles = new List<string>();
             
-            foreach (var configFileName in orderConfig.Order)
+            if (File.Exists(userOrderPath))
             {
                 try
                 {
-                    // Load individual instrument config
+                    var orderJson = File.ReadAllText(userOrderPath);
+                    var orderConfig = JsonSerializer.Deserialize<InstrumentOrderConfig>(orderJson);
+                    if (orderConfig?.Order != null)
+                    {
+                        orderedFiles.AddRange(orderConfig.Order);
+                    }
+                }
+                catch { }
+            }
+            
+            // Get all config files
+            var configFiles = Directory.GetFiles(userInstrumentsPath, "*.json")
+                .Select(Path.GetFileName)
+                .Where(f => f != null && 
+                       !f.Equals("user-instrument-order.json", StringComparison.OrdinalIgnoreCase) &&
+                       !f.Equals("bundled-order-override.json", StringComparison.OrdinalIgnoreCase))
+                .Cast<string>()
+                .ToList();
+            
+            // Sort: ordered files first, then rest alphabetically
+            var sortedFiles = new List<string>();
+            foreach (var file in orderedFiles)
+            {
+                if (configFiles.Contains(file))
+                {
+                    sortedFiles.Add(file);
+                    configFiles.Remove(file);
+                }
+            }
+            sortedFiles.AddRange(configFiles.OrderBy(f => f));
+            
+            // Load each user instrument
+            foreach (var configFile in sortedFiles)
+            {
+                try
+                {
+                    var configPath = Path.Combine(userInstrumentsPath, configFile);
+                    var configJson = File.ReadAllText(configPath);
+                    var config = JsonSerializer.Deserialize<InstrumentConfig>(configJson);
+                    
+                    if (config == null || string.IsNullOrEmpty(config.SfzPath))
+                        continue;
+                    
+                    // Store with path to user storage
+                    _instrumentNames.Add(config.DisplayName);
+                    
+                    // Parse sfzPath and mark as user instrument
+                    var pathParts = config.SfzPath.Split('/');
+                    if (pathParts.Length == 2)
+                    {
+                        _instrumentPaths[config.DisplayName] = (pathParts[0], pathParts[1]);
+                        _userInstrumentFolders.Add(config.DisplayName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error loading user instrument {configFile}: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading user instruments: {ex.Message}");
+        }
+    }
+    
+    private void LoadBundledInstruments()
+    {
+        try
+        {
+            // Check for bundled order override first
+            var bundledOrder = GetBundledInstrumentOrder();
+            if (bundledOrder.Count == 0)
+                return;
+            
+            foreach (var configFileName in bundledOrder)
+            {
+                try
+                {
+                    // Load individual instrument config from assets
                     using var configStream = _assets.Open($"instruments/{configFileName}");
                     using var configReader = new StreamReader(configStream);
                     var configJson = configReader.ReadToEnd();
@@ -212,13 +297,46 @@ public class SfzService : ISfzService, IDisposable
                     System.Diagnostics.Debug.WriteLine($"Error loading instrument config {configFileName}: {ex.Message}");
                 }
             }
-            
-            return _instrumentNames.Count > 0;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading instruments config: {ex.Message}");
-            return false;
+            System.Diagnostics.Debug.WriteLine($"Error loading bundled instruments: {ex.Message}");
+        }
+    }
+    
+    private List<string> GetBundledInstrumentOrder()
+    {
+        // Check for user override first
+        try
+        {
+            var userInstrumentsPath = Path.Combine(FileSystem.AppDataDirectory, "instruments");
+            var overridePath = Path.Combine(userInstrumentsPath, "bundled-order-override.json");
+            
+            if (File.Exists(overridePath))
+            {
+                var json = File.ReadAllText(overridePath);
+                var data = JsonSerializer.Deserialize<InstrumentOrderConfig>(json);
+                if (data?.Order != null && data.Order.Count > 0)
+                {
+                    return data.Order;
+                }
+            }
+        }
+        catch { }
+        
+        // Fall back to bundled order
+        try
+        {
+            using var orderStream = _assets.Open("instruments/instrument-order.json");
+            using var orderReader = new StreamReader(orderStream);
+            var orderJson = orderReader.ReadToEnd();
+            
+            var orderConfig = JsonSerializer.Deserialize<InstrumentOrderConfig>(orderJson);
+            return orderConfig?.Order ?? new List<string>();
+        }
+        catch
+        {
+            return new List<string>();
         }
     }
     
@@ -294,14 +412,26 @@ public class SfzService : ISfzService, IDisposable
                 throw new FileNotFoundException($"Instrument not found: {instrumentName}");
             
             var (folder, sfzFile) = pathInfo;
-            var basePath = $"instruments/{folder}";
-
-            // Read and parse SFZ file
-            var sfzPath = $"{basePath}/{sfzFile}";
+            var isUserInstrument = _userInstrumentFolders.Contains(instrumentName);
+            
             string sfzContent;
-            using (var stream = _assets.Open(sfzPath))
-            using (var reader = new StreamReader(stream))
+            string basePath;
+            
+            if (isUserInstrument)
             {
+                // Load from user storage
+                var userInstrumentsPath = Path.Combine(FileSystem.AppDataDirectory, "instruments", folder);
+                var sfzPath = Path.Combine(userInstrumentsPath, sfzFile);
+                sfzContent = await File.ReadAllTextAsync(sfzPath);
+                basePath = userInstrumentsPath;
+            }
+            else
+            {
+                // Load from assets
+                basePath = $"instruments/{folder}";
+                var sfzPath = $"{basePath}/{sfzFile}";
+                using var stream = _assets.Open(sfzPath);
+                using var reader = new StreamReader(stream);
                 sfzContent = await reader.ReadToEndAsync();
             }
 
@@ -311,12 +441,23 @@ public class SfzService : ISfzService, IDisposable
             var samplePath = instrument.DefaultSample;
             if (!string.IsNullOrEmpty(samplePath))
             {
-                var fullSamplePath = $"{basePath}/{samplePath}";
-                using var sampleStream = _assets.Open(fullSamplePath);
-                using var ms = new MemoryStream();
-                await sampleStream.CopyToAsync(ms);
+                byte[] wavBytes;
                 
-                var wavData = WavLoader.LoadSamples(ms.ToArray());
+                if (isUserInstrument)
+                {
+                    var fullSamplePath = Path.Combine(basePath, samplePath);
+                    wavBytes = await File.ReadAllBytesAsync(fullSamplePath);
+                }
+                else
+                {
+                    var fullSamplePath = $"{basePath}/{samplePath}";
+                    using var sampleStream = _assets.Open(fullSamplePath);
+                    using var ms = new MemoryStream();
+                    await sampleStream.CopyToAsync(ms);
+                    wavBytes = ms.ToArray();
+                }
+                
+                var wavData = WavLoader.LoadSamples(wavBytes);
                 instrument.LoadedSamples[instrument.GetSamplePath(instrument.Regions.FirstOrDefault() ?? new SfzRegion())] = wavData;
                 
                 // Store samples directly for all regions (they all use the same file with offsets)

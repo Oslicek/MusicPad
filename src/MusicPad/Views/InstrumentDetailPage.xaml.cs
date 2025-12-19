@@ -106,6 +106,17 @@ public partial class InstrumentDetailPage : ContentPage
         var allConfigs = await _configService.GetAllInstrumentsAsync();
         _config = allConfigs.FirstOrDefault(c => c.DisplayName == _instrumentName);
         
+        // For bundled instruments, check for settings override
+        if (_config != null && _config.IsBundled)
+        {
+            var overrideSettings = await _configService.GetBundledSettingsOverrideAsync(_instrumentName);
+            if (overrideSettings.HasValue)
+            {
+                _config.Voicing = overrideSettings.Value.voicing;
+                _config.PitchType = overrideSettings.Value.pitchType;
+            }
+        }
+        
         UpdateSettingsUI();
     }
     
@@ -131,34 +142,51 @@ public partial class InstrumentDetailPage : ContentPage
     
     private async void OnPolyphonicClicked(object? sender, EventArgs e)
     {
-        if (_config == null || _config.IsBundled) return;
+        if (_config == null) return;
         _config.Voicing = VoicingType.Polyphonic;
-        await _configService.SaveInstrumentAsync(_config);
+        await SaveSettingsAsync();
         UpdateSettingsUI();
     }
     
     private async void OnMonophonicClicked(object? sender, EventArgs e)
     {
-        if (_config == null || _config.IsBundled) return;
+        if (_config == null) return;
         _config.Voicing = VoicingType.Monophonic;
-        await _configService.SaveInstrumentAsync(_config);
+        await SaveSettingsAsync();
         UpdateSettingsUI();
     }
     
     private async void OnPitchedClicked(object? sender, EventArgs e)
     {
-        if (_config == null || _config.IsBundled) return;
+        if (_config == null) return;
         _config.PitchType = PitchType.Pitched;
-        await _configService.SaveInstrumentAsync(_config);
+        await SaveSettingsAsync();
         UpdateSettingsUI();
     }
     
     private async void OnUnpitchedClicked(object? sender, EventArgs e)
     {
-        if (_config == null || _config.IsBundled) return;
+        if (_config == null) return;
         _config.PitchType = PitchType.Unpitched;
-        await _configService.SaveInstrumentAsync(_config);
+        await SaveSettingsAsync();
         UpdateSettingsUI();
+    }
+    
+    private async Task SaveSettingsAsync()
+    {
+        if (_config == null) return;
+        
+        if (_config.IsBundled)
+        {
+            // Save as override for bundled instruments
+            await _configService.SaveBundledSettingsOverrideAsync(
+                _instrumentName, _config.Voicing, _config.PitchType);
+        }
+        else
+        {
+            // Save directly for user instruments
+            await _configService.SaveInstrumentAsync(_config);
+        }
     }
 
     private void DisplayInstrumentInfo(SfzInstrument instrument)
