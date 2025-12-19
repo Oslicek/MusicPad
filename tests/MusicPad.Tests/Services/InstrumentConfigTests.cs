@@ -23,21 +23,22 @@ public class InstrumentConfigTests
     }
     
     [Fact]
-    public void InstrumentConfig_FileName_DerivedFromDisplayName()
+    public void InstrumentConfig_ComputeFileName_DerivedFromDisplayName()
     {
         var config = new InstrumentConfig { DisplayName = "My Piano" };
         
-        Assert.Equal("My Piano.json", config.FileName);
+        Assert.Equal("My Piano.json", config.ComputeFileName());
     }
     
     [Fact]
-    public void InstrumentConfig_FileName_SanitizesSpecialCharacters()
+    public void InstrumentConfig_ComputeFileName_SanitizesSpecialCharacters()
     {
         var config = new InstrumentConfig { DisplayName = "Test:Instrument/Name" };
         
+        var fileName = config.ComputeFileName();
         // FileName should not contain invalid path characters
-        Assert.DoesNotContain(":", config.FileName);
-        Assert.DoesNotContain("/", config.FileName);
+        Assert.DoesNotContain(":", fileName);
+        Assert.DoesNotContain("/", fileName);
     }
     
     [Theory]

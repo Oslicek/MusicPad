@@ -131,6 +131,7 @@ public class InstrumentConfigService : IInstrumentConfigService
             if (config != null)
             {
                 config.IsBundled = false;
+                config.FileName = fileName; // Set actual filename from disk
                 result.Add(config);
             }
         }
@@ -149,6 +150,7 @@ public class InstrumentConfigService : IInstrumentConfigService
             if (config != null)
             {
                 config.IsBundled = true;
+                config.FileName = fileName; // Set actual filename
                 result.Add(config);
             }
         }
@@ -183,6 +185,9 @@ public class InstrumentConfigService : IInstrumentConfigService
         {
             throw new InvalidOperationException("Cannot modify bundled instruments.");
         }
+        
+        // Ensure filename is set
+        config.EnsureFileName();
         
         var filePath = Path.Combine(_userInstrumentsPath, config.FileName);
         var json = JsonSerializer.Serialize(config, JsonOptions);
@@ -232,9 +237,14 @@ public class InstrumentConfigService : IInstrumentConfigService
             return null;
         }
         
-        var oldFileName = config.FileName;
+        // Store old filename (which is the actual file on disk)
+        var oldFileName = configFileName;
+        config.FileName = configFileName; // Ensure it's set
+        
+        // Update display name and compute new filename
         config.DisplayName = newDisplayName;
-        var newFileName = config.FileName;
+        var newFileName = config.ComputeFileName();
+        config.FileName = newFileName; // Set new filename before saving
         
         // Save with new name
         await SaveInstrumentAsync(config);
@@ -288,14 +298,15 @@ public class InstrumentConfigService : IInstrumentConfigService
             var destWavPath = Path.Combine(sfzFolder, wavFileName);
             File.Copy(wavSourcePath, destWavPath, overwrite: true);
             
-            // Create config
+            // Create config with the unique filename
             var config = new InstrumentConfig
             {
                 DisplayName = importInfo.DisplayName,
                 SfzPath = $"{sfzFolderName}/{sfzFileName}",
                 Voicing = importInfo.Voicing,
                 PitchType = importInfo.PitchType,
-                IsBundled = false
+                IsBundled = false,
+                FileName = fileName // Use the unique filename we generated
             };
             
             await SaveInstrumentAsync(config);

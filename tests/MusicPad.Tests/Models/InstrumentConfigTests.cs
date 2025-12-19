@@ -92,29 +92,29 @@ public class InstrumentConfigTests
     }
     
     [Fact]
-    public void Config_GeneratesValidFileName()
+    public void Config_ComputeFileName_GeneratesValidFileName()
     {
         var config = new InstrumentConfig
         {
             DisplayName = "Piano"
         };
         
-        Assert.Equal("Piano.json", config.FileName);
+        Assert.Equal("Piano.json", config.ComputeFileName());
     }
     
     [Fact]
-    public void Config_FileNameHandlesSpaces()
+    public void Config_ComputeFileName_HandlesSpaces()
     {
         var config = new InstrumentConfig
         {
             DisplayName = "Acoustic Guitar"
         };
         
-        Assert.Equal("Acoustic Guitar.json", config.FileName);
+        Assert.Equal("Acoustic Guitar.json", config.ComputeFileName());
     }
     
     [Fact]
-    public void Config_FileNameHandlesSpecialCharacters()
+    public void Config_ComputeFileName_HandlesSpecialCharacters()
     {
         var config = new InstrumentConfig
         {
@@ -122,7 +122,42 @@ public class InstrumentConfigTests
         };
         
         // Special characters should be replaced with underscores
-        Assert.Equal("My_Custom_Synth.json", config.FileName);
+        Assert.Equal("My_Custom_Synth.json", config.ComputeFileName());
+    }
+    
+    [Fact]
+    public void Config_EnsureFileName_SetsFromDisplayName()
+    {
+        var config = new InstrumentConfig
+        {
+            DisplayName = "Test Synth"
+        };
+        
+        config.EnsureFileName();
+        
+        Assert.Equal("Test Synth.json", config.FileName);
+    }
+    
+    [Fact]
+    public void Config_EnsureFileName_PreservesExistingFileName()
+    {
+        var config = new InstrumentConfig
+        {
+            DisplayName = "Test Synth",
+            FileName = "existing.json"
+        };
+        
+        config.EnsureFileName();
+        
+        Assert.Equal("existing.json", config.FileName);
+    }
+    
+    [Fact]
+    public void Config_FileName_DefaultsToEmpty()
+    {
+        var config = new InstrumentConfig();
+        
+        Assert.Equal(string.Empty, config.FileName);
     }
 }
 

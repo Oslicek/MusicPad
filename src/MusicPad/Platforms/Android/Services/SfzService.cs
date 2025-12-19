@@ -247,6 +247,7 @@ public class SfzService : ISfzService, IDisposable
                 
                 if (config != null && !string.IsNullOrEmpty(config.SfzPath))
                 {
+                    config.FileName = configFile; // Set actual filename
                     result[configFile] = config;
                 }
             }
@@ -281,6 +282,7 @@ public class SfzService : ISfzService, IDisposable
                     var config = JsonSerializer.Deserialize<InstrumentConfig>(configJson);
                     if (config != null && !string.IsNullOrEmpty(config.SfzPath))
                     {
+                        config.FileName = configFileName; // Set actual filename
                         result[configFileName] = config;
                     }
                 }

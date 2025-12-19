@@ -73,16 +73,31 @@ public class InstrumentConfig
     public bool IsBundled { get; set; } = true;
     
     /// <summary>
-    /// Gets the filename for this config based on display name.
-    /// Invalid filename characters are replaced with underscores.
+    /// Gets or sets the actual filename for this config file.
+    /// When loaded from disk, this is set to the actual filename.
+    /// When creating new, this is computed from DisplayName.
     /// </summary>
     [JsonIgnore]
-    public string FileName
+    public string FileName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Computes a filename from the display name.
+    /// Invalid filename characters are replaced with underscores.
+    /// </summary>
+    public string ComputeFileName()
     {
-        get
+        var safeName = InvalidFileNameChars.Replace(DisplayName, "_");
+        return $"{safeName}.json";
+    }
+    
+    /// <summary>
+    /// Ensures FileName is set. If empty, computes it from DisplayName.
+    /// </summary>
+    public void EnsureFileName()
+    {
+        if (string.IsNullOrEmpty(FileName))
         {
-            var safeName = InvalidFileNameChars.Replace(DisplayName, "_");
-            return $"{safeName}.json";
+            FileName = ComputeFileName();
         }
     }
 }
