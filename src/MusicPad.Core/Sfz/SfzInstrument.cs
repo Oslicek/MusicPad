@@ -57,6 +57,76 @@ public class SfzInstrument
     }
 
     /// <summary>
+    /// Gets a list of unique MIDI notes that have regions assigned, sorted ascending.
+    /// This is useful for unpitched instruments where each pad corresponds to a distinct note.
+    /// </summary>
+    public List<int> GetUniqueMidiNotes()
+    {
+        var notes = new HashSet<int>();
+        
+        foreach (var region in Regions)
+        {
+            if (region.Key.HasValue)
+            {
+                notes.Add(region.Key.Value);
+            }
+            else
+            {
+                // For regions with ranges, add all notes in the range
+                for (int note = region.LoKey; note <= region.HiKey; note++)
+                {
+                    notes.Add(note);
+                }
+            }
+        }
+        
+        return notes.OrderBy(n => n).ToList();
+    }
+
+    /// <summary>
+    /// Gets a human-readable label for a MIDI note based on the region that covers it.
+    /// Returns (in priority order): RegionLabel, sample filename without extension, or note name.
+    /// </summary>
+    public string GetRegionLabel(int midiNote)
+    {
+        // Find the first region that matches this note
+        var region = Regions.FirstOrDefault(r => r.Matches(midiNote, 100));
+        
+        if (region != null)
+        {
+            // Priority 1: Use explicit region label
+            if (!string.IsNullOrEmpty(region.RegionLabel))
+            {
+                return region.RegionLabel;
+            }
+            
+            // Priority 2: Use sample filename without extension
+            if (!string.IsNullOrEmpty(region.Sample))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(region.Sample);
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    return fileName;
+                }
+            }
+        }
+        
+        // Priority 3: Fall back to note name (C4, D#3, etc.)
+        return MidiNoteToName(midiNote);
+    }
+
+    /// <summary>
+    /// Converts a MIDI note number to a note name (e.g., 60 -> "C4").
+    /// </summary>
+    private static string MidiNoteToName(int midiNote)
+    {
+        var noteNames = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        int octave = (midiNote / 12) - 1;
+        int noteIndex = midiNote % 12;
+        return $"{noteNames[noteIndex]}{octave}";
+    }
+
+    /// <summary>
     /// Gets the full path to a sample file.
     /// </summary>
     public string GetSamplePath(SfzRegion region)

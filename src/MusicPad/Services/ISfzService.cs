@@ -40,6 +40,17 @@ public interface ISfzService
     SfzInstrument? CurrentInstrument { get; }
     
     /// <summary>
+    /// Gets the unique MIDI notes from the current instrument (for unpitched instruments).
+    /// </summary>
+    IReadOnlyList<int> CurrentUniqueMidiNotes { get; }
+    
+    /// <summary>
+    /// Gets the label for a specific MIDI note in the current instrument.
+    /// For unpitched instruments, this returns the sample/region name.
+    /// </summary>
+    string GetNoteLabel(int midiNote);
+    
+    /// <summary>
     /// Loads an SFZ instrument by name.
     /// </summary>
     Task LoadInstrumentAsync(string instrumentName);

@@ -82,6 +82,20 @@ public class PadreaService : IPadreaService
         };
         _padreas.Add(pitchVolumePadrea);
         
+        // Unpitched padrea - for drums/percussion
+        var unpitchedPadrea = new Padrea
+        {
+            Id = "unpitched",
+            Name = "Unpitched",
+            Description = "Drum/percussion pads - each pad triggers a different sound",
+            NoteFilter = NoteFilterType.Chromatic,
+            Kind = PadreaKind.Unpitched,
+            Columns = 4,           // 4 pads per row
+            RowsPerViewpage = 4    // 4 rows = 16 pads per page
+            // Colors are null - drawable will use dynamic palette defaults
+        };
+        _padreas.Add(unpitchedPadrea);
+        
         CurrentPadrea = fullRangePadrea;
     }
 

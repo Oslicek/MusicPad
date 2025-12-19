@@ -419,6 +419,10 @@ public partial class MainPage : ContentPage
         double volumeSize = 120;
         double padding = 8;
 
+        // Calculate mute button position - closer to padrea
+        double muteButtonHeight = 44;
+        double muteButtonWidth = 80;
+
         if (_isLandscape)
         {
             if (isPiano)
@@ -432,14 +436,14 @@ public partial class MainPage : ContentPage
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
-                // Mute button below volume knob
-                MuteButton.HorizontalOptions = LayoutOptions.Start;
-                MuteButton.VerticalOptions = LayoutOptions.Start;
-                MuteButton.Margin = new Thickness(controlsWidth + 28, volumeSize + 8, 0, 0);
-
                 // Piano at bottom - compact height in landscape
                 double pianoHeight = _pageHeight * 0.45;
                 double topAreaHeight = _pageHeight - pianoHeight - padding;
+
+                // Mute button at bottom-left, adjacent to piano
+                MuteButton.HorizontalOptions = LayoutOptions.Start;
+                MuteButton.VerticalOptions = LayoutOptions.End;
+                MuteButton.Margin = new Thickness(0, 0, 0, pianoHeight + padding);
 
                 // Effect area: positioned in top-right, constrained to top area
                 double efareaLeft = controlsWidth + volumeSize + 24;
@@ -470,14 +474,16 @@ public partial class MainPage : ContentPage
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(30, controlsHeight + 16, 0, 0);
 
-                // Mute button below volume knob
-                MuteButton.HorizontalOptions = LayoutOptions.Start;
-                MuteButton.VerticalOptions = LayoutOptions.Start;
-                MuteButton.Margin = new Thickness(50, controlsHeight + volumeSize + 24, 0, 0);
-
                 // Square padrea centered on page
                 double availableHeight = _pageHeight - padding * 4;
                 double padreaSize = availableHeight;
+                double padreaCenterX = _pageWidth / 2;
+                double padreaLeft = padreaCenterX - padreaSize / 2;
+
+                // Mute button to the left of padrea, vertically centered
+                MuteButton.HorizontalOptions = LayoutOptions.Start;
+                MuteButton.VerticalOptions = LayoutOptions.Center;
+                MuteButton.Margin = new Thickness(padreaLeft - muteButtonWidth - padding, 0, 0, 0);
 
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.Center;
@@ -486,7 +492,6 @@ public partial class MainPage : ContentPage
                 PadContainer.Margin = new Thickness(0);
 
                 // Effect area on the right side - constrained width
-                double padreaCenterX = _pageWidth / 2;
                 double padreaRight = padreaCenterX + padreaSize / 2;
                 double efareaWidth = _pageWidth - padreaRight - padding * 2;
                 
@@ -510,11 +515,6 @@ public partial class MainPage : ContentPage
             VolumeKnob.VerticalOptions = LayoutOptions.Start;
             VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
-            // Mute button to the right of volume knob
-            MuteButton.HorizontalOptions = LayoutOptions.Start;
-            MuteButton.VerticalOptions = LayoutOptions.Start;
-            MuteButton.Margin = new Thickness(controlsWidth + volumeSize + 16, 40, 0, 0);
-
             // Calculate sizes - efarea needs height for 4 effect buttons (25px each + spacing)
             double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
             double efareaHeight = 125; // Height for 4 buttons: 4*25 + 3*4 spacing + 2*4 margins = 120+
@@ -528,21 +528,33 @@ public partial class MainPage : ContentPage
             EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
             
             double padreaTop = topAreaHeight + efareaHeight + padding * 2;
-            double availableForPadrea = _pageHeight - padreaTop - padding;
+            double availableForPadrea = _pageHeight - padreaTop - padding - muteButtonHeight - padding;
             
             if (isPiano)
             {
                 // Piano padrea - full width
+                double pianoHeight = Math.Min(_pageHeight * 0.42, availableForPadrea);
+                
+                // Mute button just above the piano, left-aligned
+                MuteButton.HorizontalOptions = LayoutOptions.Start;
+                MuteButton.VerticalOptions = LayoutOptions.End;
+                MuteButton.Margin = new Thickness(0, 0, 0, pianoHeight + padding);
+
                 PadContainer.HorizontalOptions = LayoutOptions.Fill;
                 PadContainer.VerticalOptions = LayoutOptions.End;
                 PadContainer.WidthRequest = _pageWidth - padding * 2;
-                PadContainer.HeightRequest = Math.Min(_pageHeight * 0.42, availableForPadrea);
+                PadContainer.HeightRequest = pianoHeight;
                 PadContainer.Margin = new Thickness(0);
             }
             else
             {
-                // Square padrea - centered
+                // Square padrea - centered, with mute button above the padrea
                 double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea);
+
+                // Mute button above the padrea, left-aligned
+                MuteButton.HorizontalOptions = LayoutOptions.Start;
+                MuteButton.VerticalOptions = LayoutOptions.End;
+                MuteButton.Margin = new Thickness(0, 0, 0, padreaSize + padding);
 
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.End;
@@ -784,6 +796,40 @@ public partial class MainPage : ContentPage
             if (config != null)
             {
                 _sfzService.VoicingMode = config.Voicing;
+                
+                // For unpitched instruments, auto-select the unpitched padrea
+                if (config.PitchType == Core.Models.PitchType.Unpitched)
+                {
+                    var unpitchedPadrea = _padreaService.AvailablePadreas.FirstOrDefault(p => p.Kind == PadreaKind.Unpitched);
+                    if (unpitchedPadrea != null && _padreaService.CurrentPadrea?.Kind != PadreaKind.Unpitched)
+                    {
+                        _padreaService.CurrentPadrea = unpitchedPadrea;
+                        
+                        // Update the picker to reflect the change
+                        var index = _padreaService.AvailablePadreas.ToList().FindIndex(p => p.Id == unpitchedPadrea.Id);
+                        if (index >= 0)
+                        {
+                            PadreaPicker.SelectedIndex = index;
+                        }
+                    }
+                }
+                else
+                {
+                    // For pitched instruments, if currently on unpitched padrea, switch to default
+                    if (_padreaService.CurrentPadrea?.Kind == PadreaKind.Unpitched)
+                    {
+                        var defaultPadrea = _padreaService.AvailablePadreas.FirstOrDefault(p => p.Kind == PadreaKind.Grid);
+                        if (defaultPadrea != null)
+                        {
+                            _padreaService.CurrentPadrea = defaultPadrea;
+                            var index = _padreaService.AvailablePadreas.ToList().FindIndex(p => p.Id == defaultPadrea.Id);
+                            if (index >= 0)
+                            {
+                                PadreaPicker.SelectedIndex = index;
+                            }
+                        }
+                    }
+                }
             }
             else
             {
@@ -852,6 +898,52 @@ public partial class MainPage : ContentPage
             _padDrawable.SetKeyRange(instrumentMinKey, instrumentMaxKey);
             _padDrawable.SetHalftoneDetector(null);
             _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
+            _padDrawable.SetLabelGetter(null);
+        }
+        else if (padrea.Kind == PadreaKind.Unpitched)
+        {
+            // Unpitched padrea: use unique MIDI notes from the instrument
+            var uniqueNotes = _sfzService.CurrentUniqueMidiNotes.ToList();
+            
+            if (uniqueNotes.Count == 0)
+            {
+                // Fallback to instrument range if no unique notes
+                uniqueNotes = Enumerable.Range(instrumentMinKey, instrumentMaxKey - instrumentMinKey + 1).ToList();
+            }
+            
+            // Calculate viewpage for unpitched
+            int columns = padrea.Columns ?? 4;
+            int rowsPerViewpage = padrea.RowsPerViewpage ?? 4;
+            int notesPerViewpage = columns * rowsPerViewpage;
+            int startIndex = padrea.CurrentViewpage * notesPerViewpage;
+            
+            if (startIndex >= uniqueNotes.Count)
+            {
+                startIndex = 0;
+                padrea.CurrentViewpage = 0;
+            }
+            
+            var pageNotes = uniqueNotes.Skip(startIndex).Take(notesPerViewpage).ToList();
+            
+            if (pageNotes.Count == 0)
+            {
+                LoadingLabel.IsVisible = true;
+                LoadingLabel.Text = "No sounds";
+                return;
+            }
+            
+            // Navigation arrows
+            int totalViewpages = (int)Math.Ceiling((double)uniqueNotes.Count / notesPerViewpage);
+            bool hasUpArrow = padrea.CurrentViewpage < totalViewpages - 1;
+            bool hasDownArrow = padrea.CurrentViewpage > 0;
+            
+            _padDrawable.SetNotes(pageNotes, columns, hasUpArrow, hasDownArrow);
+            _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
+                                   padrea.PadAltColor, padrea.PadAltPressedColor);
+            _padDrawable.SetHalftoneDetector(null); // No halftone distinction for unpitched
+            _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
+            _padDrawable.SetLabelGetter(_sfzService.GetNoteLabel);
+            _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
         }
         else
         {
@@ -876,6 +968,7 @@ public partial class MainPage : ContentPage
                                    padrea.PadAltColor, padrea.PadAltPressedColor);
             _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
             _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
+            _padDrawable.SetLabelGetter(null); // No labels for pitched instruments
             _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
         }
 

@@ -14,7 +14,16 @@ public class SfzService : ISfzService
     public string? CurrentInstrumentName => null;
     public (int minKey, int maxKey) CurrentKeyRange => (0, 127);
     public SfzInstrument? CurrentInstrument => null;
+    public IReadOnlyList<int> CurrentUniqueMidiNotes => Array.Empty<int>();
     public VoicingType VoicingMode { get; set; } = VoicingType.Polyphonic;
+    
+    public string GetNoteLabel(int midiNote)
+    {
+        var noteNames = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        int octave = (midiNote / 12) - 1;
+        int noteIndex = midiNote % 12;
+        return $"{noteNames[noteIndex]}{octave}";
+    }
     public float Volume { get; set; } = 0.75f;
     public bool LpfEnabled { get; set; } = false;
     public float LpfCutoff { get; set; } = 1.0f;

@@ -282,7 +282,9 @@ public enum PadreaKind
     Grid,
     Piano,
     /// <summary>Continuous pitch-volume surface: X = pitch, Y = volume</summary>
-    PitchVolume
+    PitchVolume,
+    /// <summary>Unpitched percussion/drum pads: each pad triggers a different sound</summary>
+    Unpitched
 }
 
 /// <summary>

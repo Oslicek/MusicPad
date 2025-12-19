@@ -196,8 +196,15 @@ Instruments support two voicing modes, configurable per instrument:
 - Finally steals oldest playing voice (last resort)
 
 **Mute Button:**
-- Visible on main page below volume knob
+- Positioned close to the padrea (left side in portrait, near padrea edge in landscape)
 - Immediately stops all playing notes with a short release (~45ms) to avoid clicks
+
+**Unpitched Instruments:**
+- Instruments with PitchType.Unpitched are detected automatically
+- When loaded, the Unpitched padrea is auto-selected
+- Pads display sample/region labels instead of note names
+- Each pad corresponds to a unique MIDI note defined in the SFZ file
+- Supports both polyphonic and monophonic voicing
 
 ## Audio Effects
 
@@ -220,6 +227,7 @@ Instruments support two voicing modes, configurable per instrument:
 | Scales | Heptatonic scales with selectable root/scale (default C Major) |
 | Piano | Chromatic piano keyboard view (C3–C4 portrait, C2–C4 landscape) |
 | Pitch-Volume | Continuous surface: X=pitch (full range), Y=volume (0-1) |
+| Unpitched | Drum/percussion pads with sample labels (auto-selected for unpitched instruments) |
 
 Features:
 - Note filtering (chromatic, pentatonic major/minor)
@@ -237,7 +245,7 @@ Features:
 - **Navigation Arrows**: Compact, amber arrows next to pads
 - **Volume Knob**: Rotary control with drag interaction
 - **Instrument Picker**: Dropdown for SFZ instrument selection
-- **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano)
+- **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano, Unpitched)
 - **Scale Picker**: Shown when Scales padrea selected (roots + common scales)
 - **Piano Padrea**: Piano keyboard (one octave+1 portrait, two octaves+1 landscape), strip with 88-key highlight, arrows/drag to shift range
 - **Instruments Page**: Unified list of bundled and user instruments with color legend
@@ -260,6 +268,7 @@ Features:
 | `SfzParserTests` | SFZ parsing, region inheritance |
 | `SfzPlayerTests` | Playback, envelope, looping |
 | `SfzPlayerVoicingTests` | Monophonic/polyphonic modes, mute |
+| `UnpitchedPadreaTests` | Unpitched instrument padrea, region labels |
 | `SfzMetadataTests` | Metadata extraction (credits, etc.) |
 | `WavLoaderTests` | WAV loading (16-bit, 24-bit) |
 | `PadreaTests` | Padrea model properties |

@@ -34,6 +34,17 @@ public class SfzService : ISfzService, IDisposable
     public string? CurrentInstrumentName => _currentInstrument?.Name;
     public (int minKey, int maxKey) CurrentKeyRange => _currentInstrument?.GetKeyRange() ?? (0, 127);
     public SfzInstrument? CurrentInstrument => _currentInstrument;
+    public IReadOnlyList<int> CurrentUniqueMidiNotes => _currentInstrument?.GetUniqueMidiNotes() ?? (IReadOnlyList<int>)Array.Empty<int>();
+    
+    public string GetNoteLabel(int midiNote) => _currentInstrument?.GetRegionLabel(midiNote) ?? MidiNoteToName(midiNote);
+    
+    private static string MidiNoteToName(int midiNote)
+    {
+        var noteNames = new[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        int octave = (midiNote / 12) - 1;
+        int noteIndex = midiNote % 12;
+        return $"{noteNames[noteIndex]}{octave}";
+    }
     
     public VoicingType VoicingMode
     {

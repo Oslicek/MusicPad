@@ -53,6 +53,7 @@ public class PadMatrixDrawable : IDrawable
     private readonly HashSet<int> _activeNotes = new();
     private Func<int, bool>? _isHalftone;
     private Func<int, float>? _envelopeLevelGetter; // Gets envelope level for a note (0-1)
+    private Func<int, string>? _labelGetter; // Gets custom label for a note (for unpitched instruments)
     private int _lastTouchCount;
     private bool _glowEnabled = true; // Whether envelope glow effect is enabled
 
@@ -124,6 +125,15 @@ public class PadMatrixDrawable : IDrawable
     public void SetGlowEnabled(bool enabled)
     {
         _glowEnabled = enabled;
+    }
+    
+    /// <summary>
+    /// Sets a custom label getter for notes (e.g., for unpitched instruments showing sample names).
+    /// If set, the label getter takes priority over default note names.
+    /// </summary>
+    public void SetLabelGetter(Func<int, string>? getter)
+    {
+        _labelGetter = getter;
     }
 
     /// <summary>
@@ -254,7 +264,8 @@ public class PadMatrixDrawable : IDrawable
         float x = _offsetX + col * (_padSize + _spacing);
         float y = _offsetY + visualRow * (_padSize + _spacing);
 
-        bool isAltNote = _isHalftone?.Invoke(midiNote) ?? IsSharp[midiNote % 12];
+        // When label getter is set (unpitched instruments), don't use alt colors - all pads same color
+        bool isAltNote = _isHalftone?.Invoke(midiNote) ?? (_labelGetter == null && IsSharp[midiNote % 12]);
         bool isTouched = _activeNotes.Contains(midiNote);
         
         // Get envelope level for this note (0 = silent, 1 = full)
@@ -318,17 +329,36 @@ public class PadMatrixDrawable : IDrawable
             canvas.DrawRoundedRectangle(x, y, _padSize, _padSize, 8);
         }
 
-        // Draw note name
-        string noteName = GetNoteName(midiNote);
-        float fontSize = Math.Max(10, _padSize / 4);
+        // Draw note name or custom label
+        string label = _labelGetter?.Invoke(midiNote) ?? GetNoteName(midiNote);
+        
+        // For longer labels, use smaller font size
+        float fontSize;
+        if (label.Length <= 3)
+        {
+            fontSize = Math.Max(10, _padSize / 4);
+        }
+        else if (label.Length <= 6)
+        {
+            fontSize = Math.Max(8, _padSize / 5);
+        }
+        else
+        {
+            fontSize = Math.Max(7, _padSize / 6);
+            // Truncate very long labels
+            if (label.Length > 10)
+            {
+                label = label.Substring(0, 9) + "…";
+            }
+        }
         
         canvas.FontSize = fontSize;
         canvas.FontColor = TextShadowColor;
-        canvas.DrawString(noteName, x + 1, y + 1, _padSize, _padSize, 
+        canvas.DrawString(label, x + 1, y + 1, _padSize, _padSize, 
             HorizontalAlignment.Center, VerticalAlignment.Center);
         
         canvas.FontColor = TextColor;
-        canvas.DrawString(noteName, x, y, _padSize, _padSize, 
+        canvas.DrawString(label, x, y, _padSize, _padSize, 
             HorizontalAlignment.Center, VerticalAlignment.Center);
     }
     
