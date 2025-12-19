@@ -36,25 +36,35 @@
                     Clicked="OnImportClicked"/>
         </Grid>
         
-        <!-- Instruments List -->
+        <!-- Instruments List - Unified for free reordering -->
         <ScrollView Grid.Row="1" Padding="16,0,16,16">
             <VerticalStackLayout x:Name="InstrumentsList" Spacing="4">
-                <!-- User Instruments Section -->
-                <Label x:Name="UserSectionLabel"
-                       Text="YOUR INSTRUMENTS"
-                       FontSize="12"
-                       FontAttributes="Bold"
-                       Margin="0,8,0,4"
-                       IsVisible="False"/>
-                <VerticalStackLayout x:Name="UserInstrumentsList" Spacing="4"/>
+                <!-- Legend -->
+                <Grid ColumnDefinitions="Auto,*,Auto,*" Margin="0,4,0,8">
+                    <BoxView Grid.Column="0" 
+                             BackgroundColor="{StaticResource SecondaryDark}" 
+                             WidthRequest="16" HeightRequest="16" 
+                             CornerRadius="4"/>
+                    <Label Grid.Column="1" 
+                           Text="Your instruments" 
+                           FontSize="11" 
+                           TextColor="{StaticResource TextMuted}"
+                           VerticalOptions="Center"
+                           Margin="6,0,16,0"/>
+                    <BoxView Grid.Column="2" 
+                             BackgroundColor="{StaticResource Surface}" 
+                             WidthRequest="16" HeightRequest="16" 
+                             CornerRadius="4"/>
+                    <Label Grid.Column="3" 
+                           Text="Bundled" 
+                           FontSize="11" 
+                           TextColor="{StaticResource TextMuted}"
+                           VerticalOptions="Center"
+                           Margin="6,0,0,0"/>
+                </Grid>
                 
-                <!-- Bundled Instruments Section -->
-                <Label x:Name="BundledSectionLabel"
-                       Text="BUNDLED INSTRUMENTS"
-                       FontSize="12"
-                       FontAttributes="Bold"
-                       Margin="0,16,0,4"/>
-                <VerticalStackLayout x:Name="BundledInstrumentsList" Spacing="4"/>
+                <!-- All instruments (unified list) -->
+                <VerticalStackLayout x:Name="AllInstrumentsList" Spacing="4"/>
             </VerticalStackLayout>
         </ScrollView>
     </Grid>

@@ -12,8 +12,7 @@ public partial class InstrumentsPage : ContentPage
 {
     private readonly IInstrumentConfigService _configService;
     private readonly ISfzService _sfzService;
-    private List<InstrumentConfig> _userInstruments = new();
-    private List<InstrumentConfig> _bundledInstruments = new();
+    private List<InstrumentConfig> _allInstruments = new();
     private InstrumentConfig? _draggedItem;
 
     public InstrumentsPage(IInstrumentConfigService configService, ISfzService sfzService)
@@ -50,40 +49,27 @@ public partial class InstrumentsPage : ContentPage
         ImportButton.BackgroundColor = secondary;
         ImportButton.TextColor = textDark;
         
-        // Section labels
-        UserSectionLabel.TextColor = textMuted;
-        BundledSectionLabel.TextColor = textMuted;
     }
 
     private async Task LoadInstrumentsAsync()
     {
-        _userInstruments = await _configService.GetUserInstrumentsAsync();
-        _bundledInstruments = await _configService.GetBundledInstrumentsAsync();
+        // Get all instruments in unified order
+        _allInstruments = await _configService.GetAllInstrumentsAsync();
         
-        BuildInstrumentLists();
+        BuildInstrumentList();
     }
 
-    private void BuildInstrumentLists()
+    private void BuildInstrumentList()
     {
         // Clear existing
-        UserInstrumentsList.Children.Clear();
-        BundledInstrumentsList.Children.Clear();
+        AllInstrumentsList.Children.Clear();
         
-        // Show/hide user section header
-        UserSectionLabel.IsVisible = _userInstruments.Count > 0;
-        
-        // Build user instruments
-        foreach (var config in _userInstruments)
+        // Build all instruments in unified order - no grouping
+        foreach (var config in _allInstruments)
         {
-            var item = CreateInstrumentItem(config, isUser: true);
-            UserInstrumentsList.Children.Add(item);
-        }
-        
-        // Build bundled instruments
-        foreach (var config in _bundledInstruments)
-        {
-            var item = CreateInstrumentItem(config, isUser: false);
-            BundledInstrumentsList.Children.Add(item);
+            var isUser = !config.IsBundled;
+            var item = CreateInstrumentItem(config, isUser);
+            AllInstrumentsList.Children.Add(item);
         }
     }
 
@@ -92,6 +78,15 @@ public partial class InstrumentsPage : ContentPage
         var bgColor = isUser 
             ? Color.FromArgb(AppColors.SecondaryDark) // Amber for user
             : Color.FromArgb(AppColors.Surface);      // Teal for bundled
+        
+        // Use dark text on bright amber background, light text on dark surface
+        var textColor = isUser
+            ? Color.FromArgb(AppColors.TextDark)      // Dark text for user instruments
+            : Color.FromArgb(AppColors.TextPrimary);  // Light text for bundled
+        
+        var handleColor = isUser
+            ? Color.FromArgb(AppColors.TextDark).WithAlpha(0.5f)
+            : Colors.White.WithAlpha(0.5f);
         
         var border = new Border
         {
@@ -117,7 +112,7 @@ public partial class InstrumentsPage : ContentPage
         {
             Text = "≡",
             FontSize = 20,
-            TextColor = Colors.White.WithAlpha(0.5f),
+            TextColor = handleColor,
             VerticalOptions = LayoutOptions.Center,
             Margin = new Thickness(0, 0, 12, 0)
         };
@@ -128,7 +123,7 @@ public partial class InstrumentsPage : ContentPage
         {
             Text = config.DisplayName,
             FontSize = 16,
-            TextColor = Color.FromArgb(AppColors.TextPrimary),
+            TextColor = textColor,
             VerticalOptions = LayoutOptions.Center
         };
         
@@ -173,12 +168,12 @@ public partial class InstrumentsPage : ContentPage
             buttonsStack.Add(deleteBtn);
         }
         
-        // Arrow for navigation
+        // Arrow for navigation (use appropriate color for background)
         var arrowLabel = new Label
         {
             Text = "›",
             FontSize = 24,
-            TextColor = Color.FromArgb(AppColors.TextDim),
+            TextColor = isUser ? Color.FromArgb(AppColors.TextDark).WithAlpha(0.6f) : Color.FromArgb(AppColors.TextDim),
             VerticalOptions = LayoutOptions.Center,
             Margin = new Thickness(8, 0, 0, 0)
         };
@@ -255,22 +250,18 @@ public partial class InstrumentsPage : ContentPage
             return;
         }
         
-        // Reorder logic
-        var allInstruments = new List<InstrumentConfig>();
-        allInstruments.AddRange(_userInstruments);
-        allInstruments.AddRange(_bundledInstruments);
-        
-        var draggedIndex = allInstruments.FindIndex(i => i.FileName == _draggedItem.FileName);
-        var targetIndex = allInstruments.FindIndex(i => i.FileName == targetConfig.FileName);
+        // Reorder logic using the unified list
+        var draggedIndex = _allInstruments.FindIndex(i => i.FileName == _draggedItem.FileName);
+        var targetIndex = _allInstruments.FindIndex(i => i.FileName == targetConfig.FileName);
         
         if (draggedIndex >= 0 && targetIndex >= 0)
         {
-            var item = allInstruments[draggedIndex];
-            allInstruments.RemoveAt(draggedIndex);
-            allInstruments.Insert(targetIndex, item);
+            var item = _allInstruments[draggedIndex];
+            _allInstruments.RemoveAt(draggedIndex);
+            _allInstruments.Insert(targetIndex, item);
             
             // Save new order
-            var orderedFileNames = allInstruments.Select(i => i.FileName).ToList();
+            var orderedFileNames = _allInstruments.Select(i => i.FileName).ToList();
             await _configService.SaveOrderAsync(orderedFileNames);
             await LoadInstrumentsAsync();
         }

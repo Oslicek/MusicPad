@@ -39,17 +39,57 @@ public class InstrumentConfigService : IInstrumentConfigService
     
     public async Task<List<InstrumentConfig>> GetAllInstrumentsAsync()
     {
-        var result = new List<InstrumentConfig>();
-        
-        // User instruments first
+        // Load all available instruments
         var userInstruments = await GetUserInstrumentsAsync();
-        result.AddRange(userInstruments);
-        
-        // Then bundled instruments
         var bundledInstruments = await GetBundledInstrumentsAsync();
-        result.AddRange(bundledInstruments);
         
-        return result;
+        // Create a lookup by filename
+        var allByFileName = new Dictionary<string, InstrumentConfig>();
+        foreach (var inst in userInstruments)
+            allByFileName[inst.FileName] = inst;
+        foreach (var inst in bundledInstruments)
+            allByFileName[inst.FileName] = inst;
+        
+        // Check for saved unified order
+        var unifiedOrderPath = Path.Combine(_userInstrumentsPath, "unified-order.json");
+        if (File.Exists(unifiedOrderPath))
+        {
+            try
+            {
+                var json = await File.ReadAllTextAsync(unifiedOrderPath);
+                var data = JsonSerializer.Deserialize<OrderFile>(json, JsonOptions);
+                if (data?.Order != null && data.Order.Count > 0)
+                {
+                    var result = new List<InstrumentConfig>();
+                    var remaining = new HashSet<string>(allByFileName.Keys);
+                    
+                    // Add in saved order
+                    foreach (var fileName in data.Order)
+                    {
+                        if (allByFileName.TryGetValue(fileName, out var config))
+                        {
+                            result.Add(config);
+                            remaining.Remove(fileName);
+                        }
+                    }
+                    
+                    // Add any new instruments at the end
+                    foreach (var fileName in remaining.OrderBy(f => f))
+                    {
+                        result.Add(allByFileName[fileName]);
+                    }
+                    
+                    return result;
+                }
+            }
+            catch { }
+        }
+        
+        // Default: user instruments first, then bundled
+        var defaultResult = new List<InstrumentConfig>();
+        defaultResult.AddRange(userInstruments);
+        defaultResult.AddRange(bundledInstruments);
+        return defaultResult;
     }
     
     public async Task<List<InstrumentConfig>> GetUserInstrumentsAsync()
@@ -57,11 +97,18 @@ public class InstrumentConfigService : IInstrumentConfigService
         var result = new List<InstrumentConfig>();
         var order = await GetUserOrderAsync();
         
-        // Get all user config files
+        // List of files to exclude (system files, not instrument configs)
+        var excludedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            UserOrderFileName,
+            "bundled-order-override.json",
+            "unified-order.json"
+        };
+        
+        // Get all user config files (only instrument configs)
         var configFiles = Directory.GetFiles(_userInstrumentsPath, "*.json")
-            .Where(f => !Path.GetFileName(f).Equals(UserOrderFileName, StringComparison.OrdinalIgnoreCase))
             .Select(Path.GetFileName)
-            .Where(f => f != null)
+            .Where(f => f != null && !excludedFiles.Contains(f))
             .Cast<string>()
             .ToList();
         
@@ -210,38 +257,10 @@ public class InstrumentConfigService : IInstrumentConfigService
     
     public async Task SaveOrderAsync(List<string> orderedFileNames)
     {
-        // Separate user and bundled instruments
-        var userOrder = new List<string>();
-        var bundledOrder = new List<string>();
-        
-        var userFiles = Directory.GetFiles(_userInstrumentsPath, "*.json")
-            .Select(Path.GetFileName)
-            .Where(f => f != null && !f.Equals(UserOrderFileName, StringComparison.OrdinalIgnoreCase))
-            .Cast<string>()
-            .ToHashSet();
-        
-        foreach (var fileName in orderedFileNames)
-        {
-            if (userFiles.Contains(fileName))
-            {
-                userOrder.Add(fileName);
-            }
-            else
-            {
-                bundledOrder.Add(fileName);
-            }
-        }
-        
-        // Save user order
-        var userOrderPath = Path.Combine(_userInstrumentsPath, UserOrderFileName);
-        var userOrderData = new { version = 1, order = userOrder };
-        await File.WriteAllTextAsync(userOrderPath, JsonSerializer.Serialize(userOrderData, JsonOptions));
-        
-        // Note: Bundled order would need special handling on Android (assets are read-only)
-        // For now, we can store a "bundled order override" in user storage
-        var bundledOrderOverridePath = Path.Combine(_userInstrumentsPath, "bundled-order-override.json");
-        var bundledOrderData = new { version = 1, order = bundledOrder };
-        await File.WriteAllTextAsync(bundledOrderOverridePath, JsonSerializer.Serialize(bundledOrderData, JsonOptions));
+        // Save unified order (all instruments in one list)
+        var unifiedOrderPath = Path.Combine(_userInstrumentsPath, "unified-order.json");
+        var unifiedOrderData = new { version = 1, order = orderedFileNames };
+        await File.WriteAllTextAsync(unifiedOrderPath, JsonSerializer.Serialize(unifiedOrderData, JsonOptions));
     }
     
     public async Task<List<string>> ImportSfzAsync(string sfzSourcePath, string wavSourcePath, List<InstrumentImportInfo> instruments)

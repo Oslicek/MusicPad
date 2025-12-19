@@ -153,10 +153,12 @@ MusicPad/
 | `PadreaService` | Services | Padrea management (Full Range, Pentatonic) |
 | `SettingsService` | Services | App settings with persistence (glow toggles) |
 | `InstrumentConfigService` | Services | Instrument configs (bundled + user-imported) |
+| `PaletteService` | Core/Theme | Runtime palette switching with computed colors |
+| `ColorHelper` | Core/Theme | Color manipulation (Lighter, Darker, Mix, WithAlpha) |
 | `MainPage` | MusicPad | Synth UI with pads, pickers, volume knob |
-| `InstrumentsPage` | Views | List of available instruments |
-| `InstrumentDetailPage` | Views | Instrument metadata display |
-| `ImportInstrumentPage` | Views | Import SFZ files with settings |
+| `InstrumentsPage` | Views | Unified instrument list with drag-and-drop |
+| `InstrumentDetailPage` | Views | Instrument metadata and settings |
+| `ImportInstrumentPage` | Views | Import SFZ+WAV files with settings |
 
 ## Note Processing
 
@@ -219,11 +221,18 @@ Features:
 - **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano)
 - **Scale Picker**: Shown when Scales padrea selected (roots + common scales)
 - **Piano Padrea**: Piano keyboard (one octave+1 portrait, two octaves+1 landscape), strip with 88-key highlight, arrows/drag to shift range
-- **Instruments Page**: Full instrument manager with import, reorder, rename, delete
-- **Import Instrument Page**: File picker with auto-detection, voicing/pitch settings
-- **Instrument Detail Page**: Shows SFZ metadata, credits, and technical info
-- **Settings Page**: Toggle glow effects for piano keys and square pads
+- **Instruments Page**: Unified list of bundled and user instruments with color legend
+  - User instruments: Amber background with dark text
+  - Bundled instruments: Teal background with light text
+  - Drag-and-drop reordering (free, not grouped)
+  - Rename/Delete for user instruments
+- **Import Instrument Page**: Requires both SFZ and WAV files, with voicing/pitch settings
+- **Instrument Detail Page**: Shows SFZ metadata, credits, and settings (Voicing, Pitch Type)
+- **Settings Page**: Toggle glow effects, color palette picker
 - **Aggressive Colors**: High-contrast pressed states (white, yellow, hot pink)
+- **Runtime Color Palettes**: 7 core colors + computed derived colors (70+ total)
+  - Palettes: Default, Sunset, Forest, Neon, Abyssal Forge, Northern Archive, Wild Echo
+  - Switch palettes at runtime via Settings page
 
 ## Tests
 
@@ -234,6 +243,7 @@ Features:
 | `SfzMetadataTests` | Metadata extraction (credits, etc.) |
 | `WavLoaderTests` | WAV loading (16-bit, 24-bit) |
 | `PadreaTests` | Padrea model properties |
+| `InstrumentConfigTests` | Instrument config, SFZ/WAV validation |
 | `HarmonySettingsTests` | Harmony settings model |
 | `HarmonyTests` | Harmony note processing |
 | `ArpeggiatorSettingsTests` | Arpeggiator settings model |
@@ -241,6 +251,8 @@ Features:
 | `EffectSelectorTests` | Effect selection |
 | `WaveTableGeneratorTests` | Wavetable shape/amplitude |
 | `VoiceMixerTests` | Polyphony, release handling |
+| `ColorHelperTests` | Color manipulation (Lighter, Darker, Mix) |
+| `PaletteTests` | Palette definitions and computed colors |
 
 ## Test Devices
 
@@ -261,18 +273,22 @@ Features:
 - [x] Viewpage navigation for large instruments
 - [x] Padrea system (Full Range, Pentatonic, Scales, Piano)
 - [x] Volume knob control
-- [x] 8 bundled SFZ instruments
+- [x] 10 bundled SFZ instruments
 - [x] Audio effects (LPF, EQ, Chorus, Delay, Reverb)
 - [x] Auto Harmony (Octave, Fifth, Major, Minor)
 - [x] Arpeggiator (Up, Down, UpDown, Random patterns)
 - [x] Hamburger menu with navigation
-- [x] Instruments page with metadata display
+- [x] Instruments page with unified list (user + bundled)
 - [x] Pitch-Volume padrea with continuous control
 - [x] Envelope-following glow on all pads and piano keys
-- [x] Settings page with glow toggles
+- [x] Settings page with glow toggles and palette picker
 - [x] Instrument config system with individual JSON files
-- [x] Import instrument page with file picker
-- [x] Instrument reordering with drag-and-drop
+- [x] Import instrument page (SFZ + WAV files)
+- [x] Instrument reordering (free, not grouped by type)
+- [x] Instrument settings override for bundled instruments
+- [x] Runtime color palette system (7 palettes)
+- [x] Montserrat font family
+- [x] Custom navigation headers on all pages
 - [x] Unit tests passing
 - [x] GitHub repository connected
 
