@@ -254,34 +254,45 @@ public class PadMatrixDrawable : IDrawable
         float y = _offsetY + visualRow * (_padSize + _spacing);
 
         bool isAltNote = _isHalftone?.Invoke(midiNote) ?? IsSharp[midiNote % 12];
+        bool isTouched = _activeNotes.Contains(midiNote);
         
         // Get envelope level for this note (0 = silent, 1 = full)
-        // Only check envelope if glow is enabled
-        float envelopeLevel = _glowEnabled ? (_envelopeLevelGetter?.Invoke(midiNote) ?? 0f) : 0f;
-        bool isActive = envelopeLevel > 0.001f;
+        float envelopeLevel = _envelopeLevelGetter?.Invoke(midiNote) ?? 0f;
+        bool isPlaying = envelopeLevel > 0.001f;
         
         // Base colors
         Color normalColor = isAltNote ? _padAltColor : _padColor;
-        Color activeColor = isAltNote ? _padAltPressedColor : _padPressedColor;
+        Color pressedColor = isAltNote ? _padAltPressedColor : _padPressedColor;
         
-        // Calculate glow color (accent orange blended with pad color based on envelope)
-        Color glowColor = EnvelopeGlowColor;
+        Color bgColor;
         
-        // The pad itself glows - interpolate from normal color towards glow color
-        // Use a power curve for more dramatic effect at higher levels
-        float glowIntensity = isActive ? (float)Math.Pow(envelopeLevel, 0.7) : 0f;
-        Color bgColor = isActive 
-            ? InterpolateColor(normalColor, glowColor, glowIntensity * 0.6f)
-            : normalColor;
+        if (_glowEnabled && isPlaying)
+        {
+            // Glow enabled: animate color based on envelope level
+            Color glowColor = EnvelopeGlowColor;
+            float glowIntensity = (float)Math.Pow(envelopeLevel, 0.7);
+            bgColor = InterpolateColor(normalColor, glowColor, glowIntensity * 0.6f);
+        }
+        else if (isTouched || isPlaying)
+        {
+            // Glow disabled or touch feedback: static pressed color
+            bgColor = pressedColor;
+        }
+        else
+        {
+            // Idle
+            bgColor = normalColor;
+        }
 
-        // Draw pad background with glow
+        // Draw pad background
         canvas.FillColor = bgColor;
         canvas.FillRoundedRectangle(x, y, _padSize, _padSize, 8);
 
-        // Draw border - glows with the envelope, more prominent when active
-        if (isActive)
+        // Draw border
+        if (_glowEnabled && isPlaying)
         {
             // Glowing outline effect - draw multiple layers for glow
+            float glowIntensity = (float)Math.Pow(envelopeLevel, 0.7);
             float outlineGlow = glowIntensity * 0.8f;
             canvas.StrokeColor = EnvelopeGlowColor.WithAlpha(outlineGlow);
             canvas.StrokeSize = 2 + envelopeLevel * 3;
@@ -291,6 +302,13 @@ public class PadMatrixDrawable : IDrawable
             canvas.StrokeColor = Colors.White.WithAlpha(0.3f + glowIntensity * 0.5f);
             canvas.StrokeSize = 1;
             canvas.DrawRoundedRectangle(x + 1, y + 1, _padSize - 2, _padSize - 2, 7);
+        }
+        else if (isTouched || isPlaying)
+        {
+            // Static bright border when touched/playing without glow
+            canvas.StrokeColor = Colors.White.WithAlpha(0.6f);
+            canvas.StrokeSize = 2;
+            canvas.DrawRoundedRectangle(x, y, _padSize, _padSize, 8);
         }
         else
         {

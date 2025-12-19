@@ -138,6 +138,13 @@ public class SfzService : ISfzService, IDisposable
         set => _reverb.Type = value;
     }
 
+    public void RefreshInstruments()
+    {
+        _instrumentNames.Clear();
+        _instrumentPaths.Clear();
+        DiscoverInstruments();
+    }
+    
     private void DiscoverInstruments()
     {
         try

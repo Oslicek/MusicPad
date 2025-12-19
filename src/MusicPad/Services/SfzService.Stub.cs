@@ -20,6 +20,7 @@ public class SfzService : ISfzService
     public float LpfResonance { get; set; } = 0.0f;
 
     public Task LoadInstrumentAsync(string instrumentName) => Task.CompletedTask;
+    public void RefreshInstruments() { }
     public void NoteOn(int midiNote) { }
     public void NoteOn(int midiNote, int velocity) { }
     public void NoteOff(int midiNote) { }

@@ -1,4 +1,6 @@
+using MusicPad.Core.Models;
 using MusicPad.Core.Sfz;
+using MusicPad.Core.Theme;
 using MusicPad.Services;
 
 namespace MusicPad.Views;
@@ -10,8 +12,10 @@ namespace MusicPad.Views;
 public partial class InstrumentDetailPage : ContentPage
 {
     private readonly ISfzService _sfzService;
+    private readonly IInstrumentConfigService _configService;
     private string _instrumentName = "";
     private SfzInstrument? _instrument;
+    private InstrumentConfig? _config;
 
     /// <summary>
     /// The instrument name, set via query parameter.
@@ -32,10 +36,11 @@ public partial class InstrumentDetailPage : ContentPage
     /// </summary>
     public event EventHandler<string>? InstrumentSelected;
 
-    public InstrumentDetailPage(ISfzService sfzService)
+    public InstrumentDetailPage(ISfzService sfzService, IInstrumentConfigService configService)
     {
         InitializeComponent();
         _sfzService = sfzService;
+        _configService = configService;
     }
 
     private async Task LoadInstrumentAsync()
@@ -50,6 +55,9 @@ public partial class InstrumentDetailPage : ContentPage
             {
                 DisplayInstrumentInfo(_instrument);
             }
+            
+            // Load config to get settings
+            await LoadConfigAsync();
         }
         catch (Exception ex)
         {
@@ -61,6 +69,67 @@ public partial class InstrumentDetailPage : ContentPage
             LoadingIndicator.IsVisible = false;
             ContentContainer.IsVisible = true;
         }
+    }
+    
+    private async Task LoadConfigAsync()
+    {
+        // Find the config file for this instrument by display name
+        var allConfigs = await _configService.GetAllInstrumentsAsync();
+        _config = allConfigs.FirstOrDefault(c => c.DisplayName == _instrumentName);
+        
+        UpdateSettingsUI();
+    }
+    
+    private void UpdateSettingsUI()
+    {
+        var selectedColor = Color.FromArgb(AppColors.Secondary);
+        var unselectedColor = Color.FromArgb(AppColors.Surface);
+        var selectedTextColor = Color.FromArgb(AppColors.TextDark);
+        var unselectedTextColor = Color.FromArgb(AppColors.TextPrimary);
+        
+        var isPolyphonic = _config?.Voicing == VoicingType.Polyphonic;
+        PolyphonicBtn.BackgroundColor = isPolyphonic ? selectedColor : unselectedColor;
+        PolyphonicBtn.TextColor = isPolyphonic ? selectedTextColor : unselectedTextColor;
+        MonophonicBtn.BackgroundColor = !isPolyphonic ? selectedColor : unselectedColor;
+        MonophonicBtn.TextColor = !isPolyphonic ? selectedTextColor : unselectedTextColor;
+        
+        var isPitched = _config?.PitchType == PitchType.Pitched;
+        PitchedBtn.BackgroundColor = isPitched ? selectedColor : unselectedColor;
+        PitchedBtn.TextColor = isPitched ? selectedTextColor : unselectedTextColor;
+        UnpitchedBtn.BackgroundColor = !isPitched ? selectedColor : unselectedColor;
+        UnpitchedBtn.TextColor = !isPitched ? selectedTextColor : unselectedTextColor;
+    }
+    
+    private async void OnPolyphonicClicked(object? sender, EventArgs e)
+    {
+        if (_config == null || _config.IsBundled) return;
+        _config.Voicing = VoicingType.Polyphonic;
+        await _configService.SaveInstrumentAsync(_config);
+        UpdateSettingsUI();
+    }
+    
+    private async void OnMonophonicClicked(object? sender, EventArgs e)
+    {
+        if (_config == null || _config.IsBundled) return;
+        _config.Voicing = VoicingType.Monophonic;
+        await _configService.SaveInstrumentAsync(_config);
+        UpdateSettingsUI();
+    }
+    
+    private async void OnPitchedClicked(object? sender, EventArgs e)
+    {
+        if (_config == null || _config.IsBundled) return;
+        _config.PitchType = PitchType.Pitched;
+        await _configService.SaveInstrumentAsync(_config);
+        UpdateSettingsUI();
+    }
+    
+    private async void OnUnpitchedClicked(object? sender, EventArgs e)
+    {
+        if (_config == null || _config.IsBundled) return;
+        _config.PitchType = PitchType.Unpitched;
+        await _configService.SaveInstrumentAsync(_config);
+        UpdateSettingsUI();
     }
 
     private void DisplayInstrumentInfo(SfzInstrument instrument)

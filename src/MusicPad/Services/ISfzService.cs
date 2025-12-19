@@ -13,6 +13,12 @@ public interface ISfzService
     IReadOnlyList<string> AvailableInstruments { get; }
     
     /// <summary>
+    /// Refreshes the list of available instruments.
+    /// Call this after instrument order changes or new instruments are added/removed.
+    /// </summary>
+    void RefreshInstruments();
+    
+    /// <summary>
     /// Gets the currently loaded instrument name.
     /// </summary>
     string? CurrentInstrumentName { get; }

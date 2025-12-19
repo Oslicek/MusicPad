@@ -121,14 +121,14 @@ public static class AppColors
     /// <summary>Teal - chromatic pad normal state</summary>
     public const string PadChromaticNormal = "#219EBC";
     
-    /// <summary>Sky blue - chromatic pad pressed</summary>
+    /// <summary>Sky blue - chromatic pad pressed (static, no glow)</summary>
     public const string PadChromaticPressed = "#8ECAE6";
     
-    /// <summary>Amber - chromatic sharps/flats normal</summary>
-    public const string PadChromaticAlt = "#FFB703";
+    /// <summary>Navy light - chromatic sharps/flats normal (no orange for idle)</summary>
+    public const string PadChromaticAlt = "#145070";
     
-    /// <summary>Orange - chromatic sharps/flats pressed</summary>
-    public const string PadChromaticAltPressed = "#FB8500";
+    /// <summary>Teal - chromatic sharps/flats pressed (static, no glow)</summary>
+    public const string PadChromaticAltPressed = "#4CB8D4";
     
     /// <summary>Border color for chromatic pads</summary>
     public const string PadChromaticBorder = "#1A7E96";
@@ -137,17 +137,17 @@ public static class AppColors
     
     #region Pad Colors - Pentatonic
     
-    /// <summary>Amber - pentatonic pad normal</summary>
-    public const string PadPentatonicNormal = "#FFB703";
+    /// <summary>Teal - pentatonic pad normal (no orange for idle)</summary>
+    public const string PadPentatonicNormal = "#219EBC";
     
-    /// <summary>Light amber - pentatonic pressed</summary>
-    public const string PadPentatonicPressed = "#FFCC44";
+    /// <summary>Sky blue - pentatonic pressed (static, no glow)</summary>
+    public const string PadPentatonicPressed = "#8ECAE6";
     
-    /// <summary>Orange - pentatonic alt normal</summary>
-    public const string PadPentatonicAlt = "#FB8500";
+    /// <summary>Navy light - pentatonic alt normal (no orange for idle)</summary>
+    public const string PadPentatonicAlt = "#145070";
     
-    /// <summary>Sky blue - pentatonic alt pressed (contrast)</summary>
-    public const string PadPentatonicAltPressed = "#8ECAE6";
+    /// <summary>Teal light - pentatonic alt pressed (static, no glow)</summary>
+    public const string PadPentatonicAltPressed = "#4CB8D4";
     
     #endregion
     
@@ -156,14 +156,14 @@ public static class AppColors
     /// <summary>Sky blue - scale pad normal</summary>
     public const string PadScaleNormal = "#8ECAE6";
     
-    /// <summary>White - scale pad pressed</summary>
+    /// <summary>White - scale pad pressed (static, no glow)</summary>
     public const string PadScalePressed = "#FFFFFF";
     
     /// <summary>Teal - scale halftones normal</summary>
     public const string PadScaleAlt = "#219EBC";
     
-    /// <summary>Amber - scale halftones pressed</summary>
-    public const string PadScaleAltPressed = "#FFB703";
+    /// <summary>Sky blue light - scale halftones pressed (static, no glow)</summary>
+    public const string PadScaleAltPressed = "#B8DBE8";
     
     #endregion
     

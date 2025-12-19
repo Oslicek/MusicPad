@@ -24,6 +24,84 @@
             <!-- Content Container -->
             <StackLayout x:Name="ContentContainer" IsVisible="False" Spacing="16">
                 
+                <!-- Settings Section -->
+                <Border StrokeShape="RoundRectangle 12"
+                        Stroke="{StaticResource SurfaceBorder}"
+                        BackgroundColor="{StaticResource Surface}"
+                        Padding="16">
+                    <StackLayout Spacing="12">
+                        <Label Text="Instrument Settings" 
+                               FontSize="16" 
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Secondary}"
+                               Margin="0,0,0,4"/>
+                        
+                        <!-- Voicing Setting -->
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Text="Voicing"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   VerticalOptions="Center"
+                                   Grid.Column="0"
+                                   Grid.Row="0"/>
+                            <Label Text="Single note or multiple notes at once"
+                                   FontSize="11"
+                                   TextColor="{StaticResource TextMuted}"
+                                   Grid.Column="0"
+                                   Grid.Row="1"/>
+                            <HorizontalStackLayout Grid.Column="1" Grid.RowSpan="2" Spacing="8" VerticalOptions="Center">
+                                <Button x:Name="PolyphonicBtn"
+                                        Text="Poly"
+                                        FontSize="12"
+                                        CornerRadius="6"
+                                        Padding="12,6"
+                                        HeightRequest="32"
+                                        Clicked="OnPolyphonicClicked"/>
+                                <Button x:Name="MonophonicBtn"
+                                        Text="Mono"
+                                        FontSize="12"
+                                        CornerRadius="6"
+                                        Padding="12,6"
+                                        HeightRequest="32"
+                                        Clicked="OnMonophonicClicked"/>
+                            </HorizontalStackLayout>
+                        </Grid>
+                        
+                        <BoxView HeightRequest="1" Color="{StaticResource SurfaceBorder}" HorizontalOptions="Fill"/>
+                        
+                        <!-- Pitch Type Setting -->
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Text="Pitch Type"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   VerticalOptions="Center"
+                                   Grid.Column="0"
+                                   Grid.Row="0"/>
+                            <Label Text="Melodic instrument or percussion"
+                                   FontSize="11"
+                                   TextColor="{StaticResource TextMuted}"
+                                   Grid.Column="0"
+                                   Grid.Row="1"/>
+                            <HorizontalStackLayout Grid.Column="1" Grid.RowSpan="2" Spacing="8" VerticalOptions="Center">
+                                <Button x:Name="PitchedBtn"
+                                        Text="Pitched"
+                                        FontSize="12"
+                                        CornerRadius="6"
+                                        Padding="12,6"
+                                        HeightRequest="32"
+                                        Clicked="OnPitchedClicked"/>
+                                <Button x:Name="UnpitchedBtn"
+                                        Text="Unpitched"
+                                        FontSize="12"
+                                        CornerRadius="6"
+                                        Padding="12,6"
+                                        HeightRequest="32"
+                                        Clicked="OnUnpitchedClicked"/>
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+                
                 <!-- Credits Section -->
                 <Border StrokeShape="RoundRectangle 12"
                         Stroke="{StaticResource SurfaceBorder}"

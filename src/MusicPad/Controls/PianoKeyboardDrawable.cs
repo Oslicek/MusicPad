@@ -191,13 +191,11 @@ public class PianoKeyboardDrawable : IDrawable
 
             var keyRect = new RectF(currentX, rect.Y, whiteWidth, whiteHeight);
             bool disabled = note < _instrumentMin || note > _instrumentMax;
+            bool isTouched = _activeNotes.Contains(note);
             
-            // Get envelope level for this note (only if glow is enabled)
-            float envelopeLevel = _glowEnabled ? (_envelopeLevelGetter?.Invoke(note) ?? 0f) : 0f;
-            bool isActive = envelopeLevel > 0.001f;
-            
-            // Calculate glow intensity with power curve for more dramatic effect
-            float glowIntensity = isActive ? (float)Math.Pow(envelopeLevel, 0.7) : 0f;
+            // Get envelope level for this note
+            float envelopeLevel = _envelopeLevelGetter?.Invoke(note) ?? 0f;
+            bool isPlaying = envelopeLevel > 0.001f;
             
             // Determine key color
             Color keyColor;
@@ -205,10 +203,16 @@ public class PianoKeyboardDrawable : IDrawable
             {
                 keyColor = Color.FromArgb(AppColors.DisabledDark);
             }
-            else if (isActive)
+            else if (_glowEnabled && isPlaying)
             {
-                // Interpolate from white towards glow color based on envelope
+                // Glow enabled: animate color based on envelope
+                float glowIntensity = (float)Math.Pow(envelopeLevel, 0.7);
                 keyColor = InterpolateColor(Colors.White, EnvelopeGlowColor, glowIntensity * 0.7f);
+            }
+            else if (isTouched || isPlaying)
+            {
+                // Glow disabled or touch feedback: static pressed color (sky blue tint)
+                keyColor = Color.FromArgb(AppColors.PadChromaticPressed);
             }
             else
             {
@@ -218,9 +222,10 @@ public class PianoKeyboardDrawable : IDrawable
             canvas.FillColor = keyColor;
             canvas.FillRectangle(keyRect);
 
-            // Draw border - glows with envelope when active
-            if (isActive && !disabled)
+            // Draw border - only changes with glow enabled
+            if (_glowEnabled && isPlaying && !disabled)
             {
+                float glowIntensity = (float)Math.Pow(envelopeLevel, 0.7);
                 canvas.StrokeColor = EnvelopeGlowColor.WithAlpha(glowIntensity * 0.9f);
                 canvas.StrokeSize = 2 + envelopeLevel * 2;
                 canvas.DrawRectangle(keyRect);
@@ -232,6 +237,7 @@ public class PianoKeyboardDrawable : IDrawable
             }
             else
             {
+                // No outline color change when glow is off (per user request)
                 canvas.StrokeColor = Color.FromArgb(AppColors.BorderDark);
                 canvas.StrokeSize = 1;
                 canvas.DrawRectangle(keyRect);
@@ -258,13 +264,11 @@ public class PianoKeyboardDrawable : IDrawable
                 float bx = rect.X + whitesBefore * whiteWidth + whiteWidth - blackWidth / 2;
                 var keyRect = new RectF(bx, rect.Y, blackWidth, blackHeight);
                 bool disabled = note < _instrumentMin || note > _instrumentMax;
+                bool isTouched = _activeNotes.Contains(note);
                 
-                // Get envelope level for this note (only if glow is enabled)
-                float envelopeLevel = _glowEnabled ? (_envelopeLevelGetter?.Invoke(note) ?? 0f) : 0f;
-                bool isActive = envelopeLevel > 0.001f;
-                
-                // Calculate glow intensity
-                float glowIntensity = isActive ? (float)Math.Pow(envelopeLevel, 0.7) : 0f;
+                // Get envelope level for this note
+                float envelopeLevel = _envelopeLevelGetter?.Invoke(note) ?? 0f;
+                bool isPlaying = envelopeLevel > 0.001f;
                 
                 // Determine key color
                 Color keyColor;
@@ -272,10 +276,16 @@ public class PianoKeyboardDrawable : IDrawable
                 {
                     keyColor = Color.FromArgb(AppColors.DisabledDarker);
                 }
-                else if (isActive)
+                else if (_glowEnabled && isPlaying)
                 {
-                    // Interpolate from dark towards glow color
+                    // Glow enabled: animate color based on envelope
+                    float glowIntensity = (float)Math.Pow(envelopeLevel, 0.7);
                     keyColor = InterpolateColor(Color.FromArgb(AppColors.PianoBlackKeyDark), EnvelopeGlowColor, glowIntensity * 0.6f);
+                }
+                else if (isTouched || isPlaying)
+                {
+                    // Glow disabled or touch feedback: static pressed color (teal tint)
+                    keyColor = Color.FromArgb(AppColors.PrimaryDark);
                 }
                 else
                 {
@@ -285,15 +295,17 @@ public class PianoKeyboardDrawable : IDrawable
                 canvas.FillColor = keyColor;
                 canvas.FillRectangle(keyRect);
 
-                // Draw border - glows with envelope when active
-                if (isActive && !disabled)
+                // Draw border - only changes with glow enabled
+                if (_glowEnabled && isPlaying && !disabled)
                 {
+                    float glowIntensity = (float)Math.Pow(envelopeLevel, 0.7);
                     canvas.StrokeColor = EnvelopeGlowColor.WithAlpha(glowIntensity * 0.9f);
                     canvas.StrokeSize = 2 + envelopeLevel * 2;
                     canvas.DrawRectangle(keyRect);
                 }
                 else
                 {
+                    // No outline color change when glow is off (per user request)
                     canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
                     canvas.StrokeSize = 1;
                     canvas.DrawRectangle(keyRect);

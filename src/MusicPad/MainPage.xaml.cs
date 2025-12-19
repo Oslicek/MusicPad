@@ -526,6 +526,9 @@ public partial class MainPage : ContentPage
         _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
         _pianoDrawable.SetGlowEnabled(_settingsService.PianoKeyGlowEnabled);
         
+        // Refresh instruments list (in case order changed or instruments were added/removed)
+        _sfzService.RefreshInstruments();
+        
         LoadPadreas();
         await LoadInstrumentsAsync();
     }
