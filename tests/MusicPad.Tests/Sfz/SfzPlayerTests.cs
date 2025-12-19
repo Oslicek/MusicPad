@@ -300,5 +300,157 @@ public class SfzPlayerTests
 
         return instrument;
     }
+    
+    #region GetEnvelopeLevel Tests
+    
+    [Fact]
+    public void GetEnvelopeLevel_NoActiveNote_ReturnsZero()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateTestInstrument();
+        player.LoadInstrument(instrument);
+        
+        float level = player.GetEnvelopeLevel(60);
+        
+        Assert.Equal(0f, level);
+    }
+    
+    [Fact]
+    public void GetEnvelopeLevel_ActiveNote_ReturnsPositiveValue()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateTestInstrumentWithEnvelope(
+            attack: 0.01f,  // 10ms attack
+            decay: 0.1f,
+            sustain: 100f,
+            release: 0.5f);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate some samples to advance past attack phase
+        var buffer = new float[2048];  // ~46ms at 44100Hz
+        player.GenerateSamples(buffer);
+        
+        float level = player.GetEnvelopeLevel(60);
+        
+        Assert.True(level > 0f, $"Envelope level should be positive for active note, got {level}");
+        Assert.True(level <= 1f, "Envelope level should not exceed 1.0");
+    }
+    
+    [Fact]
+    public void GetEnvelopeLevel_AfterNoteOff_DecreasesOverTime()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateTestInstrumentWithEnvelope(
+            attack: 0.001f, 
+            decay: 0.01f, 
+            sustain: 100f, 
+            release: 0.5f);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate samples to reach sustain
+        var buffer = new float[2048];
+        player.GenerateSamples(buffer);
+        
+        float levelBeforeRelease = player.GetEnvelopeLevel(60);
+        
+        player.NoteOff(60);
+        
+        // Generate some samples during release
+        player.GenerateSamples(buffer);
+        float levelDuringRelease = player.GetEnvelopeLevel(60);
+        
+        // Generate more samples - should be lower
+        player.GenerateSamples(buffer);
+        float levelLaterInRelease = player.GetEnvelopeLevel(60);
+        
+        Assert.True(levelDuringRelease <= levelBeforeRelease, 
+            "Level should decrease after NoteOff");
+        Assert.True(levelLaterInRelease <= levelDuringRelease, 
+            "Level should continue decreasing during release");
+    }
+    
+    [Fact]
+    public void GetEnvelopeLevel_AfterReleaseComplete_ReturnsZero()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateTestInstrumentWithEnvelope(
+            attack: 0.001f, 
+            decay: 0.01f, 
+            sustain: 100f, 
+            release: 0.1f);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        player.NoteOff(60);
+        
+        // Generate enough samples for release to complete (0.1s = 4410 samples + margin)
+        var buffer = new float[44100]; // 1 second - more than enough
+        player.GenerateSamples(buffer);
+        
+        float level = player.GetEnvelopeLevel(60);
+        
+        Assert.Equal(0f, level);
+    }
+    
+    [Fact]
+    public void GetEnvelopeLevel_DifferentNotes_ReturnsIndependentLevels()
+    {
+        var player = new SfzPlayer(sampleRate: 44100);
+        var instrument = CreateTestInstrumentWithEnvelope(
+            attack: 0.01f,
+            decay: 0.1f,
+            sustain: 100f,
+            release: 0.5f);
+        player.LoadInstrument(instrument);
+        
+        player.NoteOn(60, velocity: 100);
+        
+        // Generate enough samples to get past attack phase
+        var buffer = new float[2048];
+        player.GenerateSamples(buffer);
+        
+        float level60 = player.GetEnvelopeLevel(60);
+        float level61 = player.GetEnvelopeLevel(61);
+        
+        Assert.True(level60 > 0f, $"Active note 60 should have positive level, got {level60}");
+        Assert.Equal(0f, level61); // Note 61 was never played
+    }
+    
+    private SfzInstrument CreateTestInstrumentWithEnvelope(
+        float attack, float decay, float sustain, float release)
+    {
+        var instrument = new SfzInstrument();
+        var sampleLength = 44100;
+        
+        var region = new SfzRegion
+        {
+            Sample = "test.wav",
+            LoKey = 0,
+            HiKey = 127,
+            PitchKeycenter = 60,
+            Offset = 0,
+            End = sampleLength - 1,
+            AmpegAttack = attack,
+            AmpegDecay = decay,
+            AmpegSustain = sustain,
+            AmpegRelease = release
+        };
+        instrument.Regions.Add(region);
+
+        var samples = new float[sampleLength];
+        for (int i = 0; i < samples.Length; i++)
+        {
+            samples[i] = (float)Math.Sin(2 * Math.PI * 440 * i / 44100.0);
+        }
+        instrument.TestSamples = samples;
+
+        return instrument;
+    }
+    
+    #endregion
 }
 

@@ -1,5 +1,6 @@
 using Microsoft.Maui.Graphics;
 using MusicPad.Core.Models;
+using MusicPad.Core.Theme;
 
 namespace MusicPad.Controls;
 
@@ -11,23 +12,23 @@ public class ReverbDrawable
     private readonly ReverbSettings _settings;
     
     // Knob colors (matching other effects)
-    private static readonly Color KnobBaseColor = Color.FromArgb("#CD8B5A");
-    private static readonly Color KnobHighlightColor = Color.FromArgb("#E8A878");
-    private static readonly Color KnobShadowColor = Color.FromArgb("#8B5A3A");
-    private static readonly Color IndicatorColor = Color.FromArgb("#4A3020");
-    private static readonly Color LabelColor = Color.FromArgb("#888888");
-    private static readonly Color DisabledColor = Color.FromArgb("#555555");
+    private static readonly Color KnobBaseColor = Color.FromArgb(AppColors.KnobBase);
+    private static readonly Color KnobHighlightColor = Color.FromArgb(AppColors.KnobHighlight);
+    private static readonly Color KnobShadowColor = Color.FromArgb(AppColors.KnobShadow);
+    private static readonly Color IndicatorColor = Color.FromArgb(AppColors.KnobIndicator);
+    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
+    private static readonly Color DisabledColor = Color.FromArgb(AppColors.Disabled);
     
     // Button colors
-    private static readonly Color ButtonOnColor = Color.FromArgb("#4CAF50");
-    private static readonly Color ButtonOffColor = Color.FromArgb("#444466");
+    private static readonly Color ButtonOnColor = Color.FromArgb(AppColors.ButtonOn);
+    private static readonly Color ButtonOffColor = Color.FromArgb(AppColors.ButtonOff);
     
     // Type selector colors (knob-style aesthetic)
-    private static readonly Color TypeButtonBaseColor = Color.FromArgb("#3a3a5e");
-    private static readonly Color TypeButtonSelectedColor = Color.FromArgb("#CD8B5A"); // Copper like knobs
-    private static readonly Color TypeButtonHighlightColor = Color.FromArgb("#E8A878");
-    private static readonly Color TypeButtonTextColor = Color.FromArgb("#888888");
-    private static readonly Color TypeButtonTextSelectedColor = Color.FromArgb("#FFFFFF");
+    private static readonly Color TypeButtonBaseColor = Color.FromArgb(AppColors.TypeButtonBase);
+    private static readonly Color TypeButtonSelectedColor = Color.FromArgb(AppColors.TypeButtonSelected);
+    private static readonly Color TypeButtonHighlightColor = Color.FromArgb(AppColors.TypeButtonHighlight);
+    private static readonly Color TypeButtonTextColor = Color.FromArgb(AppColors.TextSecondary);
+    private static readonly Color TypeButtonTextSelectedColor = Color.FromArgb(AppColors.TextWhite);
 
     private RectF _onOffButtonRect;
     private RectF _levelKnobRect;
@@ -98,7 +99,7 @@ public class ReverbDrawable
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
         canvas.FillRoundedRectangle(rect, 4);
         
-        canvas.StrokeColor = isOn ? ButtonOnColor.WithAlpha(0.8f) : Color.FromArgb("#666688");
+        canvas.StrokeColor = isOn ? ButtonOnColor.WithAlpha(0.8f) : Color.FromArgb(AppColors.ButtonBorder);
         canvas.StrokeSize = 1;
         canvas.DrawRoundedRectangle(rect, 4);
         
@@ -129,7 +130,7 @@ public class ReverbDrawable
     {
         Color baseColor = isEnabled ? KnobBaseColor : DisabledColor;
         Color highlightColor = isEnabled ? KnobHighlightColor : DisabledColor.WithAlpha(0.6f);
-        Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb("#333333");
+        Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledDark);
         
         canvas.FillColor = shadowColor;
         canvas.FillCircle(centerX + 1, centerY + 1, radius);
@@ -159,7 +160,7 @@ public class ReverbDrawable
         float notchY = centerY - notchDistance * MathF.Sin(radians);
         
         float notchRadius = radius * 0.12f;
-        canvas.FillColor = isEnabled ? IndicatorColor : Color.FromArgb("#222222");
+        canvas.FillColor = isEnabled ? IndicatorColor : Color.FromArgb(AppColors.DisabledDarker);
         canvas.FillCircle(notchX, notchY, notchRadius);
 
         canvas.FontSize = 9;
@@ -202,7 +203,7 @@ public class ReverbDrawable
         }
         
         // Border
-        canvas.StrokeColor = isSelected && isEnabled ? KnobShadowColor : Color.FromArgb("#555577");
+        canvas.StrokeColor = isSelected && isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledBorder);
         canvas.StrokeSize = 1;
         canvas.DrawRoundedRectangle(rect, leftRadius, rightRadius, rightRadius, leftRadius);
         

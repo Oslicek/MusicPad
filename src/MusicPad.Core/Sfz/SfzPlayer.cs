@@ -129,6 +129,9 @@ public class SfzPlayer
         {
             if (_instrument == null)
                 return;
+            
+            // Clamp velocity to valid MIDI range
+            velocity = Math.Clamp(velocity, 1, 127);
 
             // Find matching regions
             var regions = _instrument.FindRegions(midiNote, velocity).ToList();
@@ -187,6 +190,12 @@ public class SfzPlayer
             int loopStart = region.LoopStart;
             int loopEnd = region.LoopEnd > 0 ? region.LoopEnd : (region.End > 0 ? region.End : samples.Length - 1);
             
+            // Calculate velocity scaling (MIDI velocity 0-127 -> amplitude 0-1)
+            // Use a curve that feels more natural (velocity squared for more dynamic range)
+            float velocityScale = (velocity / 127f);
+            velocityScale = velocityScale * velocityScale; // Square for more natural feel
+            velocityScale = Math.Max(0.1f, velocityScale);  // Minimum 10% volume
+            
             // Configure the voice with new note
             voice.MidiNote = midiNote;
             voice.Samples = samples;
@@ -194,7 +203,7 @@ public class SfzPlayer
             voice.EndPosition = region.End > 0 ? region.End : samples.Length - 1;
             voice.FractionalPosition = 0;
             voice.PitchRatio = clampedPitchRatio;
-            voice.Volume = DbToLinear(region.Volume);
+            voice.Volume = DbToLinear(region.Volume) * velocityScale;
             voice.LoopMode = region.LoopMode;
             voice.LoopStart = loopStart;
             voice.LoopEnd = loopEnd;
@@ -239,6 +248,29 @@ public class SfzPlayer
         }
     }
 
+    /// <summary>
+    /// Gets the current envelope level for a note (0.0 = silent, 1.0 = full).
+    /// Returns 0 if the note is not currently playing.
+    /// </summary>
+    public float GetEnvelopeLevel(int midiNote)
+    {
+        lock (_lock)
+        {
+            // Find the voice playing this note with the highest envelope level
+            float maxLevel = 0f;
+            
+            foreach (var voice in _voices)
+            {
+                if (voice.MidiNote == midiNote && voice.EnvelopePhase != EnvelopePhase.Idle)
+                {
+                    maxLevel = Math.Max(maxLevel, voice.EnvelopeLevel);
+                }
+            }
+            
+            return maxLevel;
+        }
+    }
+    
     /// <summary>
     /// Stops all playing voices immediately.
     /// </summary>

@@ -4,7 +4,7 @@
              xmlns:local="clr-namespace:MusicPad"
              x:Class="MusicPad.MainPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="#1a1a2e">
+             BackgroundColor="{StaticResource BackgroundMain}">
 
     <Grid x:Name="MainGrid" Padding="8">
         <!-- Layout will be configured dynamically in code-behind -->
@@ -16,8 +16,8 @@
                      Margin="4,0">
             <Border x:Name="HamburgerButton"
                     StrokeShape="RoundRectangle 6"
-                    Stroke="#444"
-                    BackgroundColor="#2a2a4e"
+                    Stroke="{StaticResource BorderDark}"
+                    BackgroundColor="{StaticResource BackgroundPicker}"
                     Padding="8,6"
                     HorizontalOptions="End">
                 <Border.GestureRecognizers>
@@ -25,14 +25,14 @@
                 </Border.GestureRecognizers>
                 <Label Text="☰"
                        FontSize="20"
-                       TextColor="#EAEAEC"
+                       TextColor="{StaticResource TextPrimary}"
                        HorizontalOptions="Center"
                        VerticalOptions="Center" />
             </Border>
             <Label x:Name="CommitHashLabel"
                    Text="{x:Static local:BuildInfo.CommitHash}"
                    FontSize="8"
-                   TextColor="#CC0000"
+                   TextColor="{StaticResource TextCommit}"
                    HorizontalOptions="End" />
         </StackLayout>
         
@@ -44,25 +44,25 @@
             
             <Picker x:Name="InstrumentPicker"
                     Title="Instrument"
-                    TitleColor="#888"
-                    TextColor="White"
-                    BackgroundColor="#2a2a4e"
+                    TitleColor="{StaticResource TextSecondary}"
+                    TextColor="{StaticResource White}"
+                    BackgroundColor="{StaticResource BackgroundPicker}"
                     WidthRequest="180"
                     SelectedIndexChanged="OnInstrumentChanged" />
             
             <Picker x:Name="PadreaPicker"
                     Title="Padrea"
-                    TitleColor="#888"
-                    TextColor="White"
-                    BackgroundColor="#2a2a4e"
+                    TitleColor="{StaticResource TextSecondary}"
+                    TextColor="{StaticResource White}"
+                    BackgroundColor="{StaticResource BackgroundPicker}"
                     WidthRequest="180"
                     SelectedIndexChanged="OnPadreaChanged" />
 
             <Picker x:Name="ScalePicker"
                     Title="Scale"
-                    TitleColor="#888"
-                    TextColor="White"
-                    BackgroundColor="#2a2a4e"
+                    TitleColor="{StaticResource TextSecondary}"
+                    TextColor="{StaticResource White}"
+                    BackgroundColor="{StaticResource BackgroundPicker}"
                     WidthRequest="180"
                     IsVisible="False"
                     SelectedIndexChanged="OnScaleChanged" />
@@ -81,7 +81,7 @@
             <Label x:Name="LoadingLabel"
                    Text="Loading..."
                    FontSize="18"
-                   TextColor="#666"
+                   TextColor="{StaticResource TextDim}"
                    HorizontalOptions="Center"
                    VerticalOptions="Center" />
         </Grid>

@@ -1,5 +1,6 @@
 using Microsoft.Maui.Graphics;
 using MusicPad.Core.Models;
+using MusicPad.Core.Theme;
 
 namespace MusicPad.Controls;
 
@@ -28,11 +29,11 @@ public class EffectAreaDrawable : IDrawable
     private RectF _reverbRect;
 
     // Colors
-    private static readonly Color ButtonBackgroundColor = Color.FromArgb("#2a2a4e");
-    private static readonly Color ButtonSelectedColor = Color.FromArgb("#4a6a9e");
-    private static readonly Color ButtonIconColor = Color.FromArgb("#AAAAAA");
-    private static readonly Color ButtonIconSelectedColor = Color.FromArgb("#FFFFFF");
-    private static readonly Color EffectAreaBackground = Color.FromArgb("#1e1e3a");
+    private static readonly Color ButtonBackgroundColor = Color.FromArgb(AppColors.EffectButtonBackground);
+    private static readonly Color ButtonSelectedColor = Color.FromArgb(AppColors.EffectButtonSelected);
+    private static readonly Color ButtonIconColor = Color.FromArgb(AppColors.EffectIconNormal);
+    private static readonly Color ButtonIconSelectedColor = Color.FromArgb(AppColors.EffectIconSelected);
+    private static readonly Color EffectAreaBackground = Color.FromArgb(AppColors.BackgroundEffect);
 
     public event EventHandler<EffectType>? EffectSelected;
     public event EventHandler? InvalidateRequested;
@@ -175,7 +176,7 @@ public class EffectAreaDrawable : IDrawable
             default:
                 // Draw placeholder text for unimplemented effects
                 canvas.FontSize = 12;
-                canvas.FontColor = Color.FromArgb("#666666");
+                canvas.FontColor = Color.FromArgb(AppColors.TextDim);
                 string selectedName = _selector.SelectedEffect.ToString();
                 
                 if (_isHorizontal)
@@ -343,7 +344,7 @@ public class EffectAreaDrawable : IDrawable
         canvas.FillRoundedRectangle(rect, 8);
 
         // Button border
-        canvas.StrokeColor = isSelected ? ButtonIconSelectedColor : Color.FromArgb("#444466");
+        canvas.StrokeColor = isSelected ? ButtonIconSelectedColor : Color.FromArgb(AppColors.ButtonOff);
         canvas.StrokeSize = isSelected ? 2 : 1;
         canvas.DrawRoundedRectangle(rect, 8);
 

@@ -280,7 +280,9 @@ public enum NoteFilterType
 public enum PadreaKind
 {
     Grid,
-    Piano
+    Piano,
+    /// <summary>Continuous pitch-volume surface: X = pitch, Y = volume</summary>
+    PitchVolume
 }
 
 /// <summary>

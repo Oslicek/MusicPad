@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MusicPad.Views.InstrumentsPage"
              Title="Instruments"
-             BackgroundColor="#0D0D0E">
+             BackgroundColor="{StaticResource BackgroundPage}">
     
     <Grid RowDefinitions="Auto,*" Padding="16">
         <!-- Header -->
@@ -11,7 +11,7 @@
             <Label Text="Available Instruments" 
                    FontSize="24" 
                    FontAttributes="Bold"
-                   TextColor="#EAEAEC"
+                   TextColor="{StaticResource TextPrimary}"
                    VerticalOptions="Center"/>
         </StackLayout>
         
@@ -23,24 +23,24 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Border StrokeShape="RoundRectangle 8"
-                            Stroke="#2A2A2E"
-                            BackgroundColor="#1A1A1D"
+                            Stroke="{StaticResource SurfaceBorder}"
+                            BackgroundColor="{StaticResource Surface}"
                             Margin="0,4"
                             Padding="16,12">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackLayout VerticalOptions="Center">
                                 <Label Text="{Binding Name}" 
                                        FontSize="18"
-                                       TextColor="#EAEAEC"/>
+                                       TextColor="{StaticResource TextPrimary}"/>
                                 <Label Text="{Binding Credit}" 
                                        FontSize="12"
-                                       TextColor="#888"
+                                       TextColor="{StaticResource TextSecondary}"
                                        IsVisible="{Binding HasCredit}"/>
                             </StackLayout>
                             <Label Grid.Column="1" 
                                    Text="›" 
                                    FontSize="24" 
-                                   TextColor="#666"
+                                   TextColor="{StaticResource TextDim}"
                                    VerticalOptions="Center"/>
                         </Grid>
                     </Border>
@@ -49,4 +49,3 @@
         </CollectionView>
     </Grid>
 </ContentPage>
-

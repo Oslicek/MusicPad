@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last Updated:** 2025-12-18
+> **Last Updated:** 2025-12-19
 
 ## Overview
 
@@ -24,7 +24,8 @@ MusicPad/
 ├── src/
 │   ├── MusicPad/                    # MAUI application
 │   │   ├── Controls/
-│   │   │   ├── PadMatrixDrawable.cs # Touch pad grid with multi-touch
+│   │   │   ├── PadMatrixDrawable.cs # Touch pad grid with envelope glow
+│   │   │   ├── PitchVolumeDrawable.cs # Continuous pitch-volume surface
 │   │   │   ├── RotaryKnobDrawable.cs # Volume knob control
 │   │   │   ├── EffectAreaDrawable.cs # Effect controls panel
 │   │   │   ├── ArpHarmonyDrawable.cs # Arp + Harmony controls
@@ -143,7 +144,8 @@ MusicPad/
 | `Padrea` | Core/Models | Configurable pad area with note filtering |
 | `Harmony` | Core/NoteProcessing | Auto harmony (chord generation) |
 | `Arpeggiator` | Core/NoteProcessing | Arpeggiator with patterns |
-| `PadMatrixDrawable` | Controls | Touch pad grid with multi-touch support |
+| `PadMatrixDrawable` | Controls | Touch pad grid with envelope-following glow |
+| `PitchVolumeDrawable` | Controls | Continuous pitch-volume surface |
 | `RotaryKnobDrawable` | Controls | Volume knob with drag rotation |
 | `EffectAreaDrawable` | Controls | Effect selection and controls |
 | `ISfzService` | Services | SFZ playback interface |
@@ -192,6 +194,7 @@ Rate knob controls speed (125ms to 500ms between notes).
 | Pentatonic | Major pentatonic scale (C, D, E, G, A) |
 | Scales | Heptatonic scales with selectable root/scale (default C Major) |
 | Piano | Chromatic piano keyboard view (C3–C4 portrait, C2–C4 landscape) |
+| Pitch-Volume | Continuous surface: X=pitch (full range), Y=volume (0-1) |
 
 Features:
 - Note filtering (chromatic, pentatonic major/minor)
@@ -203,8 +206,9 @@ Features:
 
 - **Hamburger Menu**: Top-right menu button (☰) with dropdown actions
 - **Effect Area**: First button (ArpHarmony) with note processing, followed by EQ/Chorus/Delay/Reverb
-- **Pad Matrix**: Touch grid with multi-touch polyphony
-- **Navigation Arrows**: Compact, neon-green arrows next to pads
+- **Pad Matrix**: Touch grid with multi-touch, envelope-following glow effect
+- **Pitch-Volume Surface**: Continuous control (X=pitch, Y=volume), circular touch glow
+- **Navigation Arrows**: Compact, amber arrows next to pads
 - **Volume Knob**: Rotary control with drag interaction
 - **Instrument Picker**: Dropdown for SFZ instrument selection
 - **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano)
@@ -256,7 +260,9 @@ Features:
 - [x] Arpeggiator (Up, Down, UpDown, Random patterns)
 - [x] Hamburger menu with navigation
 - [x] Instruments page with metadata display
-- [x] Unit tests passing (442 tests)
+- [x] Pitch-Volume padrea with continuous control
+- [x] Envelope-following glow on square pads
+- [x] Unit tests passing
 - [x] GitHub repository connected
 
 **Pending:**

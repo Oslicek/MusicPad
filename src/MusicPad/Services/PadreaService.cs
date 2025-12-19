@@ -1,4 +1,5 @@
 using MusicPad.Core.Models;
+using MusicPad.Core.Theme;
 
 namespace MusicPad.Services;
 
@@ -25,10 +26,10 @@ public class PadreaService : IPadreaService
             Columns = 6,           // 6 pads per row (half octave)
             RowsPerViewpage = 4,   // 4 rows = 24 notes = 2 octaves per page
             // Teal/cyan - pressed is bright white for aggressive contrast
-            PadColor = "#4ECDC4",
-            PadPressedColor = "#FFFFFF",      // Bright white - aggressive contrast
-            PadAltColor = "#E8A838",
-            PadAltPressedColor = "#FF0066"    // Hot pink - aggressive contrast
+            PadColor = AppColors.PadChromaticNormal,
+            PadPressedColor = AppColors.PadChromaticPressed,
+            PadAltColor = AppColors.PadChromaticAlt,
+            PadAltPressedColor = AppColors.PadChromaticAltPressed
         };
         _padreas.Add(fullRangePadrea);
         
@@ -41,11 +42,11 @@ public class PadreaService : IPadreaService
             NoteFilter = NoteFilterType.PentatonicMajor,
             Columns = 5,           // 5 pads per row
             RowsPerViewpage = 5,   // 5 rows per viewpage = 5 octaves
-            // Neon magenta - pressed is bright white/yellow for aggressive contrast
-            PadColor = "#FF00FF",
-            PadPressedColor = "#FFFF00",      // Bright yellow - aggressive contrast
-            PadAltColor = "#00FFFF",
-            PadAltPressedColor = "#FF3300"    // Hot orange-red - aggressive contrast
+            // Neon magenta - pressed is bright yellow for aggressive contrast
+            PadColor = AppColors.PadPentatonicNormal,
+            PadPressedColor = AppColors.PadPentatonicPressed,
+            PadAltColor = AppColors.PadPentatonicAlt,
+            PadAltPressedColor = AppColors.PadPentatonicAltPressed
         };
         _padreas.Add(pentatonicPadrea);
 
@@ -61,11 +62,11 @@ public class PadreaService : IPadreaService
             Columns = 7,           // 7 pads per row (one octave of scale)
             RowsPerViewpage = 4,   // 4 rows = 28 notes = 4 octaves per page
             Kind = PadreaKind.Grid,
-            // Warm base, halftones highlighted
-            PadColor = "#CD8B5A",
-            PadPressedColor = "#F4B27A",
-            PadAltColor = "#8B5A3A",          // Halftones darker
-            PadAltPressedColor = "#FF9966"
+            // Warm copper base, halftones darker
+            PadColor = AppColors.PadScaleNormal,
+            PadPressedColor = AppColors.PadScalePressed,
+            PadAltColor = AppColors.PadScaleAlt,
+            PadAltPressedColor = AppColors.PadScaleAltPressed
         };
         _padreas.Add(scalesPadrea);
 
@@ -77,12 +78,28 @@ public class PadreaService : IPadreaService
             Description = "Chromatic piano keyboard view",
             NoteFilter = NoteFilterType.Chromatic,
             Kind = PadreaKind.Piano,
-            PadColor = "#FFFFFF",
-            PadPressedColor = "#FFDD88",
-            PadAltColor = "#666666",
-            PadAltPressedColor = "#FFAA55"
+            PadColor = AppColors.PianoWhiteKey,
+            PadPressedColor = AppColors.PianoWhiteKeyPressed,
+            PadAltColor = AppColors.PianoBlackKey,
+            PadAltPressedColor = AppColors.PianoBlackKeyPressed
         };
         _padreas.Add(pianoPadrea);
+        
+        // Pitch-Volume padrea - continuous surface where X = pitch, Y = volume
+        var pitchVolumePadrea = new Padrea
+        {
+            Id = "pitch-volume",
+            Name = "Pitch-Volume",
+            Description = "Continuous surface: horizontal = pitch, vertical = volume",
+            NoteFilter = NoteFilterType.Chromatic,
+            Kind = PadreaKind.PitchVolume,
+            // Teal for the surface with amber glow on touch
+            PadColor = AppColors.Teal,
+            PadPressedColor = AppColors.Accent,  // Orange - most aggressive accent
+            PadAltColor = AppColors.SkyBlue,
+            PadAltPressedColor = AppColors.Amber
+        };
+        _padreas.Add(pitchVolumePadrea);
         
         CurrentPadrea = fullRangePadrea;
     }

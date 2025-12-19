@@ -299,12 +299,14 @@ public class SfzService : ISfzService, IDisposable
         }
     }
 
-    public void NoteOn(int midiNote)
+    public void NoteOn(int midiNote) => NoteOn(midiNote, 100);
+    
+    public void NoteOn(int midiNote, int velocity)
     {
         if (_currentInstrument == null)
             return;
 
-        _player.NoteOn(midiNote, velocity: 100);
+        _player.NoteOn(midiNote, velocity: velocity);
     }
 
     public void NoteOff(int midiNote)
@@ -315,6 +317,11 @@ public class SfzService : ISfzService, IDisposable
     public void StopAll()
     {
         _player.StopAll();
+    }
+    
+    public float GetNoteEnvelopeLevel(int midiNote)
+    {
+        return _player.GetEnvelopeLevel(midiNote);
     }
 
     private void EnsurePlaybackThread()

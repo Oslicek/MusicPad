@@ -21,8 +21,10 @@ public class SfzService : ISfzService
 
     public Task LoadInstrumentAsync(string instrumentName) => Task.CompletedTask;
     public void NoteOn(int midiNote) { }
+    public void NoteOn(int midiNote, int velocity) { }
     public void NoteOff(int midiNote) { }
     public void StopAll() { }
+    public float GetNoteEnvelopeLevel(int midiNote) => 0f;
     public void SetEqBandGain(int band, float normalizedGain) { }
     public bool ChorusEnabled { get; set; } = false;
     public float ChorusDepth { get; set; } = 0.5f;

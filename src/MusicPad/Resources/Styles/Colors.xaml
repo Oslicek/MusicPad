@@ -4,33 +4,254 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
     
-    <!-- Primary Colors - Deep Ocean Blue -->
-    <Color x:Key="Primary">#1E3A5F</Color>
-    <Color x:Key="PrimaryDark">#0F1E30</Color>
-    <Color x:Key="PrimaryLight">#2E5A8F</Color>
+    <!-- =====================================================
+         Core Palette
+         #8ECAE6 - Light Sky Blue (light accent, text, highlights)
+         #219EBC - Teal (primary interactive, buttons, links)
+         #023047 - Dark Navy (base background, dark surfaces)
+         #FFB703 - Amber (main accent, selected states, knobs)
+         #FB8500 - Orange (secondary accent, pressed states)
+         ===================================================== -->
     
-    <!-- Secondary Colors - Warm Coral -->
-    <Color x:Key="Secondary">#4A90D9</Color>
-    <Color x:Key="SecondaryDark">#3570B0</Color>
-    <Color x:Key="SecondaryLight">#6BB0FF</Color>
+    <Color x:Key="SkyBlue">#8ECAE6</Color>
+    <Color x:Key="Teal">#219EBC</Color>
+    <Color x:Key="Navy">#023047</Color>
+    <Color x:Key="Amber">#FFB703</Color>
+    <Color x:Key="Orange">#FB8500</Color>
     
-    <!-- Accent Colors -->
-    <Color x:Key="Accent">#FF6B6B</Color>
-    <Color x:Key="AccentDark">#CC4545</Color>
+    <!-- =====================================================
+         Theme Colors - Primary Palette
+         ===================================================== -->
     
-    <!-- Surface Colors -->
-    <Color x:Key="Surface">#1A1A2E</Color>
-    <Color x:Key="SurfaceLight">#252545</Color>
-    <Color x:Key="SurfaceBorder">#3A3A5A</Color>
+    <!-- Teal - main brand color for interactive elements -->
+    <Color x:Key="Primary">#219EBC</Color>
+    <!-- Dark teal for depth -->
+    <Color x:Key="PrimaryDark">#1A7E96</Color>
+    <!-- Light teal for highlights -->
+    <Color x:Key="PrimaryLight">#4CB8D4</Color>
     
-    <!-- Text Colors -->
-    <Color x:Key="TextPrimary">#FFFFFF</Color>
-    <Color x:Key="TextSecondary">#B0B0C0</Color>
-    <Color x:Key="TextMuted">#707080</Color>
+    <!-- Amber - secondary accent for buttons and highlights -->
+    <Color x:Key="Secondary">#FFB703</Color>
+    <!-- Darker amber for pressed states -->
+    <Color x:Key="SecondaryDark">#CC9200</Color>
+    <!-- Lighter amber for hover states -->
+    <Color x:Key="SecondaryLight">#FFCC44</Color>
     
-    <!-- Grayscale -->
+    <!-- Orange - attention-grabbing accent -->
+    <Color x:Key="Accent">#FB8500</Color>
+    <!-- Darker orange for pressed states -->
+    <Color x:Key="AccentDark">#C86A00</Color>
+    
+    <!-- =====================================================
+         Background Colors
+         ===================================================== -->
+    
+    <!-- Main page background - dark navy -->
+    <Color x:Key="BackgroundMain">#023047</Color>
+    <!-- Even darker background for pages -->
+    <Color x:Key="BackgroundPage">#011627</Color>
+    <!-- Effect area background - slightly lighter navy -->
+    <Color x:Key="BackgroundEffect">#0A4060</Color>
+    <!-- Picker/dropdown background - navy lighter -->
+    <Color x:Key="BackgroundPicker">#145070</Color>
+    
+    <!-- =====================================================
+         Surface Colors - Cards and Containers
+         ===================================================== -->
+    
+    <!-- Card/container background - navy light -->
+    <Color x:Key="Surface">#0A4060</Color>
+    <!-- Slightly lighter surface for layers -->
+    <Color x:Key="SurfaceLight">#145070</Color>
+    <!-- Card border/stroke color - teal dark -->
+    <Color x:Key="SurfaceBorder">#1A7E96</Color>
+    <!-- Lighter border color -->
+    <Color x:Key="SurfaceBorderLight">#219EBC</Color>
+    
+    <!-- =====================================================
+         Text Colors
+         ===================================================== -->
+    
+    <!-- Primary text - light sky blue -->
+    <Color x:Key="TextPrimary">#8ECAE6</Color>
+    <!-- Secondary/label text - teal light -->
+    <Color x:Key="TextSecondary">#4CB8D4</Color>
+    <!-- Muted/disabled text - teal -->
+    <Color x:Key="TextMuted">#219EBC</Color>
+    <!-- Dim text for subtle elements -->
+    <Color x:Key="TextDim">#1A7E96</Color>
+    <!-- Commit label - orange accent -->
+    <Color x:Key="TextCommit">#FB8500</Color>
+    <!-- White text for high contrast -->
+    <Color x:Key="TextWhite">#FFFFFF</Color>
+    <!-- Dark text on light backgrounds -->
+    <Color x:Key="TextDark">#023047</Color>
+    
+    <!-- =====================================================
+         Pad Colors - Full Range (Chromatic)
+         ===================================================== -->
+    
+    <!-- Teal - chromatic pad normal state -->
+    <Color x:Key="PadChromaticNormal">#219EBC</Color>
+    <!-- Sky blue - chromatic pad pressed -->
+    <Color x:Key="PadChromaticPressed">#8ECAE6</Color>
+    <!-- Amber - chromatic sharps/flats normal -->
+    <Color x:Key="PadChromaticAlt">#FFB703</Color>
+    <!-- Orange - chromatic sharps/flats pressed -->
+    <Color x:Key="PadChromaticAltPressed">#FB8500</Color>
+    <!-- Border color for chromatic pads -->
+    <Color x:Key="PadChromaticBorder">#1A7E96</Color>
+    
+    <!-- =====================================================
+         Pad Colors - Pentatonic
+         ===================================================== -->
+    
+    <!-- Amber - pentatonic pad normal -->
+    <Color x:Key="PadPentatonicNormal">#FFB703</Color>
+    <!-- Light amber - pentatonic pressed -->
+    <Color x:Key="PadPentatonicPressed">#FFCC44</Color>
+    <!-- Orange - pentatonic alt normal -->
+    <Color x:Key="PadPentatonicAlt">#FB8500</Color>
+    <!-- Sky blue - pentatonic alt pressed (contrast) -->
+    <Color x:Key="PadPentatonicAltPressed">#8ECAE6</Color>
+    
+    <!-- =====================================================
+         Pad Colors - Scales
+         ===================================================== -->
+    
+    <!-- Sky blue - scale pad normal -->
+    <Color x:Key="PadScaleNormal">#8ECAE6</Color>
+    <!-- White - scale pad pressed -->
+    <Color x:Key="PadScalePressed">#FFFFFF</Color>
+    <!-- Teal - scale halftones normal -->
+    <Color x:Key="PadScaleAlt">#219EBC</Color>
+    <!-- Amber - scale halftones pressed -->
+    <Color x:Key="PadScaleAltPressed">#FFB703</Color>
+    
+    <!-- =====================================================
+         Pad Colors - Piano
+         ===================================================== -->
+    
+    <!-- White piano keys -->
+    <Color x:Key="PianoWhiteKey">#FFFFFF</Color>
+    <!-- Amber - white key pressed -->
+    <Color x:Key="PianoWhiteKeyPressed">#FFB703</Color>
+    <!-- Navy - black piano keys -->
+    <Color x:Key="PianoBlackKey">#023047</Color>
+    <!-- Orange - black key pressed -->
+    <Color x:Key="PianoBlackKeyPressed">#FB8500</Color>
+    <!-- Very dark navy - actual black key color -->
+    <Color x:Key="PianoBlackKeyDark">#011627</Color>
+    <!-- Piano strip background -->
+    <Color x:Key="PianoStripBackground">#0A4060</Color>
+    <!-- Piano strip highlight area - teal transparent -->
+    <Color x:Key="PianoStripHighlight">#40219EBC</Color>
+    <!-- Piano strip inactive area -->
+    <Color x:Key="PianoStripInactive">#145070</Color>
+    
+    <!-- =====================================================
+         Knob Colors - Amber Theme
+         ===================================================== -->
+    
+    <!-- Amber base color for rotary knobs -->
+    <Color x:Key="KnobBase">#FFB703</Color>
+    <!-- Light amber highlight for 3D effect -->
+    <Color x:Key="KnobHighlight">#FFCC44</Color>
+    <!-- Dark amber shadow for 3D effect -->
+    <Color x:Key="KnobShadow">#CC9200</Color>
+    <!-- Dark navy indicator dot on knobs -->
+    <Color x:Key="KnobIndicator">#023047</Color>
+    
+    <!-- =====================================================
+         Button Colors
+         ===================================================== -->
+    
+    <!-- Teal - button/toggle ON state -->
+    <Color x:Key="ButtonOn">#219EBC</Color>
+    <!-- Navy light - button OFF state -->
+    <Color x:Key="ButtonOff">#0A4060</Color>
+    <!-- Button border when off -->
+    <Color x:Key="ButtonBorder">#1A7E96</Color>
+    <!-- Type button base (unselected) -->
+    <Color x:Key="TypeButtonBase">#145070</Color>
+    <!-- Type button selected (amber) -->
+    <Color x:Key="TypeButtonSelected">#FFB703</Color>
+    <!-- Type button highlight -->
+    <Color x:Key="TypeButtonHighlight">#FFCC44</Color>
+    
+    <!-- =====================================================
+         Slider/EQ Colors
+         ===================================================== -->
+    
+    <!-- Slider track background -->
+    <Color x:Key="SliderTrack">#0A4060</Color>
+    <!-- Slider fill color - teal -->
+    <Color x:Key="SliderFill">#219EBC</Color>
+    <!-- Slider thumb (amber) -->
+    <Color x:Key="SliderThumb">#FFB703</Color>
+    <!-- Slider thumb highlight -->
+    <Color x:Key="SliderThumbHighlight">#FFCC44</Color>
+    <!-- Center line on EQ sliders -->
+    <Color x:Key="SliderCenterLine">#1A7E96</Color>
+    
+    <!-- =====================================================
+         Effect Area Colors
+         ===================================================== -->
+    
+    <!-- Effect button background -->
+    <Color x:Key="EffectButtonBackground">#0A4060</Color>
+    <!-- Effect button selected - teal -->
+    <Color x:Key="EffectButtonSelected">#219EBC</Color>
+    <!-- Effect icon normal color -->
+    <Color x:Key="EffectIconNormal">#4CB8D4</Color>
+    <!-- Effect icon selected/active -->
+    <Color x:Key="EffectIconSelected">#FFFFFF</Color>
+    
+    <!-- =====================================================
+         Disabled/Muted States
+         ===================================================== -->
+    
+    <!-- General disabled color -->
+    <Color x:Key="Disabled">#1A7E96</Color>
+    <!-- Disabled border -->
+    <Color x:Key="DisabledBorder">#145070</Color>
+    <!-- Very dark disabled background -->
+    <Color x:Key="DisabledDark">#0A4060</Color>
+    <!-- Darker disabled for deep shadows -->
+    <Color x:Key="DisabledDarker">#023047</Color>
+    <!-- Disabled text on white backgrounds -->
+    <Color x:Key="DisabledTextLight">#4CB8D4</Color>
+    
+    <!-- =====================================================
+         Arrow Colors (Navigation)
+         ===================================================== -->
+    
+    <!-- Amber arrow color - vibrant -->
+    <Color x:Key="ArrowNormal">#FFB703</Color>
+    <!-- Arrow glow color - light amber -->
+    <Color x:Key="ArrowGlow">#FFCC44</Color>
+    <!-- Arrow background (semi-transparent teal) -->
+    <Color x:Key="ArrowBackground">#40219EBC</Color>
+    
+    <!-- =====================================================
+         Miscellaneous
+         ===================================================== -->
+    
+    <!-- Pure white -->
     <Color x:Key="White">#FFFFFF</Color>
+    <!-- Pure black -->
     <Color x:Key="Black">#000000</Color>
+    <!-- Text shadow (semi-transparent black) -->
+    <Color x:Key="TextShadow">#40000000</Color>
+    <!-- Border dark - navy -->
+    <Color x:Key="BorderDark">#023047</Color>
+    <!-- Border medium - navy light -->
+    <Color x:Key="BorderMedium">#0A4060</Color>
+    
+    <!-- =====================================================
+         Grayscale (Legacy)
+         ===================================================== -->
+    
     <Color x:Key="Gray100">#F5F5F5</Color>
     <Color x:Key="Gray200">#E0E0E0</Color>
     <Color x:Key="Gray300">#BDBDBD</Color>
@@ -41,4 +262,3 @@
     <Color x:Key="Gray950">#141414</Color>
 
 </ResourceDictionary>
-

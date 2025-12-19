@@ -1,5 +1,6 @@
 using Microsoft.Maui.Graphics;
 using MusicPad.Core.Models;
+using MusicPad.Core.Theme;
 
 namespace MusicPad.Controls;
 
@@ -11,12 +12,12 @@ public class EqDrawable
     private readonly EqualizerSettings _settings;
     
     // Colors
-    private static readonly Color SliderTrackColor = Color.FromArgb("#2a2a4e");
-    private static readonly Color SliderFillColor = Color.FromArgb("#4a6a9e");
-    private static readonly Color SliderThumbColor = Color.FromArgb("#CD8B5A");
-    private static readonly Color SliderThumbHighlight = Color.FromArgb("#E8A878");
-    private static readonly Color LabelColor = Color.FromArgb("#888888");
-    private static readonly Color CenterLineColor = Color.FromArgb("#444466");
+    private static readonly Color SliderTrackColor = Color.FromArgb(AppColors.SliderTrack);
+    private static readonly Color SliderFillColor = Color.FromArgb(AppColors.SliderFill);
+    private static readonly Color SliderThumbColor = Color.FromArgb(AppColors.SliderThumb);
+    private static readonly Color SliderThumbHighlight = Color.FromArgb(AppColors.SliderThumbHighlight);
+    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
+    private static readonly Color CenterLineColor = Color.FromArgb(AppColors.SliderCenterLine);
 
     private readonly RectF[] _sliderRects = new RectF[4];
     private readonly float[] _sliderTrackTops = new float[4];
@@ -100,7 +101,7 @@ public class EqDrawable
             var thumbRect = new RectF(centerX - thumbWidth / 2, thumbY - thumbHeight / 2, thumbWidth, thumbHeight);
             
             // Shadow
-            canvas.FillColor = Color.FromArgb("#4A3020");
+            canvas.FillColor = Color.FromArgb(AppColors.KnobIndicator);
             canvas.FillRoundedRectangle(new RectF(thumbRect.X + 1, thumbRect.Y + 1, thumbRect.Width, thumbRect.Height), 2);
             
             // Thumb body

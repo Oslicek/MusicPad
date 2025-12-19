@@ -14,6 +14,7 @@ public partial class MainPage : ContentPage
     private readonly EffectAreaDrawable _effectAreaDrawable;
     private readonly List<ScaleOption> _scaleOptions = new();
     private readonly PianoKeyboardDrawable _pianoDrawable = new();
+    private readonly PitchVolumeDrawable _pitchVolumeDrawable = new();
     private PianoRangeManager? _pianoRangeManager;
     private GraphicsView? _padGraphicsView;
     private bool _isLoading;
@@ -26,6 +27,9 @@ public partial class MainPage : ContentPage
     private readonly Arpeggiator _arpeggiator = new();
     private IDispatcherTimer? _arpTimer;
     private int? _lastArpNote;
+    
+    // Envelope animation timer for pad glow effect
+    private IDispatcherTimer? _envelopeAnimationTimer;
 
     public MainPage(ISfzService sfzService, IPadreaService padreaService)
     {
@@ -46,6 +50,11 @@ public partial class MainPage : ContentPage
         _pianoDrawable.NoteOff += OnNoteOff;
         _pianoDrawable.ShiftRequested += OnPianoShiftRequested;
         _pianoDrawable.StripDragRequested += OnPianoStripDragRequested;
+        
+        // Pitch-Volume events
+        _pitchVolumeDrawable.NoteOn += OnPitchVolumeNoteOn;
+        _pitchVolumeDrawable.NoteOff += OnNoteOff;
+        _pitchVolumeDrawable.VolumeChanged += OnPitchVolumeChanged;
         
         // Setup volume knob
         _volumeKnobDrawable = new RotaryKnobDrawable { Label = "VOL", Value = 0.75f };
@@ -298,6 +307,36 @@ public partial class MainPage : ContentPage
     private void OnVolumeChanged(object? sender, float volume)
     {
         _sfzService.Volume = volume;
+    }
+    
+    private void EnsureEnvelopeAnimationTimer()
+    {
+        if (_envelopeAnimationTimer != null) return;
+        
+        _envelopeAnimationTimer = Dispatcher.CreateTimer();
+        _envelopeAnimationTimer.Interval = TimeSpan.FromMilliseconds(33); // ~30 FPS
+        _envelopeAnimationTimer.Tick += OnEnvelopeAnimationTick;
+        _envelopeAnimationTimer.Start();
+    }
+    
+    private void StopEnvelopeAnimationTimer()
+    {
+        if (_envelopeAnimationTimer == null) return;
+        
+        _envelopeAnimationTimer.Stop();
+        _envelopeAnimationTimer.Tick -= OnEnvelopeAnimationTick;
+        _envelopeAnimationTimer = null;
+    }
+    
+    private void OnEnvelopeAnimationTick(object? sender, EventArgs e)
+    {
+        // Only refresh if we're showing a grid padrea (not piano or pitch-volume)
+        if (_padGraphicsView != null && 
+            !IsCurrentPadreaPiano() && 
+            !IsCurrentPadreaPitchVolume())
+        {
+            _padGraphicsView.Invalidate();
+        }
     }
 
     private void UpdateLayout()
@@ -653,16 +692,36 @@ public partial class MainPage : ContentPage
         }
 
         var padrea = _padreaService.CurrentPadrea;
-        bool isPiano = padrea?.Kind == PadreaKind.Piano;
+        
+        // Update volume knob visibility based on padrea type
+        UpdateVolumeKnobState(padrea);
 
-        if (isPiano)
+        if (padrea?.Kind == PadreaKind.Piano)
         {
             SetupPianoPadrea(padrea!, instrumentMinKey, instrumentMaxKey);
+        }
+        else if (padrea?.Kind == PadreaKind.PitchVolume)
+        {
+            SetupPitchVolumePadrea(padrea!, instrumentMinKey, instrumentMaxKey);
         }
         else
         {
             SetupGridPadrea(padrea, instrumentMinKey, instrumentMaxKey);
         }
+    }
+    
+    private void UpdateVolumeKnobState(Padrea? padrea)
+    {
+        // Disable volume knob when PitchVolume padrea is active (volume is controlled by Y position)
+        bool isPitchVolume = padrea?.Kind == PadreaKind.PitchVolume;
+        VolumeKnob.IsVisible = !isPitchVolume;
+        VolumeKnob.IsEnabled = !isPitchVolume;
+    }
+    
+    private void SetupPitchVolumePadrea(Padrea padrea, int instrumentMinKey, int instrumentMaxKey)
+    {
+        _pitchVolumeDrawable.SetNoteRange(instrumentMinKey, instrumentMaxKey);
+        EnsurePadGraphicsView(_pitchVolumeDrawable);
     }
 
     private void SetupGridPadrea(Padrea? padrea, int instrumentMinKey, int instrumentMaxKey)
@@ -672,6 +731,7 @@ public partial class MainPage : ContentPage
             // Fallback to simple range
             _padDrawable.SetKeyRange(instrumentMinKey, instrumentMaxKey);
             _padDrawable.SetHalftoneDetector(null);
+            _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
         }
         else
         {
@@ -695,9 +755,11 @@ public partial class MainPage : ContentPage
             _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
                                    padrea.PadAltColor, padrea.PadAltPressedColor);
             _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
+            _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
         }
 
         EnsurePadGraphicsView(_padDrawable);
+        EnsureEnvelopeAnimationTimer();
     }
 
     private void SetupPianoPadrea(Padrea padrea, int instrumentMinKey, int instrumentMaxKey)
@@ -738,6 +800,14 @@ public partial class MainPage : ContentPage
             }
             _pianoDrawable.OnTouches(touches);
         }
+        else if (IsCurrentPadreaPitchVolume())
+        {
+            // For pitch-volume, we use index 0 as pointer ID for simplicity
+            if (touches.Count > 0)
+            {
+                _pitchVolumeDrawable.OnTouchStart(0, touches[0].X, touches[0].Y);
+            }
+        }
         else
         {
             _padDrawable.OnTouches(touches);
@@ -751,6 +821,13 @@ public partial class MainPage : ContentPage
         if (IsCurrentPadreaPiano())
         {
             _pianoDrawable.OnTouches(touches);
+        }
+        else if (IsCurrentPadreaPitchVolume())
+        {
+            if (touches.Count > 0)
+            {
+                _pitchVolumeDrawable.OnTouchMove(0, touches[0].X, touches[0].Y);
+            }
         }
         else
         {
@@ -769,6 +846,10 @@ public partial class MainPage : ContentPage
                 _pianoDrawable.OnTouchEnd((float)lastTouch.X, (float)lastTouch.Y);
             }
         }
+        else if (IsCurrentPadreaPitchVolume())
+        {
+            _pitchVolumeDrawable.OnTouchEnd(0);
+        }
         else
         {
             if (lastTouch != default)
@@ -785,6 +866,10 @@ public partial class MainPage : ContentPage
         if (IsCurrentPadreaPiano())
         {
             _pianoDrawable.OnTouchEnd(0, 0);
+        }
+        else if (IsCurrentPadreaPitchVolume())
+        {
+            _pitchVolumeDrawable.OnAllTouchesEnd();
         }
         else
         {
@@ -837,6 +922,37 @@ public partial class MainPage : ContentPage
                 _sfzService.NoteOff(note);
             }
         }
+    }
+    
+    private void OnPitchVolumeNoteOn(object? sender, PitchVolumeEventArgs e)
+    {
+        // For pitch-volume surface, velocity is controlled by Y position
+        int velocity = (int)(e.Volume * 127);
+        velocity = Math.Clamp(velocity, 1, 127);
+        
+        // Apply harmony
+        var notes = _harmony.ProcessNoteOn(e.MidiNote);
+        
+        if (_arpeggiator.IsEnabled)
+        {
+            foreach (var note in notes)
+            {
+                _arpeggiator.AddNote(note);
+            }
+        }
+        else
+        {
+            foreach (var note in notes)
+            {
+                _sfzService.NoteOn(note, velocity);
+            }
+        }
+    }
+    
+    private void OnPitchVolumeChanged(object? sender, PitchVolumeEventArgs e)
+    {
+        // Volume changes during a sustained note - for future implementation
+        // Could be used for continuous controller messages or velocity aftertouch
     }
 
     private void OnNavigateUp(object? sender, EventArgs e)
@@ -900,6 +1016,8 @@ public partial class MainPage : ContentPage
     }
 
     private bool IsCurrentPadreaPiano() => _padreaService.CurrentPadrea?.Kind == PadreaKind.Piano;
+    
+    private bool IsCurrentPadreaPitchVolume() => _padreaService.CurrentPadrea?.Kind == PadreaKind.PitchVolume;
 
     private void EnsurePadGraphicsView(IDrawable drawable)
     {

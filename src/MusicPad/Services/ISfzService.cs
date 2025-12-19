@@ -33,9 +33,14 @@ public interface ISfzService
     Task LoadInstrumentAsync(string instrumentName);
     
     /// <summary>
-    /// Plays a specific MIDI note.
+    /// Plays a specific MIDI note with default velocity.
     /// </summary>
     void NoteOn(int midiNote);
+    
+    /// <summary>
+    /// Plays a specific MIDI note with specified velocity.
+    /// </summary>
+    void NoteOn(int midiNote, int velocity);
     
     /// <summary>
     /// Stops a specific MIDI note.
@@ -46,6 +51,13 @@ public interface ISfzService
     /// Stops all playing notes.
     /// </summary>
     void StopAll();
+    
+    /// <summary>
+    /// Gets the current envelope level for a note (0.0 = silent, 1.0 = full).
+    /// Returns 0 if the note is not currently playing.
+    /// Used for visual feedback that follows the sound's amplitude.
+    /// </summary>
+    float GetNoteEnvelopeLevel(int midiNote);
     
     /// <summary>
     /// Gets or sets the master volume (0.0 to 1.0).

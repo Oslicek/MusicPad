@@ -1,5 +1,6 @@
 using Microsoft.Maui.Graphics;
 using MusicPad.Core.Models;
+using MusicPad.Core.Theme;
 
 namespace MusicPad.Controls;
 
@@ -13,18 +14,21 @@ public class PadMatrixDrawable : IDrawable
     private static readonly bool[] IsSharp = { false, true, false, true, false, false, true, false, true, false, true, false };
 
     // Default colors (teal/cyan theme)
-    private Color _padColor = Color.FromArgb("#4ECDC4");
-    private Color _padPressedColor = Color.FromArgb("#7EEEE6");
-    private Color _padAltColor = Color.FromArgb("#E8A838");
-    private Color _padAltPressedColor = Color.FromArgb("#F5C868");
-    private static readonly Color BorderColor = Color.FromArgb("#2A9D8F");
+    private Color _padColor = Color.FromArgb(AppColors.PadChromaticNormal);
+    private Color _padPressedColor = Color.FromArgb(AppColors.PadChromaticPressed);
+    private Color _padAltColor = Color.FromArgb(AppColors.PadChromaticAlt);
+    private Color _padAltPressedColor = Color.FromArgb(AppColors.PadChromaticAltPressed);
+    private static readonly Color BorderColor = Color.FromArgb(AppColors.PadChromaticBorder);
     private static readonly Color TextColor = Colors.White;
-    private static readonly Color TextShadowColor = Color.FromArgb("#40000000");
+    private static readonly Color TextShadowColor = Color.FromArgb(AppColors.TextShadow);
     
     // Arrow colors - captivating neon
-    private static readonly Color ArrowColor = Color.FromArgb("#00FF88");
-    private static readonly Color ArrowGlowColor = Color.FromArgb("#00FFAA");
-    private static readonly Color ArrowBgColor = Color.FromArgb("#20FFFFFF");
+    private static readonly Color ArrowColor = Color.FromArgb(AppColors.ArrowNormal);
+    private static readonly Color ArrowGlowColor = Color.FromArgb(AppColors.ArrowGlow);
+    private static readonly Color ArrowBgColor = Color.FromArgb(AppColors.ArrowBackground);
+    
+    // Envelope glow colors - follows the sound's amplitude envelope
+    private static readonly Color EnvelopeGlowColor = Color.FromArgb(AppColors.Accent);
 
     private List<int> _notes = new();
     private int _columns;
@@ -43,6 +47,7 @@ public class PadMatrixDrawable : IDrawable
     
     private readonly HashSet<int> _activeNotes = new();
     private Func<int, bool>? _isHalftone;
+    private Func<int, float>? _envelopeLevelGetter; // Gets envelope level for a note (0-1)
     private int _lastTouchCount;
 
     public event EventHandler<int>? NoteOn;
@@ -100,6 +105,15 @@ public class PadMatrixDrawable : IDrawable
     public void SetHalftoneDetector(Func<int, bool>? detector)
     {
         _isHalftone = detector;
+    }
+    
+    /// <summary>
+    /// Sets the envelope level getter for visual feedback that follows the sound's amplitude.
+    /// The function should return 0-1 based on the current envelope level of the note.
+    /// </summary>
+    public void SetEnvelopeLevelGetter(Func<int, float>? getter)
+    {
+        _envelopeLevelGetter = getter;
     }
 
     /// <summary>
@@ -231,19 +245,36 @@ public class PadMatrixDrawable : IDrawable
         float y = _offsetY + visualRow * (_padSize + _spacing);
 
         bool isAltNote = _isHalftone?.Invoke(midiNote) ?? IsSharp[midiNote % 12];
-        bool isPressed = _activeNotes.Contains(midiNote);
+        
+        // Get envelope level for this note (0 = silent, 1 = full)
+        float envelopeLevel = _envelopeLevelGetter?.Invoke(midiNote) ?? 0f;
+        bool isActive = envelopeLevel > 0.001f;
+        
+        // Base colors
+        Color normalColor = isAltNote ? _padAltColor : _padColor;
+        Color activeColor = isAltNote ? _padAltPressedColor : _padPressedColor;
+        
+        // Interpolate color based on envelope level
+        Color bgColor = isActive 
+            ? InterpolateColor(normalColor, activeColor, envelopeLevel)
+            : normalColor;
 
-        Color bgColor = isAltNote
-            ? (isPressed ? _padAltPressedColor : _padAltColor)
-            : (isPressed ? _padPressedColor : _padColor);
+        // Draw envelope glow effect behind the pad when active
+        if (isActive)
+        {
+            DrawEnvelopeGlow(canvas, x, y, envelopeLevel);
+        }
 
-        // Draw background with glow effect for neon look
+        // Draw pad background
         canvas.FillColor = bgColor;
         canvas.FillRoundedRectangle(x, y, _padSize, _padSize, 8);
 
-        // Draw brighter border for neon effect
-        canvas.StrokeColor = isPressed ? Colors.White : bgColor.WithAlpha(0.7f);
-        canvas.StrokeSize = isPressed ? 3 : 2;
+        // Draw border - brighter when active, scaled by envelope
+        float borderBrightness = isActive ? 0.3f + 0.7f * envelopeLevel : 0.7f;
+        canvas.StrokeColor = isActive 
+            ? Colors.White.WithAlpha(borderBrightness)
+            : bgColor.WithAlpha(0.7f);
+        canvas.StrokeSize = isActive ? 2 + envelopeLevel * 2 : 2;
         canvas.DrawRoundedRectangle(x, y, _padSize, _padSize, 8);
 
         // Draw note name
@@ -258,6 +289,42 @@ public class PadMatrixDrawable : IDrawable
         canvas.FontColor = TextColor;
         canvas.DrawString(noteName, x, y, _padSize, _padSize, 
             HorizontalAlignment.Center, VerticalAlignment.Center);
+    }
+    
+    private void DrawEnvelopeGlow(ICanvas canvas, float x, float y, float level)
+    {
+        // Draw outer glow that expands/contracts with envelope level
+        float maxGlowSize = _padSize * 0.2f;
+        float glowSize = maxGlowSize * level;
+        
+        if (glowSize > 1)
+        {
+            // Multiple glow layers for smooth falloff
+            for (int i = 3; i >= 0; i--)
+            {
+                float layerSize = glowSize * (1 + i * 0.3f);
+                float alpha = level * (0.4f - i * 0.1f);
+                
+                canvas.FillColor = EnvelopeGlowColor.WithAlpha(Math.Max(0, alpha));
+                canvas.FillRoundedRectangle(
+                    x - layerSize, 
+                    y - layerSize, 
+                    _padSize + layerSize * 2, 
+                    _padSize + layerSize * 2, 
+                    8 + layerSize);
+            }
+        }
+    }
+    
+    private static Color InterpolateColor(Color a, Color b, float t)
+    {
+        t = Math.Clamp(t, 0f, 1f);
+        return new Color(
+            a.Red + (b.Red - a.Red) * t,
+            a.Green + (b.Green - a.Green) * t,
+            a.Blue + (b.Blue - a.Blue) * t,
+            a.Alpha + (b.Alpha - a.Alpha) * t
+        );
     }
 
     public void OnTouches(IEnumerable<PointF> touches)

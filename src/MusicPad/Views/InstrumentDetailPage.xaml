@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MusicPad.Views.InstrumentDetailPage"
              Title="Instrument Details"
-             BackgroundColor="#0D0D0E">
+             BackgroundColor="{StaticResource BackgroundPage}">
     
     <ScrollView Padding="20">
         <StackLayout Spacing="20">
@@ -11,14 +11,14 @@
             <Label x:Name="InstrumentNameLabel" 
                    FontSize="28" 
                    FontAttributes="Bold"
-                   TextColor="#EAEAEC"
+                   TextColor="{StaticResource TextPrimary}"
                    HorizontalTextAlignment="Center"/>
             
             <!-- Loading Indicator -->
             <ActivityIndicator x:Name="LoadingIndicator"
                                IsRunning="True"
                                IsVisible="True"
-                               Color="#4A90D9"
+                               Color="{StaticResource Secondary}"
                                HeightRequest="50"/>
             
             <!-- Content Container -->
@@ -26,36 +26,36 @@
                 
                 <!-- Credits Section -->
                 <Border StrokeShape="RoundRectangle 12"
-                        Stroke="#2A2A2E"
-                        BackgroundColor="#1A1A1D"
+                        Stroke="{StaticResource SurfaceBorder}"
+                        BackgroundColor="{StaticResource Surface}"
                         Padding="16">
                     <StackLayout Spacing="8">
                         <Label Text="Credits" 
                                FontSize="16" 
                                FontAttributes="Bold"
-                               TextColor="#4A90D9"
+                               TextColor="{StaticResource Secondary}"
                                Margin="0,0,0,4"/>
                         
                         <StackLayout Spacing="6">
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Sound Engineer:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="SoundEngineerLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Created:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="CreationDateLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Editor:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="EditorLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                         </StackLayout>
                     </StackLayout>
@@ -63,51 +63,51 @@
                 
                 <!-- Technical Info Section -->
                 <Border StrokeShape="RoundRectangle 12"
-                        Stroke="#2A2A2E"
-                        BackgroundColor="#1A1A1D"
+                        Stroke="{StaticResource SurfaceBorder}"
+                        BackgroundColor="{StaticResource Surface}"
                         Padding="16">
                     <StackLayout Spacing="8">
                         <Label Text="Technical Information" 
                                FontSize="16" 
                                FontAttributes="Bold"
-                               TextColor="#4A90D9"
+                               TextColor="{StaticResource Secondary}"
                                Margin="0,0,0,4"/>
                         
                         <StackLayout Spacing="6">
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Internal Name:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="InternalNameLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Source:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="SourceFileLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"
                                        LineBreakMode="TailTruncation"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Soundfont:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="SoundfontVersionLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Key Range:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="KeyRangeLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Regions:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="RegionCountLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                         </StackLayout>
                     </StackLayout>
@@ -115,36 +115,36 @@
                 
                 <!-- Conversion Info Section -->
                 <Border StrokeShape="RoundRectangle 12"
-                        Stroke="#2A2A2E"
-                        BackgroundColor="#1A1A1D"
+                        Stroke="{StaticResource SurfaceBorder}"
+                        BackgroundColor="{StaticResource Surface}"
                         Padding="16">
                     <StackLayout Spacing="8">
                         <Label Text="Conversion Info" 
                                FontSize="16" 
                                FontAttributes="Bold"
-                               TextColor="#4A90D9"
+                               TextColor="{StaticResource Secondary}"
                                Margin="0,0,0,4"/>
                         
                         <StackLayout Spacing="6">
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Converter:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="ConverterLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Converted:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="ConversionDateLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"/>
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"/>
                             </StackLayout>
                             
                             <StackLayout Orientation="Horizontal" Spacing="8">
                                 <Label Text="Copyright:" 
-                                       FontSize="14" TextColor="#888" WidthRequest="120"/>
+                                       FontSize="14" TextColor="{StaticResource TextSecondary}" WidthRequest="120"/>
                                 <Label x:Name="CopyrightLabel" 
-                                       FontSize="14" TextColor="#EAEAEC"
+                                       FontSize="14" TextColor="{StaticResource TextPrimary}"
                                        LineBreakMode="WordWrap"/>
                             </StackLayout>
                         </StackLayout>
@@ -154,8 +154,8 @@
                 <!-- Select Button -->
                 <Button x:Name="SelectButton"
                         Text="Select Instrument"
-                        BackgroundColor="#4A90D9"
-                        TextColor="White"
+                        BackgroundColor="{StaticResource Secondary}"
+                        TextColor="{StaticResource White}"
                         FontAttributes="Bold"
                         CornerRadius="8"
                         HeightRequest="50"

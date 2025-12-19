@@ -1,4 +1,5 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Theme;
 
 namespace MusicPad.Controls;
 
@@ -8,11 +9,11 @@ namespace MusicPad.Controls;
 public class RotaryKnobDrawable : IDrawable
 {
     // Warm copper/bronze color scheme like hardware knobs
-    private static readonly Color KnobBaseColor = Color.FromArgb("#CD8B5A");
-    private static readonly Color KnobHighlightColor = Color.FromArgb("#E8A878");
-    private static readonly Color KnobShadowColor = Color.FromArgb("#8B5A3A");
-    private static readonly Color IndicatorColor = Color.FromArgb("#4A3020");
-    private static readonly Color LabelColor = Color.FromArgb("#888888");
+    private static readonly Color KnobBaseColor = Color.FromArgb(AppColors.KnobBase);
+    private static readonly Color KnobHighlightColor = Color.FromArgb(AppColors.KnobHighlight);
+    private static readonly Color KnobShadowColor = Color.FromArgb(AppColors.KnobShadow);
+    private static readonly Color IndicatorColor = Color.FromArgb(AppColors.KnobIndicator);
+    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
 
     private float _value = 0.75f; // 0-1 range, default 75%
     private float _minAngle = 225f; // Start angle (7 o'clock position)

@@ -1,4 +1,5 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Theme;
 
 namespace MusicPad.Controls;
 
@@ -114,11 +115,11 @@ public class PianoKeyboardDrawable : IDrawable
         float instX = _stripRect.X + (instStart - GlobalMin) * keyWidth;
         float instW = (instEnd - instStart + 1) * keyWidth;
         var instRect = new RectF(instX, _stripRect.Y, instW, _stripRect.Height);
-        canvas.FillColor = Color.FromArgb("#2044AAFF");
+        canvas.FillColor = Color.FromArgb(AppColors.PianoStripHighlight);
         canvas.FillRectangle(instRect);
 
         // Draw current window highlight
-        canvas.FillColor = Color.FromArgb("#404040");
+        canvas.FillColor = Color.FromArgb(AppColors.PianoStripInactive);
         canvas.FillRectangle(_stripHighlight);
 
         // Draw black keys on top - much shorter outside selection, taller inside
@@ -134,12 +135,12 @@ public class PianoKeyboardDrawable : IDrawable
             float blackKeyHeight = insideSelection ? _stripRect.Height * 0.65f : _stripRect.Height * 0.18f;
             
             var keyRect = new RectF(x, _stripRect.Y, keyWidth, blackKeyHeight);
-            canvas.FillColor = Color.FromArgb("#111111");
+            canvas.FillColor = Color.FromArgb(AppColors.PianoBlackKeyDark);
             canvas.FillRectangle(keyRect);
         }
 
         // Outlines
-        canvas.StrokeColor = Color.FromArgb("#555555");
+        canvas.StrokeColor = Color.FromArgb(AppColors.Disabled);
         canvas.StrokeSize = 1;
         canvas.DrawRectangle(_stripRect);
 
@@ -170,17 +171,17 @@ public class PianoKeyboardDrawable : IDrawable
             bool disabled = note < _instrumentMin || note > _instrumentMax;
             bool pressed = _activeNotes.Contains(note);
 
-            canvas.FillColor = disabled ? Color.FromArgb("#333333")
-                                        : pressed ? Color.FromArgb("#FFDD88") : Colors.White;
+            canvas.FillColor = disabled ? Color.FromArgb(AppColors.DisabledDark)
+                                        : pressed ? Color.FromArgb(AppColors.PianoWhiteKeyPressed) : Colors.White;
             canvas.FillRectangle(keyRect);
 
-            canvas.StrokeColor = Color.FromArgb("#444444");
+            canvas.StrokeColor = Color.FromArgb(AppColors.BorderDark);
             canvas.StrokeSize = 1;
             canvas.DrawRectangle(keyRect);
 
             // Label
             canvas.FontSize = 12;
-            canvas.FontColor = disabled ? Color.FromArgb("#777777") : Color.FromArgb("#222222");
+            canvas.FontColor = disabled ? Color.FromArgb(AppColors.DisabledTextLight) : Color.FromArgb(AppColors.TextDark);
             canvas.DrawString(GetNoteName(note), keyRect, HorizontalAlignment.Center, VerticalAlignment.Bottom);
 
             _keyRects.Add(new KeyRect(note, keyRect, false, disabled));
@@ -201,16 +202,16 @@ public class PianoKeyboardDrawable : IDrawable
                 bool disabled = note < _instrumentMin || note > _instrumentMax;
                 bool pressed = _activeNotes.Contains(note);
 
-                canvas.FillColor = disabled ? Color.FromArgb("#222222")
-                                            : pressed ? Color.FromArgb("#FFAA55") : Color.FromArgb("#111111");
+                canvas.FillColor = disabled ? Color.FromArgb(AppColors.DisabledDarker)
+                                            : pressed ? Color.FromArgb(AppColors.PianoBlackKeyPressed) : Color.FromArgb(AppColors.PianoBlackKeyDark);
                 canvas.FillRectangle(keyRect);
 
-                canvas.StrokeColor = Color.FromArgb("#333333");
+                canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
                 canvas.StrokeSize = 1;
                 canvas.DrawRectangle(keyRect);
 
                 canvas.FontSize = 10;
-                canvas.FontColor = disabled ? Color.FromArgb("#666666") : Colors.White;
+                canvas.FontColor = disabled ? Color.FromArgb(AppColors.TextDim) : Colors.White;
                 canvas.DrawString(GetNoteName(note), keyRect, HorizontalAlignment.Center, VerticalAlignment.Bottom);
 
                 _keyRects.Add(new KeyRect(note, keyRect, true, disabled));
@@ -224,7 +225,7 @@ public class PianoKeyboardDrawable : IDrawable
 
     private void DrawArrow(ICanvas canvas, RectF rect, bool left)
     {
-        canvas.FillColor = Color.FromArgb("#303030");
+        canvas.FillColor = Color.FromArgb(AppColors.PianoStripBackground);
         canvas.FillRoundedRectangle(rect, 6);
         canvas.StrokeColor = Colors.White.WithAlpha(0.7f);
         canvas.StrokeSize = 1;
