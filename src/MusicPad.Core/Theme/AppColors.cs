@@ -2,320 +2,324 @@ namespace MusicPad.Core.Theme;
 
 /// <summary>
 /// Centralized color configuration for the entire application.
+/// All colors are derived from the current palette's 7 core colors.
 /// 
-/// Color Palette:
-/// - #8ECAE6 - Light Sky Blue (light accent, text, highlights)
-/// - #219EBC - Teal (primary interactive, buttons, links)
-/// - #023047 - Dark Navy (base background, dark surfaces)
-/// - #FFB703 - Amber (main accent, selected states, knobs)
-/// - #FB8500 - Orange (secondary accent, pressed states)
+/// To change the palette at runtime, use:
+/// PaletteService.Instance.SetPalette(Palette.Sunset);
+/// 
+/// Available palettes: Default, Sunset, Forest, Neon
 /// </summary>
 public static class AppColors
 {
-    #region Core Palette
+    /// <summary>
+    /// Gets the current computed palette colors.
+    /// </summary>
+    private static ComputedPalette Colors => PaletteService.Instance.Colors;
+    
+    #region Core Palette (read-only access to current palette)
     
     /// <summary>Light sky blue - light accent, text, highlights</summary>
-    public const string SkyBlue = "#8ECAE6";
+    public static string SkyBlue => ColorHelper.ToHex(PaletteService.Instance.CurrentPalette.SkyBlue);
     
     /// <summary>Teal - primary interactive, buttons, links</summary>
-    public const string Teal = "#219EBC";
+    public static string Teal => ColorHelper.ToHex(PaletteService.Instance.CurrentPalette.Teal);
     
     /// <summary>Dark navy - base background, dark surfaces</summary>
-    public const string Navy = "#023047";
+    public static string Navy => ColorHelper.ToHex(PaletteService.Instance.CurrentPalette.Navy);
     
     /// <summary>Amber - main accent, selected states, knobs</summary>
-    public const string Amber = "#FFB703";
+    public static string Amber => ColorHelper.ToHex(PaletteService.Instance.CurrentPalette.Amber);
     
     /// <summary>Orange - secondary accent, pressed states</summary>
-    public const string Orange = "#FB8500";
+    public static string Orange => ColorHelper.ToHex(PaletteService.Instance.CurrentPalette.Orange);
     
     #endregion
     
     #region Theme Colors - Primary Palette
     
     /// <summary>Teal - main brand color for interactive elements</summary>
-    public const string Primary = "#219EBC";
+    public static string Primary => Colors.Primary;
     
     /// <summary>Dark teal for depth</summary>
-    public const string PrimaryDark = "#1A7E96";
+    public static string PrimaryDark => Colors.PrimaryDark;
     
     /// <summary>Light teal for highlights</summary>
-    public const string PrimaryLight = "#4CB8D4";
+    public static string PrimaryLight => Colors.PrimaryLight;
     
     /// <summary>Amber - secondary accent for buttons and highlights</summary>
-    public const string Secondary = "#FFB703";
+    public static string Secondary => Colors.Secondary;
     
     /// <summary>Darker amber for pressed states</summary>
-    public const string SecondaryDark = "#CC9200";
+    public static string SecondaryDark => Colors.SecondaryDark;
     
     /// <summary>Lighter amber for hover states</summary>
-    public const string SecondaryLight = "#FFCC44";
+    public static string SecondaryLight => Colors.SecondaryLight;
     
     /// <summary>Orange - attention-grabbing accent</summary>
-    public const string Accent = "#FB8500";
+    public static string Accent => Colors.Accent;
     
     /// <summary>Darker orange for pressed states</summary>
-    public const string AccentDark = "#C86A00";
+    public static string AccentDark => Colors.AccentDark;
     
     #endregion
     
     #region Background Colors
     
     /// <summary>Main page background - dark navy</summary>
-    public const string BackgroundMain = "#023047";
+    public static string BackgroundMain => Colors.BackgroundMain;
     
     /// <summary>Even darker background for pages</summary>
-    public const string BackgroundPage = "#011627";
+    public static string BackgroundPage => Colors.BackgroundPage;
     
     /// <summary>Effect area background - slightly lighter navy</summary>
-    public const string BackgroundEffect = "#0A4060";
+    public static string BackgroundEffect => Colors.BackgroundEffect;
     
     /// <summary>Picker/dropdown background - navy lighter</summary>
-    public const string BackgroundPicker = "#145070";
+    public static string BackgroundPicker => Colors.BackgroundPicker;
     
     #endregion
     
     #region Surface Colors - Cards and Containers
     
     /// <summary>Card/container background - navy light</summary>
-    public const string Surface = "#0A4060";
+    public static string Surface => Colors.Surface;
     
     /// <summary>Slightly lighter surface for layers</summary>
-    public const string SurfaceLight = "#145070";
+    public static string SurfaceLight => Colors.SurfaceLight;
     
     /// <summary>Card border/stroke color - teal dark</summary>
-    public const string SurfaceBorder = "#1A7E96";
+    public static string SurfaceBorder => Colors.SurfaceBorder;
     
     /// <summary>Lighter border color</summary>
-    public const string SurfaceBorderLight = "#219EBC";
+    public static string SurfaceBorderLight => Colors.SurfaceBorderLight;
     
     #endregion
     
     #region Text Colors
     
     /// <summary>Primary text - light sky blue</summary>
-    public const string TextPrimary = "#8ECAE6";
+    public static string TextPrimary => Colors.TextPrimary;
     
     /// <summary>Secondary/label text - teal light</summary>
-    public const string TextSecondary = "#4CB8D4";
+    public static string TextSecondary => Colors.TextSecondary;
     
     /// <summary>Muted/disabled text - teal</summary>
-    public const string TextMuted = "#219EBC";
+    public static string TextMuted => Colors.TextMuted;
     
     /// <summary>Dim text for subtle elements</summary>
-    public const string TextDim = "#1A7E96";
+    public static string TextDim => Colors.TextDim;
     
     /// <summary>Commit label - orange accent</summary>
-    public const string TextCommit = "#FB8500";
+    public static string TextCommit => Colors.TextCommit;
     
     /// <summary>White text for high contrast</summary>
-    public const string TextWhite = "#FFFFFF";
+    public static string TextWhite => Colors.TextWhite;
     
     /// <summary>Dark text on light backgrounds</summary>
-    public const string TextDark = "#023047";
+    public static string TextDark => Colors.TextDark;
     
     #endregion
     
     #region Pad Colors - Full Range (Chromatic)
     
     /// <summary>Teal - chromatic pad normal state</summary>
-    public const string PadChromaticNormal = "#219EBC";
+    public static string PadChromaticNormal => Colors.PadChromaticNormal;
     
     /// <summary>Sky blue - chromatic pad pressed (static, no glow)</summary>
-    public const string PadChromaticPressed = "#8ECAE6";
+    public static string PadChromaticPressed => Colors.PadChromaticPressed;
     
-    /// <summary>Navy light - chromatic sharps/flats normal (no orange for idle)</summary>
-    public const string PadChromaticAlt = "#145070";
+    /// <summary>Navy - chromatic sharps/flats normal (no orange for idle)</summary>
+    public static string PadChromaticAlt => Colors.PadChromaticAlt;
     
     /// <summary>Teal - chromatic sharps/flats pressed (static, no glow)</summary>
-    public const string PadChromaticAltPressed = "#4CB8D4";
+    public static string PadChromaticAltPressed => Colors.PadChromaticAltPressed;
     
     /// <summary>Border color for chromatic pads</summary>
-    public const string PadChromaticBorder = "#1A7E96";
+    public static string PadChromaticBorder => Colors.PadChromaticBorder;
     
     #endregion
     
     #region Pad Colors - Pentatonic
     
     /// <summary>Teal - pentatonic pad normal (no orange for idle)</summary>
-    public const string PadPentatonicNormal = "#219EBC";
+    public static string PadPentatonicNormal => Colors.PadPentatonicNormal;
     
     /// <summary>Sky blue - pentatonic pressed (static, no glow)</summary>
-    public const string PadPentatonicPressed = "#8ECAE6";
+    public static string PadPentatonicPressed => Colors.PadPentatonicPressed;
     
-    /// <summary>Navy light - pentatonic alt normal (no orange for idle)</summary>
-    public const string PadPentatonicAlt = "#145070";
+    /// <summary>Navy - pentatonic alt normal (no orange for idle)</summary>
+    public static string PadPentatonicAlt => Colors.PadPentatonicAlt;
     
-    /// <summary>Teal light - pentatonic alt pressed (static, no glow)</summary>
-    public const string PadPentatonicAltPressed = "#4CB8D4";
+    /// <summary>Teal - pentatonic alt pressed (static, no glow)</summary>
+    public static string PadPentatonicAltPressed => Colors.PadPentatonicAltPressed;
     
     #endregion
     
     #region Pad Colors - Scales
     
     /// <summary>Sky blue - scale pad normal</summary>
-    public const string PadScaleNormal = "#8ECAE6";
+    public static string PadScaleNormal => Colors.PadScaleNormal;
     
     /// <summary>White - scale pad pressed (static, no glow)</summary>
-    public const string PadScalePressed = "#FFFFFF";
+    public static string PadScalePressed => Colors.PadScalePressed;
     
     /// <summary>Teal - scale halftones normal</summary>
-    public const string PadScaleAlt = "#219EBC";
+    public static string PadScaleAlt => Colors.PadScaleAlt;
     
-    /// <summary>Sky blue light - scale halftones pressed (static, no glow)</summary>
-    public const string PadScaleAltPressed = "#B8DBE8";
+    /// <summary>Sky blue - scale halftones pressed (static, no glow)</summary>
+    public static string PadScaleAltPressed => Colors.PadScaleAltPressed;
     
     #endregion
     
     #region Pad Colors - Piano
     
     /// <summary>White piano keys</summary>
-    public const string PianoWhiteKey = "#FFFFFF";
+    public static string PianoWhiteKey => Colors.PianoWhiteKey;
     
     /// <summary>Amber - white key pressed</summary>
-    public const string PianoWhiteKeyPressed = "#FFB703";
+    public static string PianoWhiteKeyPressed => Colors.PianoWhiteKeyPressed;
     
     /// <summary>Navy - black piano keys</summary>
-    public const string PianoBlackKey = "#023047";
+    public static string PianoBlackKey => Colors.PianoBlackKey;
     
     /// <summary>Orange - black key pressed</summary>
-    public const string PianoBlackKeyPressed = "#FB8500";
+    public static string PianoBlackKeyPressed => Colors.PianoBlackKeyPressed;
     
-    /// <summary>Very dark navy - actual black key color</summary>
-    public const string PianoBlackKeyDark = "#011627";
+    /// <summary>Black - actual black key color</summary>
+    public static string PianoBlackKeyDark => Colors.PianoBlackKeyDark;
     
     /// <summary>Piano strip background</summary>
-    public const string PianoStripBackground = "#0A4060";
+    public static string PianoStripBackground => Colors.PianoStripBackground;
     
-    /// <summary>Piano strip highlight area - teal transparent</summary>
-    public const string PianoStripHighlight = "#40219EBC";
+    /// <summary>Piano strip highlight area - teal</summary>
+    public static string PianoStripHighlight => Colors.PianoStripHighlight;
     
     /// <summary>Piano strip inactive area</summary>
-    public const string PianoStripInactive = "#145070";
+    public static string PianoStripInactive => Colors.PianoStripInactive;
     
     #endregion
     
     #region Knob Colors - Amber Theme
     
     /// <summary>Amber base color for rotary knobs</summary>
-    public const string KnobBase = "#FFB703";
+    public static string KnobBase => Colors.KnobBase;
     
     /// <summary>Light amber highlight for 3D effect</summary>
-    public const string KnobHighlight = "#FFCC44";
+    public static string KnobHighlight => Colors.KnobHighlight;
     
     /// <summary>Dark amber shadow for 3D effect</summary>
-    public const string KnobShadow = "#CC9200";
+    public static string KnobShadow => Colors.KnobShadow;
     
     /// <summary>Dark navy indicator dot on knobs</summary>
-    public const string KnobIndicator = "#023047";
+    public static string KnobIndicator => Colors.KnobIndicator;
     
     #endregion
     
     #region Button Colors
     
     /// <summary>Teal - button/toggle ON state</summary>
-    public const string ButtonOn = "#219EBC";
+    public static string ButtonOn => Colors.ButtonOn;
     
-    /// <summary>Navy light - button OFF state</summary>
-    public const string ButtonOff = "#0A4060";
+    /// <summary>Navy - button OFF state</summary>
+    public static string ButtonOff => Colors.ButtonOff;
     
     /// <summary>Button border when off</summary>
-    public const string ButtonBorder = "#1A7E96";
+    public static string ButtonBorder => Colors.ButtonBorder;
     
     /// <summary>Type button base (unselected)</summary>
-    public const string TypeButtonBase = "#145070";
+    public static string TypeButtonBase => Colors.TypeButtonBase;
     
     /// <summary>Type button selected (amber)</summary>
-    public const string TypeButtonSelected = "#FFB703";
+    public static string TypeButtonSelected => Colors.TypeButtonSelected;
     
     /// <summary>Type button highlight</summary>
-    public const string TypeButtonHighlight = "#FFCC44";
+    public static string TypeButtonHighlight => Colors.TypeButtonHighlight;
     
     #endregion
     
     #region Slider/EQ Colors
     
     /// <summary>Slider track background</summary>
-    public const string SliderTrack = "#0A4060";
+    public static string SliderTrack => Colors.SliderTrack;
     
     /// <summary>Slider fill color - teal</summary>
-    public const string SliderFill = "#219EBC";
+    public static string SliderFill => Colors.SliderFill;
     
     /// <summary>Slider thumb (amber)</summary>
-    public const string SliderThumb = "#FFB703";
+    public static string SliderThumb => Colors.SliderThumb;
     
     /// <summary>Slider thumb highlight</summary>
-    public const string SliderThumbHighlight = "#FFCC44";
+    public static string SliderThumbHighlight => Colors.SliderThumbHighlight;
     
     /// <summary>Center line on EQ sliders</summary>
-    public const string SliderCenterLine = "#1A7E96";
+    public static string SliderCenterLine => Colors.SliderCenterLine;
     
     #endregion
     
     #region Effect Area Colors
     
     /// <summary>Effect button background</summary>
-    public const string EffectButtonBackground = "#0A4060";
+    public static string EffectButtonBackground => Colors.EffectButtonBackground;
     
     /// <summary>Effect button selected - teal</summary>
-    public const string EffectButtonSelected = "#219EBC";
+    public static string EffectButtonSelected => Colors.EffectButtonSelected;
     
     /// <summary>Effect icon normal color</summary>
-    public const string EffectIconNormal = "#4CB8D4";
+    public static string EffectIconNormal => Colors.EffectIconNormal;
     
     /// <summary>Effect icon selected/active</summary>
-    public const string EffectIconSelected = "#FFFFFF";
+    public static string EffectIconSelected => Colors.EffectIconSelected;
     
     #endregion
     
     #region Disabled/Muted States
     
     /// <summary>General disabled color</summary>
-    public const string Disabled = "#1A7E96";
+    public static string Disabled => Colors.Disabled;
     
     /// <summary>Disabled border</summary>
-    public const string DisabledBorder = "#145070";
+    public static string DisabledBorder => Colors.DisabledBorder;
     
     /// <summary>Very dark disabled background</summary>
-    public const string DisabledDark = "#0A4060";
+    public static string DisabledDark => Colors.DisabledDark;
     
     /// <summary>Darker disabled for deep shadows</summary>
-    public const string DisabledDarker = "#023047";
+    public static string DisabledDarker => Colors.DisabledDarker;
     
     /// <summary>Disabled text on white backgrounds</summary>
-    public const string DisabledTextLight = "#4CB8D4";
+    public static string DisabledTextLight => Colors.DisabledTextLight;
     
     #endregion
     
     #region Arrow Colors (Navigation)
     
     /// <summary>Amber arrow color - vibrant</summary>
-    public const string ArrowNormal = "#FFB703";
+    public static string ArrowNormal => Colors.ArrowNormal;
     
-    /// <summary>Arrow glow color - light amber</summary>
-    public const string ArrowGlow = "#FFCC44";
+    /// <summary>Arrow glow color - amber</summary>
+    public static string ArrowGlow => Colors.ArrowGlow;
     
-    /// <summary>Arrow background (semi-transparent teal)</summary>
-    public const string ArrowBackground = "#40219EBC";
+    /// <summary>Arrow background - teal</summary>
+    public static string ArrowBackground => Colors.ArrowBackground;
     
     #endregion
     
     #region Miscellaneous
     
     /// <summary>Pure white</summary>
-    public const string White = "#FFFFFF";
+    public static string White => Colors.White;
     
     /// <summary>Pure black</summary>
-    public const string Black = "#000000";
+    public static string Black => Colors.Black;
     
-    /// <summary>Text shadow (semi-transparent black)</summary>
-    public const string TextShadow = "#40000000";
+    /// <summary>Text shadow - black</summary>
+    public static string TextShadow => Colors.TextShadow;
     
     /// <summary>Border dark - navy</summary>
-    public const string BorderDark = "#023047";
+    public static string BorderDark => Colors.BorderDark;
     
-    /// <summary>Border medium - navy light</summary>
-    public const string BorderMedium = "#0A4060";
+    /// <summary>Border medium - navy</summary>
+    public static string BorderMedium => Colors.BorderMedium;
     
     #endregion
 }
