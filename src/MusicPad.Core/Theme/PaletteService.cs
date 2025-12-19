@@ -58,7 +58,10 @@ public class PaletteService
         ("Default", Palette.Default),
         ("Sunset", Palette.Sunset),
         ("Forest", Palette.Forest),
-        ("Neon", Palette.Neon)
+        ("Neon", Palette.Neon),
+        ("Abyssal Forge", Palette.AbyssalForge),
+        ("Northern Archive", Palette.NorthernArchive),
+        ("Wild Echo", Palette.WildEcho)
     };
     
     /// <summary>

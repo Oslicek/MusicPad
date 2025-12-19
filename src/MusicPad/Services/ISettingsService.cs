@@ -23,6 +23,11 @@ public interface ISettingsService
     bool PadGlowEnabled { get; set; }
     
     /// <summary>
+    /// The name of the currently selected color palette.
+    /// </summary>
+    string SelectedPalette { get; set; }
+    
+    /// <summary>
     /// Saves settings to persistent storage.
     /// </summary>
     void Save();

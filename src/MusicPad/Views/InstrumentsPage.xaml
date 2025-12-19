@@ -2,21 +2,34 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MusicPad.Views.InstrumentsPage"
-             Title="Instruments"
-             BackgroundColor="{StaticResource BackgroundPage}">
+             Shell.NavBarIsVisible="False"
+             x:Name="ThisPage">
     
-    <Grid RowDefinitions="Auto,*,Auto" Padding="16">
-        <!-- Header with Import Button -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
-            <Label Text="Instruments" 
-                   FontSize="24" 
+    <Grid RowDefinitions="Auto,*" Padding="0">
+        <!-- Custom Header -->
+        <Grid x:Name="HeaderBar" 
+              Grid.Row="0" 
+              ColumnDefinitions="Auto,*,Auto" 
+              Padding="16,12">
+            <Label x:Name="BackArrow"
+                   Text="←"
+                   FontSize="24"
+                   VerticalOptions="Center"
+                   Grid.Column="0">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackClicked" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label x:Name="HeaderLabel"
+                   Text="Instruments"
+                   FontSize="22"
                    FontAttributes="Bold"
-                   TextColor="{StaticResource TextPrimary}"
-                   VerticalOptions="Center"/>
-            <Button Grid.Column="1"
+                   VerticalOptions="Center"
+                   Margin="16,0,0,0"
+                   Grid.Column="1" />
+            <Button x:Name="ImportButton"
+                    Grid.Column="2"
                     Text="+ Import"
-                    BackgroundColor="{StaticResource Secondary}"
-                    TextColor="{StaticResource TextDark}"
                     FontSize="14"
                     CornerRadius="8"
                     Padding="12,8"
@@ -24,14 +37,13 @@
         </Grid>
         
         <!-- Instruments List -->
-        <ScrollView Grid.Row="1">
+        <ScrollView Grid.Row="1" Padding="16,0,16,16">
             <VerticalStackLayout x:Name="InstrumentsList" Spacing="4">
                 <!-- User Instruments Section -->
                 <Label x:Name="UserSectionLabel"
                        Text="YOUR INSTRUMENTS"
                        FontSize="12"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource TextMuted}"
                        Margin="0,8,0,4"
                        IsVisible="False"/>
                 <VerticalStackLayout x:Name="UserInstrumentsList" Spacing="4"/>
@@ -41,21 +53,9 @@
                        Text="BUNDLED INSTRUMENTS"
                        FontSize="12"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource TextMuted}"
                        Margin="0,16,0,4"/>
                 <VerticalStackLayout x:Name="BundledInstrumentsList" Spacing="4"/>
             </VerticalStackLayout>
         </ScrollView>
-        
-        <!-- Back Button -->
-        <Button Grid.Row="2"
-                Text="Back"
-                BackgroundColor="{StaticResource Primary}"
-                TextColor="{StaticResource TextWhite}"
-                FontSize="16"
-                CornerRadius="8"
-                HeightRequest="50"
-                Margin="0,16,0,0"
-                Clicked="OnBackClicked"/>
     </Grid>
 </ContentPage>

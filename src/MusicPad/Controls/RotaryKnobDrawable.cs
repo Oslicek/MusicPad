@@ -8,12 +8,12 @@ namespace MusicPad.Controls;
 /// </summary>
 public class RotaryKnobDrawable : IDrawable
 {
-    // Warm copper/bronze color scheme like hardware knobs
-    private static readonly Color KnobBaseColor = Color.FromArgb(AppColors.KnobBase);
-    private static readonly Color KnobHighlightColor = Color.FromArgb(AppColors.KnobHighlight);
-    private static readonly Color KnobShadowColor = Color.FromArgb(AppColors.KnobShadow);
-    private static readonly Color IndicatorColor = Color.FromArgb(AppColors.KnobIndicator);
-    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
+    // Colors read dynamically to support runtime palette switching
+    private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
+    private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
+    private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
+    private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
 
     private float _value = 0.75f; // 0-1 range, default 75%
     private float _minAngle = 225f; // Start angle (7 o'clock position)

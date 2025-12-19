@@ -26,7 +26,33 @@ public partial class InstrumentsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        RefreshPageColors();
         await LoadInstrumentsAsync();
+    }
+    
+    private void RefreshPageColors()
+    {
+        // Get colors from current palette
+        var bgPage = Color.FromArgb(AppColors.BackgroundPage);
+        var surface = Color.FromArgb(AppColors.Surface);
+        var textPrimary = Color.FromArgb(AppColors.TextPrimary);
+        var textMuted = Color.FromArgb(AppColors.TextMuted);
+        var secondary = Color.FromArgb(AppColors.Secondary);
+        var textDark = Color.FromArgb(AppColors.TextDark);
+        
+        // Page background
+        BackgroundColor = bgPage;
+        
+        // Header bar
+        HeaderBar.BackgroundColor = surface;
+        BackArrow.TextColor = textPrimary;
+        HeaderLabel.TextColor = textPrimary;
+        ImportButton.BackgroundColor = secondary;
+        ImportButton.TextColor = textDark;
+        
+        // Section labels
+        UserSectionLabel.TextColor = textMuted;
+        BundledSectionLabel.TextColor = textMuted;
     }
 
     private async Task LoadInstrumentsAsync()

@@ -18,6 +18,29 @@ public partial class ImportInstrumentPage : ContentPage
     {
         InitializeComponent();
         _configService = configService;
+        RefreshPageColors();
+    }
+    
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        RefreshPageColors();
+    }
+    
+    private void RefreshPageColors()
+    {
+        // Get colors from current palette
+        var bgPage = Color.FromArgb(AppColors.BackgroundPage);
+        var surface = Color.FromArgb(AppColors.Surface);
+        var textPrimary = Color.FromArgb(AppColors.TextPrimary);
+        
+        // Page background
+        BackgroundColor = bgPage;
+        
+        // Header bar
+        HeaderBar.BackgroundColor = surface;
+        BackArrow.TextColor = textPrimary;
+        HeaderLabel.TextColor = textPrimary;
     }
 
     private async void OnBrowseClicked(object? sender, EventArgs e)

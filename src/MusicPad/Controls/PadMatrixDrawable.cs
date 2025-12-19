@@ -13,22 +13,27 @@ public class PadMatrixDrawable : IDrawable
     private static readonly string[] NoteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
     private static readonly bool[] IsSharp = { false, true, false, true, false, false, true, false, true, false, true, false };
 
-    // Default colors (teal/cyan theme)
-    private Color _padColor = Color.FromArgb(AppColors.PadChromaticNormal);
-    private Color _padPressedColor = Color.FromArgb(AppColors.PadChromaticPressed);
-    private Color _padAltColor = Color.FromArgb(AppColors.PadChromaticAlt);
-    private Color _padAltPressedColor = Color.FromArgb(AppColors.PadChromaticAltPressed);
-    private static readonly Color BorderColor = Color.FromArgb(AppColors.PadChromaticBorder);
-    private static readonly Color TextColor = Colors.White;
-    private static readonly Color TextShadowColor = Color.FromArgb(AppColors.TextShadow);
+    // Colors with optional overrides - read dynamically to support runtime palette switching
+    private Color? _padColorOverride;
+    private Color? _padPressedColorOverride;
+    private Color? _padAltColorOverride;
+    private Color? _padAltPressedColorOverride;
+    
+    private Color _padColor => _padColorOverride ?? Color.FromArgb(AppColors.PadChromaticNormal);
+    private Color _padPressedColor => _padPressedColorOverride ?? Color.FromArgb(AppColors.PadChromaticPressed);
+    private Color _padAltColor => _padAltColorOverride ?? Color.FromArgb(AppColors.PadChromaticAlt);
+    private Color _padAltPressedColor => _padAltPressedColorOverride ?? Color.FromArgb(AppColors.PadChromaticAltPressed);
+    private static Color BorderColor => Color.FromArgb(AppColors.PadChromaticBorder);
+    private static Color TextColor => Colors.White;
+    private static Color TextShadowColor => Color.FromArgb(AppColors.TextShadow);
     
     // Arrow colors - captivating neon
-    private static readonly Color ArrowColor = Color.FromArgb(AppColors.ArrowNormal);
-    private static readonly Color ArrowGlowColor = Color.FromArgb(AppColors.ArrowGlow);
-    private static readonly Color ArrowBgColor = Color.FromArgb(AppColors.ArrowBackground);
+    private static Color ArrowColor => Color.FromArgb(AppColors.ArrowNormal);
+    private static Color ArrowGlowColor => Color.FromArgb(AppColors.ArrowGlow);
+    private static Color ArrowBgColor => Color.FromArgb(AppColors.ArrowBackground);
     
     // Envelope glow colors - follows the sound's amplitude envelope
-    private static readonly Color EnvelopeGlowColor = Color.FromArgb(AppColors.Accent);
+    private static Color EnvelopeGlowColor => Color.FromArgb(AppColors.Accent);
 
     private List<int> _notes = new();
     private int _columns;
@@ -86,18 +91,14 @@ public class PadMatrixDrawable : IDrawable
     }
 
     /// <summary>
-    /// Sets custom colors for the pads.
+    /// Sets custom colors for the pads (overrides palette colors).
     /// </summary>
     public void SetColors(string? padColor, string? padPressedColor, string? padAltColor, string? padAltPressedColor)
     {
-        if (!string.IsNullOrEmpty(padColor))
-            _padColor = Color.FromArgb(padColor);
-        if (!string.IsNullOrEmpty(padPressedColor))
-            _padPressedColor = Color.FromArgb(padPressedColor);
-        if (!string.IsNullOrEmpty(padAltColor))
-            _padAltColor = Color.FromArgb(padAltColor);
-        if (!string.IsNullOrEmpty(padAltPressedColor))
-            _padAltPressedColor = Color.FromArgb(padAltPressedColor);
+        _padColorOverride = !string.IsNullOrEmpty(padColor) ? Color.FromArgb(padColor) : null;
+        _padPressedColorOverride = !string.IsNullOrEmpty(padPressedColor) ? Color.FromArgb(padPressedColor) : null;
+        _padAltColorOverride = !string.IsNullOrEmpty(padAltColor) ? Color.FromArgb(padAltColor) : null;
+        _padAltPressedColorOverride = !string.IsNullOrEmpty(padAltPressedColor) ? Color.FromArgb(padAltPressedColor) : null;
     }
 
     /// <summary>

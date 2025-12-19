@@ -11,24 +11,24 @@ public class ReverbDrawable
 {
     private readonly ReverbSettings _settings;
     
-    // Knob colors (matching other effects)
-    private static readonly Color KnobBaseColor = Color.FromArgb(AppColors.KnobBase);
-    private static readonly Color KnobHighlightColor = Color.FromArgb(AppColors.KnobHighlight);
-    private static readonly Color KnobShadowColor = Color.FromArgb(AppColors.KnobShadow);
-    private static readonly Color IndicatorColor = Color.FromArgb(AppColors.KnobIndicator);
-    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
-    private static readonly Color DisabledColor = Color.FromArgb(AppColors.Disabled);
+    // Knob colors (dynamic for palette switching)
+    private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
+    private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
+    private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
+    private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
+    private static Color DisabledColor => Color.FromArgb(AppColors.Disabled);
     
-    // Button colors
-    private static readonly Color ButtonOnColor = Color.FromArgb(AppColors.ButtonOn);
-    private static readonly Color ButtonOffColor = Color.FromArgb(AppColors.ButtonOff);
+    // Button colors (dynamic for palette switching)
+    private static Color ButtonOnColor => Color.FromArgb(AppColors.ButtonOn);
+    private static Color ButtonOffColor => Color.FromArgb(AppColors.ButtonOff);
     
-    // Type selector colors (knob-style aesthetic)
-    private static readonly Color TypeButtonBaseColor = Color.FromArgb(AppColors.TypeButtonBase);
-    private static readonly Color TypeButtonSelectedColor = Color.FromArgb(AppColors.TypeButtonSelected);
-    private static readonly Color TypeButtonHighlightColor = Color.FromArgb(AppColors.TypeButtonHighlight);
-    private static readonly Color TypeButtonTextColor = Color.FromArgb(AppColors.TextSecondary);
-    private static readonly Color TypeButtonTextSelectedColor = Color.FromArgb(AppColors.TextWhite);
+    // Type selector colors (dynamic for palette switching)
+    private static Color TypeButtonBaseColor => Color.FromArgb(AppColors.TypeButtonBase);
+    private static Color TypeButtonSelectedColor => Color.FromArgb(AppColors.TypeButtonSelected);
+    private static Color TypeButtonHighlightColor => Color.FromArgb(AppColors.TypeButtonHighlight);
+    private static Color TypeButtonTextColor => Color.FromArgb(AppColors.TextSecondary);
+    private static Color TypeButtonTextSelectedColor => Color.FromArgb(AppColors.TextWhite);
 
     private RectF _onOffButtonRect;
     private RectF _levelKnobRect;

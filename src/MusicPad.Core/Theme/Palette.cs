@@ -89,5 +89,44 @@ public class Palette
         white: 0xFFFFFF,
         black: 0x000000
     );
+    
+    /// <summary>
+    /// Abyssal Forge - deep ocean and molten metal theme.
+    /// </summary>
+    public static Palette AbyssalForge { get; } = new Palette(
+        skyBlue: 0x3C5A64,  // Detail: Kelp Shadow (60, 90, 100)
+        teal: 0x23374B,     // Front: Storm Slate (35, 55, 75)
+        navy: 0x0A141E,     // Back: Deep Trench (10, 20, 30)
+        amber: 0x00FFCD,    // Accent 1: Bio-Lume Cyan (0, 255, 205)
+        orange: 0xFFAA32,   // Accent 2: Molten Amber (255, 170, 50)
+        white: 0xFFFFFF,
+        black: 0x000000
+    );
+    
+    /// <summary>
+    /// Northern Archive - arctic and copper theme.
+    /// </summary>
+    public static Palette NorthernArchive { get; } = new Palette(
+        skyBlue: 0x648296,  // Detail: Frost Glass (100, 130, 150)
+        teal: 0x324B5F,     // Front: Arctic Steel (50, 75, 95)
+        navy: 0x0F1923,     // Back: Midnight Fjord (15, 25, 35)
+        amber: 0xDCF5FF,    // Accent 1: Glacial White (220, 245, 255)
+        orange: 0xC3734B,   // Accent 2: Copper Compass (195, 115, 75)
+        white: 0xFFFFFF,
+        black: 0x000000
+    );
+    
+    /// <summary>
+    /// Wild Echo - natural seaweed and coral theme.
+    /// </summary>
+    public static Palette WildEcho { get; } = new Palette(
+        skyBlue: 0x557369,  // Detail: Mist Green (85, 115, 105)
+        teal: 0x2D413C,     // Front: Shore Stone (45, 65, 60)
+        navy: 0x0F1E19,     // Back: Dark Seaweed (15, 30, 25)
+        amber: 0x64FFB4,    // Accent 1: Electric Seafoam (100, 255, 180)
+        orange: 0xFF6E64,   // Accent 2: Sunset Coral (255, 110, 100)
+        white: 0xFFFFFF,
+        black: 0x000000
+    );
 }
 

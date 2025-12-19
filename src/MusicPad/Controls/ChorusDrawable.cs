@@ -11,17 +11,17 @@ public class ChorusDrawable
 {
     private readonly ChorusSettings _settings;
     
-    // Knob colors
-    private static readonly Color KnobBaseColor = Color.FromArgb(AppColors.KnobBase);
-    private static readonly Color KnobHighlightColor = Color.FromArgb(AppColors.KnobHighlight);
-    private static readonly Color KnobShadowColor = Color.FromArgb(AppColors.KnobShadow);
-    private static readonly Color IndicatorColor = Color.FromArgb(AppColors.KnobIndicator);
-    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
-    private static readonly Color DisabledColor = Color.FromArgb(AppColors.Disabled);
+    // Knob colors (dynamic for palette switching)
+    private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
+    private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
+    private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
+    private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
+    private static Color DisabledColor => Color.FromArgb(AppColors.Disabled);
     
-    // Button colors
-    private static readonly Color ButtonOnColor = Color.FromArgb(AppColors.ButtonOn);
-    private static readonly Color ButtonOffColor = Color.FromArgb(AppColors.ButtonOff);
+    // Button colors (dynamic for palette switching)
+    private static Color ButtonOnColor => Color.FromArgb(AppColors.ButtonOn);
+    private static Color ButtonOffColor => Color.FromArgb(AppColors.ButtonOff);
 
     private RectF _onOffButtonRect;
     private RectF _depthKnobRect;

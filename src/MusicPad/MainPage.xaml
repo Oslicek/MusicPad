@@ -16,16 +16,14 @@
                      Margin="4,0">
             <Border x:Name="HamburgerButton"
                     StrokeShape="RoundRectangle 6"
-                    Stroke="{StaticResource BorderDark}"
-                    BackgroundColor="{StaticResource BackgroundPicker}"
                     Padding="8,6"
                     HorizontalOptions="End">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnHamburgerMenuClicked" />
                 </Border.GestureRecognizers>
-                <Label Text="☰"
+                <Label x:Name="HamburgerIcon"
+                       Text="☰"
                        FontSize="20"
-                       TextColor="{StaticResource TextPrimary}"
                        HorizontalOptions="Center"
                        VerticalOptions="Center" />
             </Border>

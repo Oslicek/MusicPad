@@ -41,6 +41,35 @@ public partial class InstrumentDetailPage : ContentPage
         InitializeComponent();
         _sfzService = sfzService;
         _configService = configService;
+        RefreshPageColors();
+    }
+    
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        RefreshPageColors();
+    }
+    
+    private void RefreshPageColors()
+    {
+        // Get colors from current palette
+        var bgPage = Color.FromArgb(AppColors.BackgroundPage);
+        var surface = Color.FromArgb(AppColors.Surface);
+        var textPrimary = Color.FromArgb(AppColors.TextPrimary);
+        
+        // Page background
+        BackgroundColor = bgPage;
+        
+        // Header bar
+        HeaderBar.BackgroundColor = surface;
+        BackArrow.TextColor = textPrimary;
+        HeaderLabel.TextColor = textPrimary;
+        InstrumentNameLabel.TextColor = textPrimary;
+    }
+    
+    private async void OnBackClicked(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("..");
     }
 
     private async Task LoadInstrumentAsync()

@@ -11,8 +11,8 @@ public class PianoKeyboardDrawable : IDrawable
     private const int GlobalMin = 21;  // A0
     private const int GlobalMax = 108; // C8
     
-    // Envelope glow color - follows the sound's amplitude envelope
-    private static readonly Color EnvelopeGlowColor = Color.FromArgb(AppColors.Accent);
+    // Envelope glow color - follows the sound's amplitude envelope (dynamic for palette switching)
+    private static Color EnvelopeGlowColor => Color.FromArgb(AppColors.Accent);
 
     private int _rangeStart;
     private int _rangeEnd;

@@ -16,7 +16,7 @@ public class PadreaService : IPadreaService
 
     public PadreaService()
     {
-        // Create default chromatic padrea with contrasting pressed colors
+        // Create default chromatic padrea - colors come from dynamic palette
         var fullRangePadrea = new Padrea
         {
             Id = "full-range",
@@ -24,16 +24,12 @@ public class PadreaService : IPadreaService
             Description = "Shows all chromatic notes from the instrument's range",
             NoteFilter = NoteFilterType.Chromatic,
             Columns = 6,           // 6 pads per row (half octave)
-            RowsPerViewpage = 4,   // 4 rows = 24 notes = 2 octaves per page
-            // Teal/cyan - pressed is bright white for aggressive contrast
-            PadColor = AppColors.PadChromaticNormal,
-            PadPressedColor = AppColors.PadChromaticPressed,
-            PadAltColor = AppColors.PadChromaticAlt,
-            PadAltPressedColor = AppColors.PadChromaticAltPressed
+            RowsPerViewpage = 4    // 4 rows = 24 notes = 2 octaves per page
+            // Colors are null - drawable will use dynamic palette defaults
         };
         _padreas.Add(fullRangePadrea);
         
-        // Create pentatonic padrea with neon colors and aggressive pressed states
+        // Create pentatonic padrea - colors come from dynamic palette
         var pentatonicPadrea = new Padrea
         {
             Id = "pentatonic",
@@ -41,16 +37,12 @@ public class PadreaService : IPadreaService
             Description = "Major pentatonic scale - 5 notes per octave, 5 octaves per page",
             NoteFilter = NoteFilterType.PentatonicMajor,
             Columns = 5,           // 5 pads per row
-            RowsPerViewpage = 5,   // 5 rows per viewpage = 5 octaves
-            // Neon magenta - pressed is bright yellow for aggressive contrast
-            PadColor = AppColors.PadPentatonicNormal,
-            PadPressedColor = AppColors.PadPentatonicPressed,
-            PadAltColor = AppColors.PadPentatonicAlt,
-            PadAltPressedColor = AppColors.PadPentatonicAltPressed
+            RowsPerViewpage = 5    // 5 rows per viewpage = 5 octaves
+            // Colors are null - drawable will use dynamic palette defaults
         };
         _padreas.Add(pentatonicPadrea);
 
-        // Heptatonic scales padrea (default C Major)
+        // Heptatonic scales padrea (default C Major) - colors come from dynamic palette
         var scalesPadrea = new Padrea
         {
             Id = "scales",
@@ -61,12 +53,8 @@ public class PadreaService : IPadreaService
             RootNote = 0, // C
             Columns = 7,           // 7 pads per row (one octave of scale)
             RowsPerViewpage = 4,   // 4 rows = 28 notes = 4 octaves per page
-            Kind = PadreaKind.Grid,
-            // Warm copper base, halftones darker
-            PadColor = AppColors.PadScaleNormal,
-            PadPressedColor = AppColors.PadScalePressed,
-            PadAltColor = AppColors.PadScaleAlt,
-            PadAltPressedColor = AppColors.PadScaleAltPressed
+            Kind = PadreaKind.Grid
+            // Colors are null - drawable will use dynamic palette defaults
         };
         _padreas.Add(scalesPadrea);
 
@@ -77,11 +65,8 @@ public class PadreaService : IPadreaService
             Name = "Piano",
             Description = "Chromatic piano keyboard view",
             NoteFilter = NoteFilterType.Chromatic,
-            Kind = PadreaKind.Piano,
-            PadColor = AppColors.PianoWhiteKey,
-            PadPressedColor = AppColors.PianoWhiteKeyPressed,
-            PadAltColor = AppColors.PianoBlackKey,
-            PadAltPressedColor = AppColors.PianoBlackKeyPressed
+            Kind = PadreaKind.Piano
+            // Colors are null - drawable will use dynamic palette defaults
         };
         _padreas.Add(pianoPadrea);
         
@@ -92,12 +77,8 @@ public class PadreaService : IPadreaService
             Name = "Pitch-Volume",
             Description = "Continuous surface: horizontal = pitch, vertical = volume",
             NoteFilter = NoteFilterType.Chromatic,
-            Kind = PadreaKind.PitchVolume,
-            // Teal for the surface with amber glow on touch
-            PadColor = AppColors.Teal,
-            PadPressedColor = AppColors.Accent,  // Orange - most aggressive accent
-            PadAltColor = AppColors.SkyBlue,
-            PadAltPressedColor = AppColors.Amber
+            Kind = PadreaKind.PitchVolume
+            // Colors are null - drawable will use dynamic palette defaults
         };
         _padreas.Add(pitchVolumePadrea);
         

@@ -13,15 +13,15 @@ public class PitchVolumeDrawable : IDrawable
 {
     private static readonly string[] NoteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
     
-    // Colors
-    private static readonly Color SurfaceColor = Color.FromArgb(AppColors.Navy);
-    private static readonly Color GridLineColor = Color.FromArgb(AppColors.SurfaceBorder);
-    private static readonly Color OctaveLineColor = Color.FromArgb(AppColors.Teal);
-    private static readonly Color TouchGlowColor = Color.FromArgb(AppColors.Accent); // Orange - most aggressive
-    private static readonly Color TouchCoreColor = Color.FromArgb(AppColors.Amber);
-    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
-    private static readonly Color GradientTopColor = Color.FromArgb(AppColors.SkyBlue).WithAlpha(0.15f);
-    private static readonly Color GradientBottomColor = Color.FromArgb(AppColors.Navy);
+    // Colors (dynamic for palette switching)
+    private static Color SurfaceColor => Color.FromArgb(AppColors.Navy);
+    private static Color GridLineColor => Color.FromArgb(AppColors.SurfaceBorder);
+    private static Color OctaveLineColor => Color.FromArgb(AppColors.Teal);
+    private static Color TouchGlowColor => Color.FromArgb(AppColors.Accent); // Orange - most aggressive
+    private static Color TouchCoreColor => Color.FromArgb(AppColors.Amber);
+    private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
+    private static Color GradientTopColor => Color.FromArgb(AppColors.SkyBlue).WithAlpha(0.15f);
+    private static Color GradientBottomColor => Color.FromArgb(AppColors.Navy);
     
     private int _minNote = 21;  // A0
     private int _maxNote = 108; // C8

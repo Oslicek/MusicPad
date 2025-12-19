@@ -2,17 +2,39 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MusicPad.Views.InstrumentDetailPage"
-             Title="Instrument Details"
-             BackgroundColor="{StaticResource BackgroundPage}">
+             Shell.NavBarIsVisible="False">
     
-    <ScrollView Padding="20">
-        <StackLayout Spacing="20">
-            <!-- Instrument Name -->
-            <Label x:Name="InstrumentNameLabel" 
-                   FontSize="28" 
+    <Grid RowDefinitions="Auto,*">
+        <!-- Custom Header -->
+        <Grid x:Name="HeaderBar" 
+              Grid.Row="0" 
+              ColumnDefinitions="Auto,*" 
+              Padding="16,12">
+            <Label x:Name="BackArrow"
+                   Text="←"
+                   FontSize="24"
+                   VerticalOptions="Center"
+                   Grid.Column="0">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackClicked" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label x:Name="HeaderLabel"
+                   Text="Instrument Details"
+                   FontSize="22"
                    FontAttributes="Bold"
-                   TextColor="{StaticResource TextPrimary}"
-                   HorizontalTextAlignment="Center"/>
+                   VerticalOptions="Center"
+                   Margin="16,0,0,0"
+                   Grid.Column="1" />
+        </Grid>
+        
+        <ScrollView Grid.Row="1" Padding="20,0,20,20">
+            <StackLayout Spacing="20">
+                <!-- Instrument Name -->
+                <Label x:Name="InstrumentNameLabel" 
+                       FontSize="28" 
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center"/>
             
             <!-- Loading Indicator -->
             <ActivityIndicator x:Name="LoadingIndicator"
@@ -242,4 +264,5 @@
             </StackLayout>
         </StackLayout>
     </ScrollView>
+    </Grid>
 </ContentPage>

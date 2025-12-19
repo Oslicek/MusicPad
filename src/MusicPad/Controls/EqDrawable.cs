@@ -11,13 +11,13 @@ public class EqDrawable
 {
     private readonly EqualizerSettings _settings;
     
-    // Colors
-    private static readonly Color SliderTrackColor = Color.FromArgb(AppColors.SliderTrack);
-    private static readonly Color SliderFillColor = Color.FromArgb(AppColors.SliderFill);
-    private static readonly Color SliderThumbColor = Color.FromArgb(AppColors.SliderThumb);
-    private static readonly Color SliderThumbHighlight = Color.FromArgb(AppColors.SliderThumbHighlight);
-    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
-    private static readonly Color CenterLineColor = Color.FromArgb(AppColors.SliderCenterLine);
+    // Colors (dynamic for palette switching)
+    private static Color SliderTrackColor => Color.FromArgb(AppColors.SliderTrack);
+    private static Color SliderFillColor => Color.FromArgb(AppColors.SliderFill);
+    private static Color SliderThumbColor => Color.FromArgb(AppColors.SliderThumb);
+    private static Color SliderThumbHighlight => Color.FromArgb(AppColors.SliderThumbHighlight);
+    private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
+    private static Color CenterLineColor => Color.FromArgb(AppColors.SliderCenterLine);
 
     private readonly RectF[] _sliderRects = new RectF[4];
     private readonly float[] _sliderTrackTops = new float[4];

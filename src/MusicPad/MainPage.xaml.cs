@@ -1,6 +1,7 @@
 using MusicPad.Controls;
 using MusicPad.Core.Models;
 using MusicPad.Core.NoteProcessing;
+using MusicPad.Core.Theme;
 using MusicPad.Services;
 
 namespace MusicPad;
@@ -70,6 +71,60 @@ public partial class MainPage : ContentPage
         
         // Setup Harmony and Arpeggiator from effect area settings
         SetupHarmonyAndArpeggiator();
+        
+        // Subscribe to palette changes
+        PaletteService.Instance.PaletteChanged += OnPaletteChanged;
+    }
+    
+    private void OnPaletteChanged(object? sender, EventArgs e)
+    {
+        // Invalidate all drawables to pick up new colors
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            _padGraphicsView?.Invalidate();
+            VolumeKnob?.Invalidate();
+            EffectArea?.Invalidate();
+            
+            // Update background color dynamically
+            BackgroundColor = Color.FromArgb(AppColors.BackgroundMain);
+            
+            // Update all pickers with palette colors
+            var pickerBgColor = Color.FromArgb(AppColors.BackgroundPicker);
+            var textColor = Color.FromArgb(AppColors.TextPrimary);
+            
+            if (InstrumentPicker != null)
+            {
+                InstrumentPicker.BackgroundColor = pickerBgColor;
+                InstrumentPicker.TextColor = textColor;
+            }
+            if (PadreaPicker != null)
+            {
+                PadreaPicker.BackgroundColor = pickerBgColor;
+                PadreaPicker.TextColor = textColor;
+            }
+            if (ScalePicker != null)
+            {
+                ScalePicker.BackgroundColor = pickerBgColor;
+                ScalePicker.TextColor = textColor;
+            }
+            
+            // Update hamburger button
+            if (HamburgerButton != null)
+            {
+                HamburgerButton.BackgroundColor = pickerBgColor;
+                HamburgerButton.Stroke = new SolidColorBrush(Color.FromArgb(AppColors.BorderDark));
+            }
+            if (HamburgerIcon != null)
+            {
+                HamburgerIcon.TextColor = textColor;
+            }
+            
+            // Update commit hash label
+            if (CommitHashLabel != null)
+            {
+                CommitHashLabel.TextColor = Color.FromArgb(AppColors.TextCommit);
+            }
+        });
     }
 
     private void SetupVolumeKnob()

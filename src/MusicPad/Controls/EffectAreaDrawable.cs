@@ -28,12 +28,12 @@ public class EffectAreaDrawable : IDrawable
     private RectF _delayRect;
     private RectF _reverbRect;
 
-    // Colors
-    private static readonly Color ButtonBackgroundColor = Color.FromArgb(AppColors.EffectButtonBackground);
-    private static readonly Color ButtonSelectedColor = Color.FromArgb(AppColors.EffectButtonSelected);
-    private static readonly Color ButtonIconColor = Color.FromArgb(AppColors.EffectIconNormal);
-    private static readonly Color ButtonIconSelectedColor = Color.FromArgb(AppColors.EffectIconSelected);
-    private static readonly Color EffectAreaBackground = Color.FromArgb(AppColors.BackgroundEffect);
+    // Colors (dynamic for palette switching)
+    private static Color ButtonBackgroundColor => Color.FromArgb(AppColors.EffectButtonBackground);
+    private static Color ButtonSelectedColor => Color.FromArgb(AppColors.EffectButtonSelected);
+    private static Color ButtonIconColor => Color.FromArgb(AppColors.EffectIconNormal);
+    private static Color ButtonIconSelectedColor => Color.FromArgb(AppColors.EffectIconSelected);
+    private static Color EffectAreaBackground => Color.FromArgb(AppColors.BackgroundEffect);
 
     public event EventHandler<EffectType>? EffectSelected;
     public event EventHandler? InvalidateRequested;

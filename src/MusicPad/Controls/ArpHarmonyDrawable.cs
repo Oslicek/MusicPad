@@ -14,23 +14,23 @@ public class ArpHarmonyDrawable
     private readonly HarmonySettings _harmonySettings;
     private readonly ArpeggiatorSettings _arpSettings;
     
-    // Knob colors
-    private static readonly Color KnobBaseColor = Color.FromArgb(AppColors.KnobBase);
-    private static readonly Color KnobHighlightColor = Color.FromArgb(AppColors.KnobHighlight);
-    private static readonly Color KnobShadowColor = Color.FromArgb(AppColors.KnobShadow);
-    private static readonly Color IndicatorColor = Color.FromArgb(AppColors.KnobIndicator);
-    private static readonly Color LabelColor = Color.FromArgb(AppColors.TextSecondary);
-    private static readonly Color DisabledColor = Color.FromArgb(AppColors.Disabled);
+    // Knob colors (dynamic for palette switching)
+    private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
+    private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
+    private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
+    private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
+    private static Color DisabledColor => Color.FromArgb(AppColors.Disabled);
     
-    // Button colors
-    private static readonly Color ButtonOnColor = Color.FromArgb(AppColors.ButtonOn);
-    private static readonly Color ButtonOffColor = Color.FromArgb(AppColors.ButtonOff);
+    // Button colors (dynamic for palette switching)
+    private static Color ButtonOnColor => Color.FromArgb(AppColors.ButtonOn);
+    private static Color ButtonOffColor => Color.FromArgb(AppColors.ButtonOff);
     
-    // Type selector colors
-    private static readonly Color TypeButtonBaseColor = Color.FromArgb(AppColors.TypeButtonBase);
-    private static readonly Color TypeButtonSelectedColor = Color.FromArgb(AppColors.TypeButtonSelected);
-    private static readonly Color TypeButtonTextColor = Color.FromArgb(AppColors.TextSecondary);
-    private static readonly Color TypeButtonTextSelectedColor = Color.FromArgb(AppColors.TextWhite);
+    // Type selector colors (dynamic for palette switching)
+    private static Color TypeButtonBaseColor => Color.FromArgb(AppColors.TypeButtonBase);
+    private static Color TypeButtonSelectedColor => Color.FromArgb(AppColors.TypeButtonSelected);
+    private static Color TypeButtonTextColor => Color.FromArgb(AppColors.TextSecondary);
+    private static Color TypeButtonTextSelectedColor => Color.FromArgb(AppColors.TextWhite);
 
     // Hit test rects
     private RectF _harmonyOnOffRect;
