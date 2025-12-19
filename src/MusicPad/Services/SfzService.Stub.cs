@@ -14,6 +14,7 @@ public class SfzService : ISfzService
     public string? CurrentInstrumentName => null;
     public (int minKey, int maxKey) CurrentKeyRange => (0, 127);
     public SfzInstrument? CurrentInstrument => null;
+    public VoicingType VoicingMode { get; set; } = VoicingType.Polyphonic;
     public float Volume { get; set; } = 0.75f;
     public bool LpfEnabled { get; set; } = false;
     public float LpfCutoff { get; set; } = 1.0f;
@@ -25,6 +26,7 @@ public class SfzService : ISfzService
     public void NoteOn(int midiNote, int velocity) { }
     public void NoteOff(int midiNote) { }
     public void StopAll() { }
+    public void Mute() { }
     public float GetNoteEnvelopeLevel(int midiNote) => 0f;
     public void SetEqBandGain(int band, float normalizedGain) { }
     public bool ChorusEnabled { get; set; } = false;

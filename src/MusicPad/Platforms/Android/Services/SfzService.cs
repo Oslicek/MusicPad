@@ -35,6 +35,12 @@ public class SfzService : ISfzService, IDisposable
     public (int minKey, int maxKey) CurrentKeyRange => _currentInstrument?.GetKeyRange() ?? (0, 127);
     public SfzInstrument? CurrentInstrument => _currentInstrument;
     
+    public VoicingType VoicingMode
+    {
+        get => _player.VoicingMode;
+        set => _player.VoicingMode = value;
+    }
+    
     private float _volume = 0.75f;
     public float Volume
     {
@@ -482,6 +488,11 @@ public class SfzService : ISfzService, IDisposable
     public void StopAll()
     {
         _player.StopAll();
+    }
+    
+    public void Mute()
+    {
+        _player.Mute();
     }
     
     public float GetNoteEnvelopeLevel(int midiNote)

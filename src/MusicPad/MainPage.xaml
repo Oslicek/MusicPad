@@ -71,6 +71,29 @@
                       HeightRequest="120"
                       WidthRequest="120" />
         
+        <!-- Mute Button - positioned dynamically -->
+        <Border x:Name="MuteButton"
+                StrokeShape="RoundRectangle 8"
+                BackgroundColor="{StaticResource BackgroundPicker}"
+                Stroke="{StaticResource BorderDark}"
+                StrokeThickness="2"
+                Padding="12,8"
+                HeightRequest="44"
+                WidthRequest="80"
+                HorizontalOptions="Start"
+                VerticalOptions="Start">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnMuteButtonClicked" />
+            </Border.GestureRecognizers>
+            <Label x:Name="MuteLabel"
+                   Text="MUTE"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Accent}"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center" />
+        </Border>
+        
         <!-- Effect Area - positioned dynamically -->
         <GraphicsView x:Name="EffectArea" />
         

@@ -1,3 +1,4 @@
+using MusicPad.Core.Models;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -7,6 +8,11 @@ namespace MusicPad.Services;
 /// </summary>
 public interface ISfzService
 {
+    /// <summary>
+    /// Gets or sets the current voicing mode (polyphonic or monophonic).
+    /// </summary>
+    VoicingType VoicingMode { get; set; }
+    
     /// <summary>
     /// Gets the list of available instruments.
     /// </summary>
@@ -57,6 +63,12 @@ public interface ISfzService
     /// Stops all playing notes.
     /// </summary>
     void StopAll();
+    
+    /// <summary>
+    /// Mutes all playing notes with a very short release to avoid clicks.
+    /// Used by the mute button on keyboards/pads.
+    /// </summary>
+    void Mute();
     
     /// <summary>
     /// Gets the current envelope level for a note (0.0 = silent, 1.0 = full).

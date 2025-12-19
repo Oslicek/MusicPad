@@ -1,21 +1,25 @@
 using System.Diagnostics;
+using MusicPad.Core.Models;
 
 namespace MusicPad.Core.Sfz;
 
 /// <summary>
 /// Plays SFZ instruments by generating audio samples.
-/// Supports polyphonic playback with configurable max voices.
+/// Supports polyphonic and monophonic playback with configurable max voices.
 /// Uses a fixed voice pool with intelligent allocation like real acoustic instruments.
 /// </summary>
 public class SfzPlayer
 {
     private const int DefaultMaxVoices = 10;
+    private const int MuteReleaseSamples = 2000; // ~45ms at 44100Hz - quick but smooth
     
     private readonly int _sampleRate;
     private readonly int _maxVoices;
     private SfzInstrument? _instrument;
     private readonly Voice[] _voices;
     private readonly object _lock = new();
+    private VoicingType _voicingMode = VoicingType.Polyphonic;
+    private int _lastMonoNoteActive = -1; // Track active note in mono mode
 
     public SfzPlayer(int sampleRate, int maxVoices = DefaultMaxVoices)
     {
@@ -45,6 +49,33 @@ public class SfzPlayer
     }
 
     /// <summary>
+    /// Gets or sets the voicing mode for this player.
+    /// Monophonic: Only one note plays at a time.
+    /// Polyphonic: Multiple notes can play simultaneously.
+    /// </summary>
+    public VoicingType VoicingMode
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _voicingMode;
+            }
+        }
+        set
+        {
+            lock (_lock)
+            {
+                _voicingMode = value;
+                if (value == VoicingType.Monophonic)
+                {
+                    _lastMonoNoteActive = -1;
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Loads an SFZ instrument for playback.
     /// </summary>
     public void LoadInstrument(SfzInstrument instrument)
@@ -58,6 +89,8 @@ public class SfzPlayer
                 voice.EnvelopePhase = EnvelopePhase.Idle;
                 voice.IsFinished = false;
             }
+            // Reset mono mode tracking
+            _lastMonoNoteActive = -1;
         }
     }
 
@@ -145,6 +178,21 @@ public class SfzPlayer
             float[]? samples = GetSamplesForRegion(region);
             if (samples == null || samples.Length == 0)
                 return;
+
+            // Handle monophonic mode - cut off all other notes immediately
+            if (_voicingMode == VoicingType.Monophonic)
+            {
+                // Immediately silence all other voices (no release)
+                foreach (var v in _voices)
+                {
+                    if (v.EnvelopePhase != EnvelopePhase.Idle)
+                    {
+                        v.EnvelopePhase = EnvelopePhase.Idle;
+                        v.EnvelopeLevel = 0;
+                    }
+                }
+                _lastMonoNoteActive = midiNote;
+            }
 
             // Check if this note is already playing (not idle, not releasing) - retrigger in place
             Voice? voice = null;
@@ -290,6 +338,34 @@ public class SfzPlayer
                     voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Mutes all playing voices with a very short release phase to avoid clicks.
+    /// This is used by the mute button on keyboards/pads.
+    /// </summary>
+    public void Mute()
+    {
+        lock (_lock)
+        {
+            long now = Stopwatch.GetTimestamp();
+            
+            foreach (var voice in _voices)
+            {
+                if (voice.EnvelopePhase != EnvelopePhase.Idle)
+                {
+                    voice.EnvelopePhase = EnvelopePhase.Release;
+                    voice.EnvelopePosition = 0;
+                    voice.ReleaseStartTicks = now;
+                    voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
+                    // Use quick release to avoid clicks
+                    voice.ReleaseSamples = MuteReleaseSamples;
+                }
+            }
+            
+            // Reset mono mode tracking
+            _lastMonoNoteActive = -1;
         }
     }
 

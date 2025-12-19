@@ -127,6 +127,7 @@ MusicPad/
 - Bit Depth: 32-bit float (PcmFloat)
 - Synthesis: SFZ sample-based with AHDSR envelope
 - Polyphony: Up to 10 simultaneous voices
+- Voicing Modes: Polyphonic (multiple notes) and Monophonic (single note)
 
 **Signal Chain:**
 ```
@@ -138,7 +139,7 @@ MusicPad/
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | `SfzParser` | Core/Sfz | Parses SFZ instrument files |
-| `SfzPlayer` | Core/Sfz | Polyphonic sample playback with envelope |
+| `SfzPlayer` | Core/Sfz | Sample playback with envelope, poly/mono modes |
 | `SfzMetadata` | Core/Sfz | Parses instrument metadata (credits, etc.) |
 | `WavLoader` | Core/Sfz | Loads WAV audio samples |
 | `Padrea` | Core/Models | Configurable pad area with note filtering |
@@ -179,6 +180,24 @@ MusicPad/
 | Random (?) | Random order |
 
 Rate knob controls speed (125ms to 500ms between notes).
+
+## Voicing Modes
+
+Instruments support two voicing modes, configurable per instrument:
+
+| Mode | Description |
+|------|-------------|
+| **Polyphonic** | Multiple notes play simultaneously (default). Voice allocation prioritizes: idle voices → oldest releasing voices → oldest playing voices. |
+| **Monophonic** | Single note at a time. New notes immediately cut off previous notes. Release phase plays only when last key released. |
+
+**Voice Allocation (Polyphonic):**
+- Prefers idle voices (no interruption)
+- Then steals oldest voice in release phase (minimal disruption)
+- Finally steals oldest playing voice (last resort)
+
+**Mute Button:**
+- Visible on main page below volume knob
+- Immediately stops all playing notes with a short release (~45ms) to avoid clicks
 
 ## Audio Effects
 
@@ -240,6 +259,7 @@ Features:
 |------------|---------|
 | `SfzParserTests` | SFZ parsing, region inheritance |
 | `SfzPlayerTests` | Playback, envelope, looping |
+| `SfzPlayerVoicingTests` | Monophonic/polyphonic modes, mute |
 | `SfzMetadataTests` | Metadata extraction (credits, etc.) |
 | `WavLoaderTests` | WAV loading (16-bit, 24-bit) |
 | `PadreaTests` | Padrea model properties |
@@ -289,6 +309,8 @@ Features:
 - [x] Runtime color palette system (7 palettes)
 - [x] Montserrat font family
 - [x] Custom navigation headers on all pages
+- [x] Voicing modes (polyphonic/monophonic) per instrument
+- [x] Mute button with quick release
 - [x] Unit tests passing
 - [x] GitHub repository connected
 

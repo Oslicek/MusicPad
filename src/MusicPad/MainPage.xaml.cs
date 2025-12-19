@@ -11,6 +11,7 @@ public partial class MainPage : ContentPage
     private readonly ISfzService _sfzService;
     private readonly IPadreaService _padreaService;
     private readonly ISettingsService _settingsService;
+    private readonly IInstrumentConfigService _instrumentConfigService;
     private readonly PadMatrixDrawable _padDrawable;
     private readonly RotaryKnobDrawable _volumeKnobDrawable;
     private readonly EffectAreaDrawable _effectAreaDrawable;
@@ -33,12 +34,13 @@ public partial class MainPage : ContentPage
     // Envelope animation timer for pad glow effect
     private IDispatcherTimer? _envelopeAnimationTimer;
 
-    public MainPage(ISfzService sfzService, IPadreaService padreaService, ISettingsService settingsService)
+    public MainPage(ISfzService sfzService, IPadreaService padreaService, ISettingsService settingsService, IInstrumentConfigService instrumentConfigService)
     {
         InitializeComponent();
         _sfzService = sfzService;
         _padreaService = padreaService;
         _settingsService = settingsService;
+        _instrumentConfigService = instrumentConfigService;
         _padDrawable = new PadMatrixDrawable();
         _padDrawable.NoteOn += OnNoteOn;
         _padDrawable.NoteOff += OnNoteOff;
@@ -123,6 +125,17 @@ public partial class MainPage : ContentPage
             if (CommitHashLabel != null)
             {
                 CommitHashLabel.TextColor = Color.FromArgb(AppColors.TextCommit);
+            }
+            
+            // Update mute button
+            if (MuteButton != null)
+            {
+                MuteButton.BackgroundColor = pickerBgColor;
+                MuteButton.Stroke = new SolidColorBrush(Color.FromArgb(AppColors.BorderDark));
+            }
+            if (MuteLabel != null)
+            {
+                MuteLabel.TextColor = Color.FromArgb(AppColors.Accent);
             }
         });
     }
@@ -419,6 +432,11 @@ public partial class MainPage : ContentPage
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
+                // Mute button below volume knob
+                MuteButton.HorizontalOptions = LayoutOptions.Start;
+                MuteButton.VerticalOptions = LayoutOptions.Start;
+                MuteButton.Margin = new Thickness(controlsWidth + 28, volumeSize + 8, 0, 0);
+
                 // Piano at bottom - compact height in landscape
                 double pianoHeight = _pageHeight * 0.45;
                 double topAreaHeight = _pageHeight - pianoHeight - padding;
@@ -451,6 +469,11 @@ public partial class MainPage : ContentPage
                 VolumeKnob.HorizontalOptions = LayoutOptions.Start;
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(30, controlsHeight + 16, 0, 0);
+
+                // Mute button below volume knob
+                MuteButton.HorizontalOptions = LayoutOptions.Start;
+                MuteButton.VerticalOptions = LayoutOptions.Start;
+                MuteButton.Margin = new Thickness(50, controlsHeight + volumeSize + 24, 0, 0);
 
                 // Square padrea centered on page
                 double availableHeight = _pageHeight - padding * 4;
@@ -486,6 +509,11 @@ public partial class MainPage : ContentPage
             VolumeKnob.HorizontalOptions = LayoutOptions.Start;
             VolumeKnob.VerticalOptions = LayoutOptions.Start;
             VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
+
+            // Mute button to the right of volume knob
+            MuteButton.HorizontalOptions = LayoutOptions.Start;
+            MuteButton.VerticalOptions = LayoutOptions.Start;
+            MuteButton.Margin = new Thickness(controlsWidth + volumeSize + 16, 40, 0, 0);
 
             // Calculate sizes - efarea needs height for 4 effect buttons (25px each + spacing)
             double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
@@ -729,6 +757,9 @@ public partial class MainPage : ContentPage
             
             await _sfzService.LoadInstrumentAsync(instrumentName);
             
+            // Apply voicing mode from instrument config
+            await ApplyInstrumentVoicingModeAsync(instrumentName);
+            
             // Setup pad matrix
             SetupPadMatrix();
         }
@@ -739,6 +770,31 @@ public partial class MainPage : ContentPage
         finally
         {
             _isLoading = false;
+        }
+    }
+    
+    private async Task ApplyInstrumentVoicingModeAsync(string instrumentName)
+    {
+        try
+        {
+            // Get all instruments to find the matching config
+            var allInstruments = await _instrumentConfigService.GetAllInstrumentsAsync();
+            var config = allInstruments.FirstOrDefault(c => c.DisplayName == instrumentName);
+            
+            if (config != null)
+            {
+                _sfzService.VoicingMode = config.Voicing;
+            }
+            else
+            {
+                // Default to polyphonic if config not found
+                _sfzService.VoicingMode = Core.Models.VoicingType.Polyphonic;
+            }
+        }
+        catch
+        {
+            // Default to polyphonic on error
+            _sfzService.VoicingMode = Core.Models.VoicingType.Polyphonic;
         }
     }
 
@@ -1124,6 +1180,23 @@ public partial class MainPage : ContentPage
         SetupPadMatrix();
     }
 
+    private void OnMuteButtonClicked(object? sender, EventArgs e)
+    {
+        _sfzService.Mute();
+        
+        // Brief visual feedback
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            if (MuteButton != null)
+            {
+                var originalBg = MuteButton.BackgroundColor;
+                MuteButton.BackgroundColor = Color.FromArgb(AppColors.Accent);
+                await Task.Delay(100);
+                MuteButton.BackgroundColor = originalBg;
+            }
+        });
+    }
+    
     private async void OnHamburgerMenuClicked(object? sender, EventArgs e)
     {
         // Show action sheet with menu options
