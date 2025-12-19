@@ -5,47 +5,57 @@
              Title="Instruments"
              BackgroundColor="{StaticResource BackgroundPage}">
     
-    <Grid RowDefinitions="Auto,*" Padding="16">
-        <!-- Header -->
-        <StackLayout Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,16">
-            <Label Text="Available Instruments" 
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16">
+        <!-- Header with Import Button -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+            <Label Text="Instruments" 
                    FontSize="24" 
                    FontAttributes="Bold"
                    TextColor="{StaticResource TextPrimary}"
                    VerticalOptions="Center"/>
-        </StackLayout>
+            <Button Grid.Column="1"
+                    Text="+ Import"
+                    BackgroundColor="{StaticResource Secondary}"
+                    TextColor="{StaticResource TextDark}"
+                    FontSize="14"
+                    CornerRadius="8"
+                    Padding="12,8"
+                    Clicked="OnImportClicked"/>
+        </Grid>
         
         <!-- Instruments List -->
-        <CollectionView x:Name="InstrumentsList" 
-                        Grid.Row="1"
-                        SelectionMode="Single"
-                        SelectionChanged="OnInstrumentSelected">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border StrokeShape="RoundRectangle 8"
-                            Stroke="{StaticResource SurfaceBorder}"
-                            BackgroundColor="{StaticResource Surface}"
-                            Margin="0,4"
-                            Padding="16,12">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackLayout VerticalOptions="Center">
-                                <Label Text="{Binding Name}" 
-                                       FontSize="18"
-                                       TextColor="{StaticResource TextPrimary}"/>
-                                <Label Text="{Binding Credit}" 
-                                       FontSize="12"
-                                       TextColor="{StaticResource TextSecondary}"
-                                       IsVisible="{Binding HasCredit}"/>
-                            </StackLayout>
-                            <Label Grid.Column="1" 
-                                   Text="›" 
-                                   FontSize="24" 
-                                   TextColor="{StaticResource TextDim}"
-                                   VerticalOptions="Center"/>
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout x:Name="InstrumentsList" Spacing="4">
+                <!-- User Instruments Section -->
+                <Label x:Name="UserSectionLabel"
+                       Text="YOUR INSTRUMENTS"
+                       FontSize="12"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextMuted}"
+                       Margin="0,8,0,4"
+                       IsVisible="False"/>
+                <VerticalStackLayout x:Name="UserInstrumentsList" Spacing="4"/>
+                
+                <!-- Bundled Instruments Section -->
+                <Label x:Name="BundledSectionLabel"
+                       Text="BUNDLED INSTRUMENTS"
+                       FontSize="12"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextMuted}"
+                       Margin="0,16,0,4"/>
+                <VerticalStackLayout x:Name="BundledInstrumentsList" Spacing="4"/>
+            </VerticalStackLayout>
+        </ScrollView>
+        
+        <!-- Back Button -->
+        <Button Grid.Row="2"
+                Text="Back"
+                BackgroundColor="{StaticResource Primary}"
+                TextColor="{StaticResource TextWhite}"
+                FontSize="16"
+                CornerRadius="8"
+                HeightRequest="50"
+                Margin="0,16,0,0"
+                Clicked="OnBackClicked"/>
     </Grid>
 </ContentPage>

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Vocal Soprano",
+  "sfzPath": "VocalsPapel_sf2/000_S-IrinaBrochin.sfz",
+  "voicing": "Monophonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

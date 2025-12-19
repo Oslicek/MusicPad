@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Gothic Organ",
+  "sfzPath": "Gothorgn_sf2/000_Gothic_Organ.sfz",
+  "voicing": "Polyphonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

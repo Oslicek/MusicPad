@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Drums",
+  "sfzPath": "Simmons_SDS7_sf2/000_Simmon_SD57.sfz",
+  "voicing": "Polyphonic",
+  "pitchType": "Unpitched",
+  "isBundled": true
+}
+

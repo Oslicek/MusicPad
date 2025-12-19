@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Violin",
+  "sfzPath": "Violin_sf2/000_VIOLIN.sfz",
+  "voicing": "Monophonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

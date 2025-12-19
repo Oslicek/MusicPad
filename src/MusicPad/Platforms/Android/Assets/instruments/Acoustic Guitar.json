@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Acoustic Guitar",
+  "sfzPath": "acoustic_guitars_sf2/000_Acoustic_Guitar.sfz",
+  "voicing": "Polyphonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

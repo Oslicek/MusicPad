@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Flute",
+  "sfzPath": "good_flutes_sf2/000_Good_flute.sfz",
+  "voicing": "Monophonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

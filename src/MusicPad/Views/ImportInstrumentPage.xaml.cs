@@ -1,0 +1,188 @@
+using MusicPad.Core.Models;
+using MusicPad.Core.Theme;
+using MusicPad.Services;
+
+namespace MusicPad.Views;
+
+/// <summary>
+/// Page for importing SFZ instrument files.
+/// </summary>
+public partial class ImportInstrumentPage : ContentPage
+{
+    private readonly IInstrumentConfigService _configService;
+    private string? _selectedFilePath;
+    private List<SfzInstrumentInfo> _detectedInstruments = new();
+    private readonly Dictionary<int, (CheckBox checkbox, Entry nameEntry)> _instrumentControls = new();
+
+    public ImportInstrumentPage(IInstrumentConfigService configService)
+    {
+        InitializeComponent();
+        _configService = configService;
+    }
+
+    private async void OnBrowseClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var options = new PickOptions
+            {
+                PickerTitle = "Select SFZ Instrument File",
+                FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    { DevicePlatform.Android, new[] { "application/octet-stream", "*/*" } },
+                    { DevicePlatform.iOS, new[] { "public.data" } },
+                    { DevicePlatform.WinUI, new[] { ".sfz" } }
+                })
+            };
+
+            var result = await FilePicker.Default.PickAsync(options);
+            if (result != null)
+            {
+                _selectedFilePath = result.FullPath;
+                SelectedFileLabel.Text = result.FileName;
+                
+                // Analyze the SFZ file
+                await AnalyzeSfzFileAsync(result);
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to pick file: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task AnalyzeSfzFileAsync(FileResult fileResult)
+    {
+        try
+        {
+            using var stream = await fileResult.OpenReadAsync();
+            _detectedInstruments = await _configService.AnalyzeSfzAsync(stream, fileResult.FileName);
+            
+            BuildInstrumentCheckboxList();
+            
+            InstrumentsFrame.IsVisible = true;
+            SettingsFrame.IsVisible = true;
+            UpdateImportButtonState();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to analyze SFZ file: {ex.Message}", "OK");
+        }
+    }
+
+    private void BuildInstrumentCheckboxList()
+    {
+        InstrumentCheckboxList.Children.Clear();
+        _instrumentControls.Clear();
+        
+        foreach (var instrument in _detectedInstruments)
+        {
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitionCollection
+                {
+                    new ColumnDefinition(GridLength.Auto),
+                    new ColumnDefinition(GridLength.Star)
+                },
+                Margin = new Thickness(0, 4)
+            };
+            
+            var checkbox = new CheckBox
+            {
+                IsChecked = true,
+                Color = Color.FromArgb(AppColors.Secondary)
+            };
+            checkbox.CheckedChanged += (s, e) => UpdateImportButtonState();
+            grid.Add(checkbox, 0);
+            
+            var nameEntry = new Entry
+            {
+                Text = instrument.SuggestedName,
+                FontSize = 14,
+                TextColor = Color.FromArgb(AppColors.TextPrimary),
+                BackgroundColor = Color.FromArgb(AppColors.BackgroundPicker),
+                Placeholder = "Instrument name",
+                PlaceholderColor = Color.FromArgb(AppColors.TextDim)
+            };
+            grid.Add(nameEntry, 1);
+            
+            InstrumentCheckboxList.Children.Add(grid);
+            _instrumentControls[instrument.Index] = (checkbox, nameEntry);
+        }
+    }
+
+    private void UpdateImportButtonState()
+    {
+        var anySelected = _instrumentControls.Values.Any(c => c.checkbox.IsChecked);
+        ImportButton.IsEnabled = anySelected && !string.IsNullOrEmpty(_selectedFilePath);
+    }
+
+    private async void OnImportClicked(object? sender, EventArgs e)
+    {
+        if (string.IsNullOrEmpty(_selectedFilePath))
+        {
+            await DisplayAlert("Error", "No file selected", "OK");
+            return;
+        }
+        
+        var voicing = PolyphonicRadio.IsChecked ? VoicingType.Polyphonic : VoicingType.Monophonic;
+        var pitchType = PitchedRadio.IsChecked ? PitchType.Pitched : PitchType.Unpitched;
+        
+        var instrumentsToImport = new List<InstrumentImportInfo>();
+        
+        foreach (var instrument in _detectedInstruments)
+        {
+            if (_instrumentControls.TryGetValue(instrument.Index, out var controls))
+            {
+                if (controls.checkbox.IsChecked)
+                {
+                    var displayName = controls.nameEntry.Text?.Trim();
+                    if (string.IsNullOrEmpty(displayName))
+                    {
+                        displayName = instrument.SuggestedName;
+                    }
+                    
+                    instrumentsToImport.Add(new InstrumentImportInfo
+                    {
+                        DisplayName = displayName,
+                        InstrumentIndex = instrument.Index,
+                        Voicing = voicing,
+                        PitchType = pitchType
+                    });
+                }
+            }
+        }
+        
+        if (instrumentsToImport.Count == 0)
+        {
+            await DisplayAlert("Error", "No instruments selected", "OK");
+            return;
+        }
+        
+        try
+        {
+            ImportButton.IsEnabled = false;
+            ImportButton.Text = "Importing...";
+            
+            var createdConfigs = await _configService.ImportSfzAsync(_selectedFilePath, instrumentsToImport);
+            
+            await DisplayAlert("Success", 
+                $"Successfully imported {createdConfigs.Count} instrument(s)!", 
+                "OK");
+            
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to import: {ex.Message}", "OK");
+            ImportButton.IsEnabled = true;
+            ImportButton.Text = "Import";
+        }
+    }
+
+    private async void OnCancelClicked(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("..");
+    }
+}
+

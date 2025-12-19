@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Piano",
+  "sfzPath": "Petrof_sf2/000_Grandioso.sfz",
+  "voicing": "Polyphonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

@@ -152,9 +152,11 @@ MusicPad/
 | `ISfzService` | Services | SFZ playback interface |
 | `PadreaService` | Services | Padrea management (Full Range, Pentatonic) |
 | `SettingsService` | Services | App settings with persistence (glow toggles) |
+| `InstrumentConfigService` | Services | Instrument configs (bundled + user-imported) |
 | `MainPage` | MusicPad | Synth UI with pads, pickers, volume knob |
 | `InstrumentsPage` | Views | List of available instruments |
 | `InstrumentDetailPage` | Views | Instrument metadata display |
+| `ImportInstrumentPage` | Views | Import SFZ files with settings |
 
 ## Note Processing
 
@@ -217,7 +219,8 @@ Features:
 - **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano)
 - **Scale Picker**: Shown when Scales padrea selected (roots + common scales)
 - **Piano Padrea**: Piano keyboard (one octave+1 portrait, two octaves+1 landscape), strip with 88-key highlight, arrows/drag to shift range
-- **Instruments Page**: Browse all instruments with navigation to detail view
+- **Instruments Page**: Full instrument manager with import, reorder, rename, delete
+- **Import Instrument Page**: File picker with auto-detection, voicing/pitch settings
 - **Instrument Detail Page**: Shows SFZ metadata, credits, and technical info
 - **Settings Page**: Toggle glow effects for piano keys and square pads
 - **Aggressive Colors**: High-contrast pressed states (white, yellow, hot pink)
@@ -267,6 +270,9 @@ Features:
 - [x] Pitch-Volume padrea with continuous control
 - [x] Envelope-following glow on all pads and piano keys
 - [x] Settings page with glow toggles
+- [x] Instrument config system with individual JSON files
+- [x] Import instrument page with file picker
+- [x] Instrument reordering with drag-and-drop
 - [x] Unit tests passing
 - [x] GitHub repository connected
 

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "description": "Order of bundled instruments in the application",
+  "order": [
+    "Piano.json",
+    "Synth.json",
+    "Drums.json",
+    "Acoustic Guitar.json",
+    "Electric Bass.json",
+    "Flute.json",
+    "Violin.json",
+    "Vocal Soprano.json",
+    "Gothic Organ.json",
+    "Glockenspiel.json"
+  ]
+}
+

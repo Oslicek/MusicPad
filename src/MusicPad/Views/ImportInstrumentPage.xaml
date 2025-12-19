@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MusicPad.Views.ImportInstrumentPage"
+             Title="Import Instrument"
+             BackgroundColor="{StaticResource BackgroundPage}">
+    
+    <ScrollView Padding="20">
+        <VerticalStackLayout Spacing="20">
+            
+            <!-- Header -->
+            <Label Text="Import Instrument"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextPrimary}"
+                   HorizontalOptions="Start"/>
+            
+            <!-- File Selection -->
+            <Frame BackgroundColor="{StaticResource Surface}"
+                   BorderColor="{StaticResource SurfaceBorder}"
+                   CornerRadius="12"
+                   Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Select SFZ File"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"/>
+                    
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label x:Name="SelectedFileLabel"
+                               Text="No file selected"
+                               FontSize="14"
+                               TextColor="{StaticResource TextMuted}"
+                               VerticalOptions="Center"
+                               LineBreakMode="TailTruncation"/>
+                        <Button Grid.Column="1"
+                                Text="Browse..."
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="{StaticResource TextWhite}"
+                                FontSize="14"
+                                CornerRadius="8"
+                                Padding="16,8"
+                                Clicked="OnBrowseClicked"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Detected Instruments -->
+            <Frame x:Name="InstrumentsFrame"
+                   BackgroundColor="{StaticResource Surface}"
+                   BorderColor="{StaticResource SurfaceBorder}"
+                   CornerRadius="12"
+                   Padding="16"
+                   IsVisible="False">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Detected Instruments"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"/>
+                    
+                    <Label Text="Select which instruments to import:"
+                           FontSize="12"
+                           TextColor="{StaticResource TextMuted}"/>
+                    
+                    <VerticalStackLayout x:Name="InstrumentCheckboxList" Spacing="8"/>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Settings -->
+            <Frame x:Name="SettingsFrame"
+                   BackgroundColor="{StaticResource Surface}"
+                   BorderColor="{StaticResource SurfaceBorder}"
+                   CornerRadius="12"
+                   Padding="16"
+                   IsVisible="False">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Instrument Settings"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}"/>
+                    
+                    <!-- Voicing -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Voicing"
+                               FontSize="14"
+                               TextColor="{StaticResource TextPrimary}"/>
+                        <HorizontalStackLayout Spacing="24">
+                            <HorizontalStackLayout Spacing="8">
+                                <RadioButton x:Name="PolyphonicRadio"
+                                             IsChecked="True"
+                                             GroupName="Voicing"/>
+                                <Label Text="Polyphonic"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Spacing="8">
+                                <RadioButton x:Name="MonophonicRadio"
+                                             GroupName="Voicing"/>
+                                <Label Text="Monophonic"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                    
+                    <!-- Pitch Type -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Pitch Type"
+                               FontSize="14"
+                               TextColor="{StaticResource TextPrimary}"/>
+                        <HorizontalStackLayout Spacing="24">
+                            <HorizontalStackLayout Spacing="8">
+                                <RadioButton x:Name="PitchedRadio"
+                                             IsChecked="True"
+                                             GroupName="PitchType"/>
+                                <Label Text="Pitched"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Spacing="8">
+                                <RadioButton x:Name="UnpitchedRadio"
+                                             GroupName="PitchType"/>
+                                <Label Text="Unpitched"
+                                       FontSize="14"
+                                       TextColor="{StaticResource TextPrimary}"
+                                       VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Buttons -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Text="Cancel"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextPrimary}"
+                        FontSize="16"
+                        CornerRadius="8"
+                        HeightRequest="50"
+                        BorderColor="{StaticResource SurfaceBorder}"
+                        BorderWidth="1"
+                        Clicked="OnCancelClicked"/>
+                <Button x:Name="ImportButton"
+                        Grid.Column="1"
+                        Text="Import"
+                        BackgroundColor="{StaticResource Secondary}"
+                        TextColor="{StaticResource TextDark}"
+                        FontSize="16"
+                        CornerRadius="8"
+                        HeightRequest="50"
+                        IsEnabled="False"
+                        Clicked="OnImportClicked"/>
+            </Grid>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+

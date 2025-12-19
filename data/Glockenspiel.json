@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Glockenspiel",
+  "sfzPath": "glockenspiel_sf2/000_Ethan's_Glock.sfz",
+  "voicing": "Polyphonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

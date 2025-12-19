@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Synth",
+  "sfzPath": "Polysyn_sf2/000_Polysynth.sfz",
+  "voicing": "Polyphonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+

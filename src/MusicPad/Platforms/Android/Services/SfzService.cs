@@ -159,26 +159,51 @@ public class SfzService : ISfzService, IDisposable
     {
         try
         {
-            using var stream = _assets.Open("instruments/instruments.json");
-            using var reader = new StreamReader(stream);
-            var json = reader.ReadToEnd();
+            // Load instrument order
+            using var orderStream = _assets.Open("instruments/instrument-order.json");
+            using var orderReader = new StreamReader(orderStream);
+            var orderJson = orderReader.ReadToEnd();
             
-            var config = JsonSerializer.Deserialize<InstrumentsConfig>(json);
-            if (config?.Instruments == null || config.Instruments.Count == 0)
+            var orderConfig = JsonSerializer.Deserialize<InstrumentOrderConfig>(orderJson);
+            if (orderConfig?.Order == null || orderConfig.Order.Count == 0)
                 return false;
             
-            foreach (var entry in config.Instruments)
+            foreach (var configFileName in orderConfig.Order)
             {
-                // Verify the instrument file exists
-                var files = _assets.List($"instruments/{entry.Folder}");
-                if (files == null || !files.Contains(entry.SfzFile))
+                try
                 {
-                    System.Diagnostics.Debug.WriteLine($"Instrument not found: {entry.Folder}/{entry.SfzFile}");
-                    continue;
+                    // Load individual instrument config
+                    using var configStream = _assets.Open($"instruments/{configFileName}");
+                    using var configReader = new StreamReader(configStream);
+                    var configJson = configReader.ReadToEnd();
+                    
+                    var instrumentConfig = JsonSerializer.Deserialize<InstrumentConfig>(configJson);
+                    if (instrumentConfig == null || string.IsNullOrEmpty(instrumentConfig.SfzPath))
+                        continue;
+                    
+                    // Parse the sfzPath (format: "folder/file.sfz")
+                    var pathParts = instrumentConfig.SfzPath.Split('/');
+                    if (pathParts.Length != 2)
+                        continue;
+                    
+                    var folder = pathParts[0];
+                    var sfzFile = pathParts[1];
+                    
+                    // Verify the instrument file exists
+                    var files = _assets.List($"instruments/{folder}");
+                    if (files == null || !files.Contains(sfzFile))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Instrument not found: {folder}/{sfzFile}");
+                        continue;
+                    }
+                    
+                    _instrumentNames.Add(instrumentConfig.DisplayName);
+                    _instrumentPaths[instrumentConfig.DisplayName] = (folder, sfzFile);
                 }
-                
-                _instrumentNames.Add(entry.DisplayName);
-                _instrumentPaths[entry.DisplayName] = (entry.Folder, entry.SfzFile);
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error loading instrument config {configFileName}: {ex.Message}");
+                }
             }
             
             return _instrumentNames.Count > 0;
@@ -188,6 +213,18 @@ public class SfzService : ISfzService, IDisposable
             System.Diagnostics.Debug.WriteLine($"Error loading instruments config: {ex.Message}");
             return false;
         }
+    }
+    
+    /// <summary>
+    /// Helper class for instrument order config.
+    /// </summary>
+    private class InstrumentOrderConfig
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("version")]
+        public int Version { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("order")]
+        public List<string>? Order { get; set; }
     }
 
     private void DiscoverInstrumentsFromFolders()

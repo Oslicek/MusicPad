@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "displayName": "Electric Bass",
+  "sfzPath": "Studbass_sf2/000_Studio_Bass.sfz",
+  "voicing": "Polyphonic",
+  "pitchType": "Pitched",
+  "isBundled": true
+}
+
