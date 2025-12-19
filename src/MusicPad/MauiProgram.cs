@@ -28,11 +28,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<ITonePlayer, TonePlayer>();
         builder.Services.AddSingleton<ISfzService, SfzService>();
         builder.Services.AddSingleton<IPadreaService, PadreaService>();
+        builder.Services.AddSingleton<ISettingsService, SettingsService>();
         
         // Register pages
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddTransient<InstrumentsPage>();
         builder.Services.AddTransient<InstrumentDetailPage>();
+        builder.Services.AddTransient<SettingsPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

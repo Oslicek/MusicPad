@@ -49,6 +49,7 @@ public class PadMatrixDrawable : IDrawable
     private Func<int, bool>? _isHalftone;
     private Func<int, float>? _envelopeLevelGetter; // Gets envelope level for a note (0-1)
     private int _lastTouchCount;
+    private bool _glowEnabled = true; // Whether envelope glow effect is enabled
 
     public event EventHandler<int>? NoteOn;
     public event EventHandler<int>? NoteOff;
@@ -114,6 +115,14 @@ public class PadMatrixDrawable : IDrawable
     public void SetEnvelopeLevelGetter(Func<int, float>? getter)
     {
         _envelopeLevelGetter = getter;
+    }
+    
+    /// <summary>
+    /// Enables or disables the envelope glow effect.
+    /// </summary>
+    public void SetGlowEnabled(bool enabled)
+    {
+        _glowEnabled = enabled;
     }
 
     /// <summary>
@@ -247,7 +256,8 @@ public class PadMatrixDrawable : IDrawable
         bool isAltNote = _isHalftone?.Invoke(midiNote) ?? IsSharp[midiNote % 12];
         
         // Get envelope level for this note (0 = silent, 1 = full)
-        float envelopeLevel = _envelopeLevelGetter?.Invoke(midiNote) ?? 0f;
+        // Only check envelope if glow is enabled
+        float envelopeLevel = _glowEnabled ? (_envelopeLevelGetter?.Invoke(midiNote) ?? 0f) : 0f;
         bool isActive = envelopeLevel > 0.001f;
         
         // Base colors

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MusicPad.Views.SettingsPage"
+             Title="Settings"
+             BackgroundColor="{StaticResource BackgroundPage}">
+
+    <ScrollView Padding="20">
+        <VerticalStackLayout Spacing="24">
+            
+            <!-- Header -->
+            <Label Text="Settings"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextPrimary}"
+                   HorizontalOptions="Start" />
+            
+            <!-- Visual Effects Section -->
+            <Frame BackgroundColor="{StaticResource Surface}"
+                   BorderColor="{StaticResource SurfaceBorder}"
+                   CornerRadius="12"
+                   Padding="16">
+                <VerticalStackLayout Spacing="16">
+                    
+                    <Label Text="Visual Effects"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource TextSecondary}" />
+                    
+                    <!-- Piano Key Glow Toggle -->
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                        <Label Text="Piano Key Glow"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               VerticalOptions="Center"
+                               Grid.Column="0"
+                               Grid.Row="0" />
+                        <Label Text="Keys glow following the sound envelope"
+                               FontSize="12"
+                               TextColor="{StaticResource TextMuted}"
+                               Grid.Column="0"
+                               Grid.Row="1" />
+                        <Switch x:Name="PianoGlowSwitch"
+                                OnColor="{StaticResource Primary}"
+                                ThumbColor="{StaticResource Secondary}"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Grid.RowSpan="2"
+                                VerticalOptions="Center"
+                                Toggled="OnPianoGlowToggled" />
+                    </Grid>
+                    
+                    <BoxView HeightRequest="1" 
+                             Color="{StaticResource SurfaceBorder}" 
+                             HorizontalOptions="Fill" />
+                    
+                    <!-- Pad Glow Toggle -->
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                        <Label Text="Square Pad Glow"
+                               FontSize="16"
+                               TextColor="{StaticResource TextPrimary}"
+                               VerticalOptions="Center"
+                               Grid.Column="0"
+                               Grid.Row="0" />
+                        <Label Text="Pads glow following the sound envelope"
+                               FontSize="12"
+                               TextColor="{StaticResource TextMuted}"
+                               Grid.Column="0"
+                               Grid.Row="1" />
+                        <Switch x:Name="PadGlowSwitch"
+                                OnColor="{StaticResource Primary}"
+                                ThumbColor="{StaticResource Secondary}"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Grid.RowSpan="2"
+                                VerticalOptions="Center"
+                                Toggled="OnPadGlowToggled" />
+                    </Grid>
+                    
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Back Button -->
+            <Button Text="Back"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="{StaticResource TextWhite}"
+                    FontSize="16"
+                    CornerRadius="8"
+                    HeightRequest="50"
+                    Clicked="OnBackClicked"
+                    HorizontalOptions="Fill" />
+            
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+

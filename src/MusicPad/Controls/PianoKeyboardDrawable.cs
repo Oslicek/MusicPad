@@ -20,6 +20,7 @@ public class PianoKeyboardDrawable : IDrawable
     private int _instrumentMax;
     private bool _isLandscape;
     private Func<int, float>? _envelopeLevelGetter; // Gets envelope level for a note (0-1)
+    private bool _glowEnabled = true; // Whether envelope glow effect is enabled
 
     private readonly List<KeyRect> _keyRects = new();
     private readonly HashSet<int> _activeNotes = new();
@@ -52,6 +53,14 @@ public class PianoKeyboardDrawable : IDrawable
     public void SetEnvelopeLevelGetter(Func<int, float>? getter)
     {
         _envelopeLevelGetter = getter;
+    }
+    
+    /// <summary>
+    /// Enables or disables the envelope glow effect.
+    /// </summary>
+    public void SetGlowEnabled(bool enabled)
+    {
+        _glowEnabled = enabled;
     }
 
     public void Draw(ICanvas canvas, RectF dirtyRect)
@@ -183,8 +192,8 @@ public class PianoKeyboardDrawable : IDrawable
             var keyRect = new RectF(currentX, rect.Y, whiteWidth, whiteHeight);
             bool disabled = note < _instrumentMin || note > _instrumentMax;
             
-            // Get envelope level for this note
-            float envelopeLevel = _envelopeLevelGetter?.Invoke(note) ?? 0f;
+            // Get envelope level for this note (only if glow is enabled)
+            float envelopeLevel = _glowEnabled ? (_envelopeLevelGetter?.Invoke(note) ?? 0f) : 0f;
             bool isActive = envelopeLevel > 0.001f;
             
             // Calculate glow intensity with power curve for more dramatic effect
@@ -250,8 +259,8 @@ public class PianoKeyboardDrawable : IDrawable
                 var keyRect = new RectF(bx, rect.Y, blackWidth, blackHeight);
                 bool disabled = note < _instrumentMin || note > _instrumentMax;
                 
-                // Get envelope level for this note
-                float envelopeLevel = _envelopeLevelGetter?.Invoke(note) ?? 0f;
+                // Get envelope level for this note (only if glow is enabled)
+                float envelopeLevel = _glowEnabled ? (_envelopeLevelGetter?.Invoke(note) ?? 0f) : 0f;
                 bool isActive = envelopeLevel > 0.001f;
                 
                 // Calculate glow intensity

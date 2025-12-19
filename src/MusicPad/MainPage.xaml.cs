@@ -9,6 +9,7 @@ public partial class MainPage : ContentPage
 {
     private readonly ISfzService _sfzService;
     private readonly IPadreaService _padreaService;
+    private readonly ISettingsService _settingsService;
     private readonly PadMatrixDrawable _padDrawable;
     private readonly RotaryKnobDrawable _volumeKnobDrawable;
     private readonly EffectAreaDrawable _effectAreaDrawable;
@@ -31,11 +32,12 @@ public partial class MainPage : ContentPage
     // Envelope animation timer for pad glow effect
     private IDispatcherTimer? _envelopeAnimationTimer;
 
-    public MainPage(ISfzService sfzService, IPadreaService padreaService)
+    public MainPage(ISfzService sfzService, IPadreaService padreaService, ISettingsService settingsService)
     {
         InitializeComponent();
         _sfzService = sfzService;
         _padreaService = padreaService;
+        _settingsService = settingsService;
         _padDrawable = new PadMatrixDrawable();
         _padDrawable.NoteOn += OnNoteOn;
         _padDrawable.NoteOff += OnNoteOff;
@@ -519,6 +521,11 @@ public partial class MainPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        
+        // Update glow settings (in case user changed them in Settings page)
+        _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
+        _pianoDrawable.SetGlowEnabled(_settingsService.PianoKeyGlowEnabled);
+        
         LoadPadreas();
         await LoadInstrumentsAsync();
     }
@@ -755,6 +762,7 @@ public partial class MainPage : ContentPage
                                    padrea.PadAltColor, padrea.PadAltPressedColor);
             _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
             _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
+            _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
         }
 
         EnsurePadGraphicsView(_padDrawable);
@@ -776,6 +784,7 @@ public partial class MainPage : ContentPage
 
         _pianoDrawable.SetRange(start, end, instrumentMinKey, instrumentMaxKey, _isLandscape);
         _pianoDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
+        _pianoDrawable.SetGlowEnabled(_settingsService.PianoKeyGlowEnabled);
         
         EnsurePadGraphicsView(_pianoDrawable);
         EnsureEnvelopeAnimationTimer();
@@ -1060,12 +1069,15 @@ public partial class MainPage : ContentPage
     private async void OnHamburgerMenuClicked(object? sender, EventArgs e)
     {
         // Show action sheet with menu options
-        var action = await DisplayActionSheet("Menu", "Cancel", null, "Instruments");
+        var action = await DisplayActionSheet("Menu", "Cancel", null, "Instruments", "Settings");
         
         switch (action)
         {
             case "Instruments":
                 await Shell.Current.GoToAsync(nameof(Views.InstrumentsPage));
+                break;
+            case "Settings":
+                await Shell.Current.GoToAsync(nameof(Views.SettingsPage));
                 break;
         }
     }

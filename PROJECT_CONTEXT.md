@@ -151,6 +151,7 @@ MusicPad/
 | `EffectAreaDrawable` | Controls | Effect selection and controls |
 | `ISfzService` | Services | SFZ playback interface |
 | `PadreaService` | Services | Padrea management (Full Range, Pentatonic) |
+| `SettingsService` | Services | App settings with persistence (glow toggles) |
 | `MainPage` | MusicPad | Synth UI with pads, pickers, volume knob |
 | `InstrumentsPage` | Views | List of available instruments |
 | `InstrumentDetailPage` | Views | Instrument metadata display |
@@ -218,6 +219,7 @@ Features:
 - **Piano Padrea**: Piano keyboard (one octave+1 portrait, two octaves+1 landscape), strip with 88-key highlight, arrows/drag to shift range
 - **Instruments Page**: Browse all instruments with navigation to detail view
 - **Instrument Detail Page**: Shows SFZ metadata, credits, and technical info
+- **Settings Page**: Toggle glow effects for piano keys and square pads
 - **Aggressive Colors**: High-contrast pressed states (white, yellow, hot pink)
 
 ## Tests
@@ -264,6 +266,7 @@ Features:
 - [x] Instruments page with metadata display
 - [x] Pitch-Volume padrea with continuous control
 - [x] Envelope-following glow on all pads and piano keys
+- [x] Settings page with glow toggles
 - [x] Unit tests passing
 - [x] GitHub repository connected
 
