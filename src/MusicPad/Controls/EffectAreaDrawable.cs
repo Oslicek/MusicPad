@@ -143,9 +143,9 @@ public class EffectAreaDrawable : IDrawable
         canvas.FillColor = EffectAreaBackground;
         canvas.FillRoundedRectangle(dirtyRect, CornerRadius);
         
-        // Draw outline to match pad styling
-        canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
-        canvas.StrokeSize = 1.5f;
+        // Draw outline using same style as pads (background color with alpha)
+        canvas.StrokeColor = EffectAreaBackground.WithAlpha(0.7f);
+        canvas.StrokeSize = 2;
         canvas.DrawRoundedRectangle(dirtyRect, CornerRadius);
 
         // Calculate button layout - square buttons with rounded corners

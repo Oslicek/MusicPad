@@ -50,11 +50,11 @@ public class DelayDrawable
     /// </summary>
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
-        float padding = 4f;
+        float padding = 8f;  // Uniform spacing
         float buttonSize = 28f;
         
-        // Large knob size - consistent with Chorus and Reverb
-        float knobSize = Math.Min(dirtyRect.Height - 16, 50f);
+        // Large knob size - consistent with Chorus and Reverb (+30% bigger)
+        float knobSize = Math.Min(dirtyRect.Height - 16, 65f);
         _knobRadius = knobSize * 0.4f;
         
         bool isEnabled = _settings.IsEnabled;
@@ -68,7 +68,7 @@ public class DelayDrawable
         // Three knobs side by side after the button
         float knobsStartX = buttonX + buttonSize + padding * 2;
         float knobY = dirtyRect.Y + dirtyRect.Height / 2;
-        float knobSpacing = _knobRadius * 2 + padding * 2;
+        float knobSpacing = _knobRadius * 2 + padding * 3;  // More spacing between knobs
         
         float timeX = knobsStartX + _knobRadius + padding;
         float feedbackX = timeX + knobSpacing;

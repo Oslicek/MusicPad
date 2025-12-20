@@ -69,7 +69,7 @@ public class ArpHarmonyDrawable
 
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
-        float padding = 4f;
+        float padding = 8f;  // Uniform spacing
         float buttonSize = 28f;
         float titleHeight = 16f;
         float controlsHeight = (dirtyRect.Height - titleHeight * 2 - padding * 2) / 2;
@@ -113,10 +113,9 @@ public class ArpHarmonyDrawable
         
         float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up to make room for labels
         
-        // Calculate layout - toggle + 4 circular buttons, right-aligned
+        // Calculate layout - toggle + 4 circular buttons, left-aligned like other effects
         float circleButtonSize = 24f;
-        float totalButtonsWidth = buttonSize + padding * 2 + (circleButtonSize + padding) * 4;
-        float startX = rowRect.Right - totalButtonsWidth - padding;
+        float startX = rowRect.X + padding;
         float x = startX;
         
         // On/Off toggle
@@ -141,12 +140,11 @@ public class ArpHarmonyDrawable
         float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up for labels
         
         float circleButtonSize = 24f;
-        float knobSize = 36f;  // Small knob size - same as LPF
+        float knobSize = 43f;  // Small knob size - same as LPF (+20% bigger)
         _rateKnobRadius = knobSize * 0.42f;
         
-        // Calculate layout - toggle + knob + 4 circular buttons, right-aligned
-        float totalWidth = buttonSize + padding * 2 + knobSize + padding * 2 + (circleButtonSize + padding + 8) * 4;
-        float startX = rowRect.Right - totalWidth - padding;
+        // Calculate layout - toggle + knob + 4 circular buttons, left-aligned like other effects
+        float startX = rowRect.X + padding;
         float x = startX;
         
         // On/Off toggle

@@ -57,9 +57,10 @@ public class ReverbDrawable
     /// </summary>
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
-        float padding = 4f;
+        float padding = 8f;  // Uniform spacing
         float buttonSize = 28f;
-        float knobSize = Math.Min(dirtyRect.Height - 16, 50f);
+        // Large knob size (+30% bigger)
+        float knobSize = Math.Min(dirtyRect.Height - 16, 65f);
         _knobRadius = knobSize * 0.4f;
         bool isEnabled = _settings.IsEnabled;
         

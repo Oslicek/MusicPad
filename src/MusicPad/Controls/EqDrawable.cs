@@ -40,22 +40,25 @@ public class EqDrawable
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
         float padding = 4;
-        float topPadding = 8f;  // Extra space at top to avoid title overlap
-        float labelHeight = 12;
+        float labelHeight = 14;
         float sliderWidth = Math.Min((dirtyRect.Width - padding * 5) / 4, 28f);
         float totalWidth = sliderWidth * 4 + padding * 3;
         float startX = dirtyRect.X + (dirtyRect.Width - totalWidth) / 2;
         
-        // Reduce track height to leave space for title and labels
-        float trackHeight = dirtyRect.Height - labelHeight - topPadding - padding * 2;
-        trackHeight = Math.Clamp(trackHeight, 30f, dirtyRect.Height * 0.7f);
+        // Reduce track height and center vertically
+        float trackHeight = dirtyRect.Height * 0.65f;
+        trackHeight = Math.Clamp(trackHeight, 30f, 80f);
         float trackWidth = 5f;  // Slightly wider track for hardware look
+        
+        // Center the sliders vertically (track + labels)
+        float totalSliderHeight = trackHeight + labelHeight;
+        float verticalOffset = (dirtyRect.Height - totalSliderHeight) / 2;
 
         for (int i = 0; i < 4; i++)
         {
             float x = startX + i * (sliderWidth + padding);
             float centerX = x + sliderWidth / 2;
-            float trackTop = dirtyRect.Y + topPadding;
+            float trackTop = dirtyRect.Y + verticalOffset;
             float trackBottom = trackTop + trackHeight;
             float trackCenterY = (trackTop + trackBottom) / 2;
 

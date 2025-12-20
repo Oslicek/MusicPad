@@ -49,7 +49,7 @@ public class LpfDrawable
     /// </summary>
     public void Draw(ICanvas canvas, RectF dirtyRect, bool isVertical = false)
     {
-        float padding = 4f;
+        float padding = 8f;  // Uniform spacing
         float buttonSize = 28f;
         bool isEnabled = _settings.IsEnabled;
         
@@ -83,8 +83,8 @@ public class LpfDrawable
         }
         else
         {
-            // Horizontal layout: button on left, knobs side by side - small knob size
-            float knobSize = Math.Min(dirtyRect.Height - 12, 36f);
+            // Horizontal layout: button on left, knobs side by side - small knob size (+20% bigger)
+            float knobSize = Math.Min(dirtyRect.Height - 12, 43f);
             _knobRadius = knobSize * 0.42f;
             
             // On/Off button on the left
