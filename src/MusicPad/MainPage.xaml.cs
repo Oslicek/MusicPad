@@ -626,6 +626,10 @@ public partial class MainPage : ContentPage
             double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
             double efareaHeight = 165; // Height for 5 buttons: 5*30 + 4*4 spacing + margins
             
+            // Calculate bottom section: recarea + navbar + padrea
+            double bottomControlsHeight = recAreaHeight + navBarHeight + padding * 2;
+            double availableForPadrea = _pageHeight - topAreaHeight - efareaHeight - bottomControlsHeight - padding * 3;
+            
             _effectAreaDrawable.SetOrientation(false); // Vertical buttons on left
             _effectAreaDrawable.SetLandscapeSquare(false);
             EffectArea.HorizontalOptions = LayoutOptions.Fill;
@@ -634,19 +638,16 @@ public partial class MainPage : ContentPage
             EffectArea.HeightRequest = efareaHeight;
             EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
             
-            double padreaTop = topAreaHeight + efareaHeight + padding * 2;
-            // Available space for padrea + navigation bar + recarea (bottom padding is in Grid)
-            double availableForPadrea = _pageHeight - padreaTop - navBarHeight - recAreaHeight - padding * 2;
-            
             if (isPiano)
             {
-                // Piano padrea - full width
-                double pianoHeight = Math.Min(_pageHeight * 0.42, availableForPadrea);
+                // Piano padrea - full width, reduced to fit recarea
+                double pianoHeight = Math.Min(_pageHeight * 0.35, availableForPadrea);
                 
                 // Recording area above the navigation bar  
                 RecArea.HorizontalOptions = LayoutOptions.Center;
                 RecArea.VerticalOptions = LayoutOptions.End;
                 RecArea.WidthRequest = _pageWidth - padding * 2;
+                RecArea.HeightRequest = recAreaHeight;
                 RecArea.Margin = new Thickness(0, 0, 0, pianoHeight + navBarHeight + padding);
                 
                 // Navigation bar above the piano
@@ -663,13 +664,14 @@ public partial class MainPage : ContentPage
             }
             else
             {
-                // Square padrea - centered, with mute button above the padrea
+                // Square padrea - smaller to fit recarea
                 double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea);
 
                 // Recording area above the navigation bar
                 RecArea.HorizontalOptions = LayoutOptions.Center;
                 RecArea.VerticalOptions = LayoutOptions.End;
                 RecArea.WidthRequest = padreaSize;
+                RecArea.HeightRequest = recAreaHeight;
                 RecArea.Margin = new Thickness(0, 0, 0, padreaSize + navBarHeight + padding);
                 
                 // Navigation bar above the padrea
