@@ -13,6 +13,7 @@ public class RotaryKnobDrawable : IDrawable
     private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
     private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
     private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color AccentColor => Color.FromArgb(AppColors.Accent);
     private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
 
     private float _value = 0.75f; // 0-1 range, default 75%
@@ -66,8 +67,8 @@ public class RotaryKnobDrawable : IDrawable
     
     private void DrawRadialMarkers(ICanvas canvas)
     {
-        // Draw tick marks around the knob's rotation range - more visible
-        canvas.StrokeColor = IndicatorColor;
+        // Draw tick marks around the knob's rotation range - use accent color for visibility
+        canvas.StrokeColor = AccentColor;
         canvas.StrokeSize = 2.5f;
         canvas.StrokeLineCap = LineCap.Round;
         
