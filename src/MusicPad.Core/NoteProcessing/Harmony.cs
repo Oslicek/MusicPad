@@ -61,6 +61,70 @@ public class Harmony
     {
         _activeNotes.Clear();
     }
+    
+    /// <summary>
+    /// Gets the root notes (originally pressed keys) that are currently active.
+    /// </summary>
+    public IReadOnlyList<int> GetActiveRootNotes()
+    {
+        return _activeNotes.Keys.ToList();
+    }
+    
+    /// <summary>
+    /// Reharmonizes all active notes with a new harmony type.
+    /// Returns the notes to remove and notes to add for updating the arpeggiator.
+    /// Also updates the internal state to track the new harmonized notes.
+    /// </summary>
+    public (int[] notesToRemove, int[] notesToAdd) ReharmonizeActiveNotes(HarmonyType newType)
+    {
+        var toRemove = new List<int>();
+        var toAdd = new List<int>();
+        
+        var rootNotes = _activeNotes.Keys.ToList();
+        var newIntervals = GetIntervals(newType);
+        
+        foreach (var rootNote in rootNotes)
+        {
+            var oldNotes = _activeNotes[rootNote];
+            
+            // Calculate new notes for this root
+            var newNotes = new List<int> { rootNote };
+            foreach (var interval in newIntervals)
+            {
+                int harmonyNote = rootNote + interval;
+                if (harmonyNote <= 127)
+                {
+                    newNotes.Add(harmonyNote);
+                }
+            }
+            
+            // Find notes to remove (in old but not in new)
+            foreach (var note in oldNotes)
+            {
+                if (!newNotes.Contains(note))
+                {
+                    toRemove.Add(note);
+                }
+            }
+            
+            // Find notes to add (in new but not in old)
+            foreach (var note in newNotes)
+            {
+                if (!oldNotes.Contains(note))
+                {
+                    toAdd.Add(note);
+                }
+            }
+            
+            // Update internal state
+            _activeNotes[rootNote] = newNotes.ToArray();
+        }
+        
+        // Update the harmony type
+        Type = newType;
+        
+        return (toRemove.ToArray(), toAdd.ToArray());
+    }
 
     private static int[] GetIntervals(HarmonyType type)
     {

@@ -25,11 +25,9 @@ public partial class MainPage : ContentPage
     private double _pageWidth;
     private double _pageHeight;
     
-    // Harmony and Arpeggiator
+    // Harmony (chord effect) - may be disabled for monophonic instruments
     private readonly Harmony _harmony = new();
-    private readonly Arpeggiator _arpeggiator = new();
-    private IDispatcherTimer? _arpTimer;
-    private int? _lastArpNote;
+    private bool _harmonyAllowed = true; // False for monophonic instruments
     
     // Envelope animation timer for pad glow effect
     private IDispatcherTimer? _envelopeAnimationTimer;
@@ -278,93 +276,56 @@ public partial class MainPage : ContentPage
                 _harmony.Reset();
             }
         };
-        harmonySettings.TypeChanged += (s, type) => _harmony.Type = type;
+        harmonySettings.TypeChanged += (s, type) => OnHarmonyTypeChanged(type);
         
         // Apply initial harmony settings
         _harmony.IsEnabled = harmonySettings.IsEnabled;
         _harmony.Type = harmonySettings.Type;
         
-        // Wire up Arpeggiator settings
+        // Wire up Arpeggiator settings - uses audio-thread arpeggiator for sample-accurate timing
         var arpSettings = _effectAreaDrawable.ArpSettings;
+        var audioArp = _sfzService.Arpeggiator;
+        
         arpSettings.EnabledChanged += (s, enabled) =>
         {
-            _arpeggiator.IsEnabled = enabled;
-            if (enabled)
-            {
-                StartArpeggiator();
-            }
-            else
-            {
-                StopArpeggiator();
-            }
+            audioArp.IsEnabled = enabled;
         };
         arpSettings.RateChanged += (s, rate) =>
         {
-            _arpeggiator.Rate = rate;
-            UpdateArpTimerInterval();
+            audioArp.SetRate(rate);
         };
-        arpSettings.PatternChanged += (s, pattern) => _arpeggiator.Pattern = pattern;
+        arpSettings.PatternChanged += (s, pattern) => audioArp.Pattern = pattern;
         
         // Apply initial arpeggiator settings
-        _arpeggiator.IsEnabled = arpSettings.IsEnabled;
-        _arpeggiator.Rate = arpSettings.Rate;
-        _arpeggiator.Pattern = arpSettings.Pattern;
+        audioArp.IsEnabled = arpSettings.IsEnabled;
+        audioArp.SetRate(arpSettings.Rate);
+        audioArp.Pattern = arpSettings.Pattern;
     }
-
-    private void StartArpeggiator()
+    
+    private void OnHarmonyTypeChanged(HarmonyType newType)
     {
-        if (_arpTimer != null) return;
+        var audioArp = _sfzService.Arpeggiator;
         
-        _arpTimer = Dispatcher.CreateTimer();
-        UpdateArpTimerInterval();
-        _arpTimer.Tick += OnArpTimerTick;
-        _arpTimer.Start();
-    }
-
-    private void StopArpeggiator()
-    {
-        if (_arpTimer == null) return;
-        
-        _arpTimer.Stop();
-        _arpTimer.Tick -= OnArpTimerTick;
-        _arpTimer = null;
-        
-        // Stop the last arpeggiated note
-        if (_lastArpNote.HasValue)
+        // If arpeggiator is active with notes, we need to update the notes live
+        if (audioArp.IsEnabled && audioArp.ActiveNotes.Count > 0)
         {
-            _sfzService.NoteOff(_lastArpNote.Value);
-            _lastArpNote = null;
-        }
-    }
-
-    private void UpdateArpTimerInterval()
-    {
-        if (_arpTimer != null)
-        {
-            _arpTimer.Interval = TimeSpan.FromMilliseconds(_arpeggiator.GetIntervalMs());
-        }
-    }
-
-    private void OnArpTimerTick(object? sender, EventArgs e)
-    {
-        if (!_arpeggiator.IsEnabled) return;
-        
-        // Stop the previous note
-        if (_lastArpNote.HasValue)
-        {
-            _sfzService.NoteOff(_lastArpNote.Value);
-        }
-        
-        // Get and play the next note
-        var nextNote = _arpeggiator.GetNextNote();
-        if (nextNote.HasValue)
-        {
-            _sfzService.NoteOn(nextNote.Value);
-            _lastArpNote = nextNote;
+            // Get notes to add/remove based on new harmony type
+            var (notesToRemove, notesToAdd) = _harmony.ReharmonizeActiveNotes(newType);
+            
+            // Update the arpeggiator
+            foreach (var note in notesToRemove)
+            {
+                audioArp.RemoveNote(note);
+            }
+            foreach (var note in notesToAdd)
+            {
+                audioArp.AddNote(note);
+            }
         }
         else
         {
-            _lastArpNote = null;
+            // Just update the type for future notes
+            _harmony.Type = newType;
         }
     }
 
@@ -797,6 +758,25 @@ public partial class MainPage : ContentPage
             {
                 _sfzService.VoicingMode = config.Voicing;
                 
+                // Disable harmony for monophonic instruments (chords don't make sense)
+                bool isMonophonic = config.Voicing == VoicingType.Monophonic;
+                _harmonyAllowed = !isMonophonic;
+                
+                // Update the harmony settings to disable the UI
+                var harmonySettings = _effectAreaDrawable.HarmonySettings;
+                harmonySettings.IsAllowed = !isMonophonic;
+                
+                // If switching to monophonic and harmony was on, turn it off
+                if (isMonophonic && harmonySettings.IsEnabled)
+                {
+                    harmonySettings.IsEnabled = false;
+                    _harmony.IsEnabled = false;
+                    _harmony.Reset();
+                }
+                
+                // Redraw effect area to show disabled state
+                EffectArea.Invalidate();
+                
                 // For unpitched instruments, auto-select the unpitched padrea
                 if (config.PitchType == Core.Models.PitchType.Unpitched)
                 {
@@ -1097,15 +1077,16 @@ public partial class MainPage : ContentPage
 
     private void OnNoteOn(object? sender, int midiNote)
     {
-        // Apply harmony (generates chord from single note)
-        var notes = _harmony.ProcessNoteOn(midiNote);
+        // Apply harmony (generates chord from single note) if allowed
+        var notes = _harmonyAllowed ? _harmony.ProcessNoteOn(midiNote) : new[] { midiNote };
+        var audioArp = _sfzService.Arpeggiator;
         
-        if (_arpeggiator.IsEnabled)
+        if (audioArp.IsEnabled)
         {
-            // When arpeggiator is enabled, add notes to it (don't play directly)
+            // When arpeggiator is enabled, add notes to audio-thread arpeggiator
             foreach (var note in notes)
             {
-                _arpeggiator.AddNote(note);
+                audioArp.AddNote(note);
             }
         }
         else
@@ -1121,14 +1102,15 @@ public partial class MainPage : ContentPage
     private void OnNoteOff(object? sender, int midiNote)
     {
         // Get all notes that were generated for this root note
-        var notes = _harmony.ProcessNoteOff(midiNote);
+        var notes = _harmonyAllowed ? _harmony.ProcessNoteOff(midiNote) : new[] { midiNote };
+        var audioArp = _sfzService.Arpeggiator;
         
-        if (_arpeggiator.IsEnabled)
+        if (audioArp.IsEnabled)
         {
-            // Remove notes from arpeggiator
+            // Remove notes from audio-thread arpeggiator
             foreach (var note in notes)
             {
-                _arpeggiator.RemoveNote(note);
+                audioArp.RemoveNote(note);
             }
         }
         else
@@ -1147,14 +1129,15 @@ public partial class MainPage : ContentPage
         int velocity = (int)(e.Volume * 127);
         velocity = Math.Clamp(velocity, 1, 127);
         
-        // Apply harmony
-        var notes = _harmony.ProcessNoteOn(e.MidiNote);
+        // Apply harmony if allowed
+        var notes = _harmonyAllowed ? _harmony.ProcessNoteOn(e.MidiNote) : new[] { e.MidiNote };
+        var audioArp = _sfzService.Arpeggiator;
         
-        if (_arpeggiator.IsEnabled)
+        if (audioArp.IsEnabled)
         {
             foreach (var note in notes)
             {
-                _arpeggiator.AddNote(note);
+                audioArp.AddNote(note);
             }
         }
         else

@@ -4,8 +4,18 @@ using Xunit;
 
 namespace MusicPad.Tests.NoteProcessing;
 
+/// <summary>
+/// Tests for the Harmony chord effect processor.
+/// Note: MainPage disables harmony (_harmonyAllowed = false) for monophonic instruments,
+/// bypassing the Harmony class entirely. This ensures monophonic instruments like
+/// flute, lead synths, etc. don't attempt to play chords.
+/// </summary>
 public class HarmonyTests
 {
+    /// <summary>
+    /// When Harmony.IsEnabled is false, only the original note is returned.
+    /// This is the same behavior as when MainPage bypasses harmony for monophonic instruments.
+    /// </summary>
     [Fact]
     public void WhenDisabled_ReturnsOnlyInputNote()
     {
@@ -144,5 +154,108 @@ public class HarmonyTests
         Assert.Contains(64, majorNotes);
         Assert.Contains(63, minorNotes);
     }
+    
+    #region Live Harmony Type Change Tests
+    
+    [Fact]
+    public void GetActiveRootNotes_ReturnsRootNotesOnly()
+    {
+        var harmony = new Harmony();
+        harmony.IsEnabled = true;
+        harmony.Type = HarmonyType.Major;
+        
+        // Press C and E
+        harmony.ProcessNoteOn(60);
+        harmony.ProcessNoteOn(64);
+        
+        var rootNotes = harmony.GetActiveRootNotes();
+        
+        Assert.Equal(2, rootNotes.Count);
+        Assert.Contains(60, rootNotes);
+        Assert.Contains(64, rootNotes);
+    }
+    
+    [Fact]
+    public void ReharmonizeActiveNotes_ReturnsNotesToAddAndRemove()
+    {
+        var harmony = new Harmony();
+        harmony.IsEnabled = true;
+        harmony.Type = HarmonyType.Major;
+        
+        // Press C with Major: C(60), E(64), G(67)
+        harmony.ProcessNoteOn(60);
+        
+        // Change to Minor: C(60), Eb(63), G(67)
+        // Should remove E(64), add Eb(63)
+        var (notesToRemove, notesToAdd) = harmony.ReharmonizeActiveNotes(HarmonyType.Minor);
+        
+        Assert.Contains(64, notesToRemove); // E should be removed
+        Assert.Contains(63, notesToAdd);    // Eb should be added
+        Assert.DoesNotContain(60, notesToRemove); // Root stays
+        Assert.DoesNotContain(67, notesToRemove); // Fifth stays
+    }
+    
+    [Fact]
+    public void ReharmonizeActiveNotes_UpdatesInternalState()
+    {
+        var harmony = new Harmony();
+        harmony.IsEnabled = true;
+        harmony.Type = HarmonyType.Major;
+        
+        harmony.ProcessNoteOn(60);
+        harmony.ReharmonizeActiveNotes(HarmonyType.Minor);
+        
+        // Now releasing the key should return Minor notes
+        var notesOff = harmony.ProcessNoteOff(60);
+        
+        Assert.Contains(60, notesOff);  // Root
+        Assert.Contains(63, notesOff);  // Minor 3rd (Eb)
+        Assert.Contains(67, notesOff);  // Fifth
+        Assert.DoesNotContain(64, notesOff); // Not Major 3rd
+    }
+    
+    [Fact]
+    public void ReharmonizeActiveNotes_FromMajorToOctave()
+    {
+        var harmony = new Harmony();
+        harmony.IsEnabled = true;
+        harmony.Type = HarmonyType.Major;
+        
+        // Major: C(60), E(64), G(67)
+        harmony.ProcessNoteOn(60);
+        
+        // Octave: C(60), C(72)
+        // Remove E(64), G(67), add C(72)
+        var (notesToRemove, notesToAdd) = harmony.ReharmonizeActiveNotes(HarmonyType.Octave);
+        
+        Assert.Contains(64, notesToRemove); // E
+        Assert.Contains(67, notesToRemove); // G
+        Assert.Contains(72, notesToAdd);    // Octave C
+    }
+    
+    [Fact]
+    public void ReharmonizeActiveNotes_MultipleRootNotes()
+    {
+        var harmony = new Harmony();
+        harmony.IsEnabled = true;
+        harmony.Type = HarmonyType.Fifth;
+        
+        // Fifth on C: C(60), G(67)
+        // Fifth on E: E(64), B(71)
+        harmony.ProcessNoteOn(60);
+        harmony.ProcessNoteOn(64);
+        
+        // Change to Octave:
+        // C(60), C(72) - remove G(67), add C(72)
+        // E(64), E(76) - remove B(71), add E(76)
+        var (notesToRemove, notesToAdd) = harmony.ReharmonizeActiveNotes(HarmonyType.Octave);
+        
+        Assert.Contains(67, notesToRemove); // G
+        Assert.Contains(71, notesToRemove); // B
+        Assert.Contains(72, notesToAdd);    // Octave C
+        Assert.Contains(76, notesToAdd);    // Octave E
+    }
+    
+    #endregion
 }
 

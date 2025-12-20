@@ -1,4 +1,5 @@
 using MusicPad.Core.Models;
+using MusicPad.Core.NoteProcessing;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -12,6 +13,11 @@ public interface ISfzService
     /// Gets or sets the current voicing mode (polyphonic or monophonic).
     /// </summary>
     VoicingType VoicingMode { get; set; }
+    
+    /// <summary>
+    /// Gets the audio-thread arpeggiator for sample-accurate timing.
+    /// </summary>
+    AudioArpeggiator Arpeggiator { get; }
     
     /// <summary>
     /// Gets the list of available instruments.

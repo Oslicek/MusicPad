@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last Updated:** 2025-12-19
+> **Last Updated:** 2025-12-20
 
 ## Overview
 
@@ -73,7 +73,8 @@ MusicPad/
 │       │   └── ArpeggiatorSettings.cs# Arpeggiator settings model
 │       ├── NoteProcessing/
 │       │   ├── Harmony.cs            # Auto harmony processor
-│       │   └── Arpeggiator.cs        # Arpeggiator processor
+│       │   ├── Arpeggiator.cs        # Arpeggiator processor (UI)
+│       │   └── AudioArpeggiator.cs   # Sample-accurate audio-thread arpeggiator
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -96,7 +97,8 @@ MusicPad/
 │       │   └── EffectSelectorTests.cs
 │       ├── NoteProcessing/
 │       │   ├── HarmonyTests.cs
-│       │   └── ArpeggiatorTests.cs
+│       │   ├── ArpeggiatorTests.cs
+│       │   └── AudioArpeggiatorTests.cs  # Audio-thread arpeggiator tests
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │
@@ -143,8 +145,9 @@ MusicPad/
 | `SfzMetadata` | Core/Sfz | Parses instrument metadata (credits, etc.) |
 | `WavLoader` | Core/Sfz | Loads WAV audio samples |
 | `Padrea` | Core/Models | Configurable pad area with note filtering |
-| `Harmony` | Core/NoteProcessing | Auto harmony (chord generation) |
-| `Arpeggiator` | Core/NoteProcessing | Arpeggiator with patterns |
+| `Harmony` | Core/NoteProcessing | Auto harmony (chord generation) - disabled for monophonic instruments |
+| `Arpeggiator` | Core/NoteProcessing | Arpeggiator with patterns (UI-based, legacy) |
+| `AudioArpeggiator` | Core/NoteProcessing | Sample-accurate arpeggiator running on audio thread |
 | `PadMatrixDrawable` | Controls | Touch pad grid with envelope-following glow |
 | `PianoKeyboardDrawable` | Controls | Piano keyboard with envelope glow |
 | `PitchVolumeDrawable` | Controls | Continuous pitch-volume surface |
@@ -180,6 +183,12 @@ MusicPad/
 | Random (?) | Random order |
 
 Rate knob controls speed (125ms to 500ms between notes).
+
+**Audio-Thread Arpeggiator** - The arpeggiator runs on the audio thread for sample-accurate timing, eliminating jitter from UI thread delays. This ensures consistent tempo even at fast rates.
+
+**Monophonic Harmony Bypass** - When an instrument is configured as monophonic (VoicingType.Monophonic), the harmony/chord effect is automatically disabled and the UI controls are grayed out since chords don't make sense for single-note instruments.
+
+**Live Harmony Type Changes** - When changing harmony type during arpeggio playback, the notes are updated immediately using `ReharmonizeActiveNotes()`, which calculates the delta (notes to add/remove) and updates the arpeggiator in real-time.
 
 ## Voicing Modes
 

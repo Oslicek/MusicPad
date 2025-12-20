@@ -55,6 +55,7 @@ public class ArpHarmonyDrawable
         
         _harmonySettings.EnabledChanged += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
         _harmonySettings.TypeChanged += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
+        _harmonySettings.AllowedChanged += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
         _arpSettings.EnabledChanged += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
         _arpSettings.RateChanged += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
         _arpSettings.PatternChanged += (s, e) => InvalidateRequested?.Invoke(this, EventArgs.Empty);
@@ -81,29 +82,33 @@ public class ArpHarmonyDrawable
     private void DrawHarmonyRow(ICanvas canvas, RectF rowRect, float padding, float buttonSize)
     {
         bool isEnabled = _harmonySettings.IsEnabled;
+        bool isAllowed = _harmonySettings.IsAllowed;
         float x = rowRect.X + padding;
         float centerY = rowRect.Y + rowRect.Height / 2;
         
-        // Label
+        // Label - dimmed when not allowed
         canvas.FontSize = 9;
-        canvas.FontColor = LabelColor;
+        canvas.FontColor = isAllowed ? LabelColor : DisabledColor;
         canvas.DrawString("HARM", x, centerY - 6, 30, 12, HorizontalAlignment.Left, VerticalAlignment.Center);
         x += 32;
         
-        // On/Off button
+        // On/Off button - disabled when not allowed
         _harmonyOnOffRect = new RectF(x, centerY - buttonSize / 2, buttonSize, buttonSize);
-        DrawOnOffButton(canvas, _harmonyOnOffRect, isEnabled);
+        DrawOnOffButton(canvas, _harmonyOnOffRect, isEnabled, isAllowed);
         x += buttonSize + padding * 2;
         
-        // Type selector (4 buttons)
+        // Type selector (4 buttons) - all disabled when not allowed
         float typeButtonWidth = 22f;
         float typeButtonHeight = 20f;
+        
+        // When not allowed, treat as if disabled
+        bool effectiveEnabled = isEnabled && isAllowed;
         
         for (int i = 0; i < 4; i++)
         {
             float bx = x + i * (typeButtonWidth + 2);
             _harmonyTypeRects[i] = new RectF(bx, centerY - typeButtonHeight / 2, typeButtonWidth, typeButtonHeight);
-            DrawTypeButton(canvas, _harmonyTypeRects[i], HarmonyLabels[i], (int)_harmonySettings.Type == i, isEnabled, i == 0, i == 3);
+            DrawTypeButton(canvas, _harmonyTypeRects[i], HarmonyLabels[i], (int)_harmonySettings.Type == i, effectiveEnabled, i == 0, i == 3);
         }
     }
 
@@ -146,8 +151,41 @@ public class ArpHarmonyDrawable
         }
     }
 
-    private void DrawOnOffButton(ICanvas canvas, RectF rect, bool isOn)
+    private void DrawOnOffButton(ICanvas canvas, RectF rect, bool isOn, bool isAllowed = true)
     {
+        // When not allowed, show as disabled
+        if (!isAllowed)
+        {
+            canvas.FillColor = DisabledColor.WithAlpha(0.3f);
+            canvas.FillRoundedRectangle(rect, 4);
+            
+            canvas.StrokeColor = Color.FromArgb(AppColors.DisabledBorder);
+            canvas.StrokeSize = 1;
+            canvas.DrawRoundedRectangle(rect, 4);
+            
+            float iconSize = rect.Width * 0.5f;
+            float centerX = rect.Center.X;
+            float centerY = rect.Center.Y;
+            
+            canvas.StrokeColor = DisabledColor;
+            canvas.StrokeSize = 2;
+            
+            var path = new PathF();
+            for (int a = 60; a <= 300; a += 10)
+            {
+                float rad = a * MathF.PI / 180f;
+                float x = centerX + MathF.Cos(rad) * iconSize * 0.4f;
+                float y = centerY + MathF.Sin(rad) * iconSize * 0.4f;
+                if (a == 60)
+                    path.MoveTo(x, y);
+                else
+                    path.LineTo(x, y);
+            }
+            canvas.DrawPath(path);
+            canvas.DrawLine(centerX, centerY - iconSize * 0.5f, centerX, centerY);
+            return;
+        }
+        
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
         canvas.FillRoundedRectangle(rect, 4);
         
@@ -155,27 +193,27 @@ public class ArpHarmonyDrawable
         canvas.StrokeSize = 1;
         canvas.DrawRoundedRectangle(rect, 4);
         
-        float iconSize = rect.Width * 0.5f;
-        float centerX = rect.Center.X;
-        float centerY = rect.Center.Y;
+        float iconSz = rect.Width * 0.5f;
+        float cx = rect.Center.X;
+        float cy = rect.Center.Y;
         
         canvas.StrokeColor = Colors.White;
         canvas.StrokeSize = 2;
         
-        var path = new PathF();
+        var iconPath = new PathF();
         for (int a = 60; a <= 300; a += 10)
         {
             float rad = a * MathF.PI / 180f;
-            float x = centerX + MathF.Cos(rad) * iconSize * 0.4f;
-            float y = centerY + MathF.Sin(rad) * iconSize * 0.4f;
+            float x = cx + MathF.Cos(rad) * iconSz * 0.4f;
+            float y = cy + MathF.Sin(rad) * iconSz * 0.4f;
             if (a == 60)
-                path.MoveTo(x, y);
+                iconPath.MoveTo(x, y);
             else
-                path.LineTo(x, y);
+                iconPath.LineTo(x, y);
         }
-        canvas.DrawPath(path);
+        canvas.DrawPath(iconPath);
         
-        canvas.DrawLine(centerX, centerY - iconSize * 0.5f, centerX, centerY);
+        canvas.DrawLine(cx, cy - iconSz * 0.5f, cx, cy);
     }
 
     private void DrawTypeButton(ICanvas canvas, RectF rect, string label, bool isSelected, bool isEnabled, bool isFirst, bool isLast)
@@ -261,19 +299,22 @@ public class ArpHarmonyDrawable
 
         if (isStart)
         {
-            // Harmony controls
-            if (_harmonyOnOffRect.Contains(point))
+            // Harmony controls - only respond if allowed (not monophonic instrument)
+            if (_harmonySettings.IsAllowed)
             {
-                _harmonySettings.IsEnabled = !_harmonySettings.IsEnabled;
-                return true;
-            }
-            
-            for (int i = 0; i < 4; i++)
-            {
-                if (_harmonyTypeRects[i].Contains(point) && _harmonySettings.IsEnabled)
+                if (_harmonyOnOffRect.Contains(point))
                 {
-                    _harmonySettings.Type = (HarmonyType)i;
+                    _harmonySettings.IsEnabled = !_harmonySettings.IsEnabled;
                     return true;
+                }
+                
+                for (int i = 0; i < 4; i++)
+                {
+                    if (_harmonyTypeRects[i].Contains(point) && _harmonySettings.IsEnabled)
+                    {
+                        _harmonySettings.Type = (HarmonyType)i;
+                        return true;
+                    }
                 }
             }
             

@@ -11,6 +11,7 @@ public class HarmonySettingsTests
         var settings = new HarmonySettings();
         
         Assert.False(settings.IsEnabled);
+        Assert.True(settings.IsAllowed); // Harmony allowed by default
         Assert.Equal(HarmonyType.Major, settings.Type);
     }
 
@@ -103,5 +104,55 @@ public class HarmonySettingsTests
         Assert.Contains(HarmonyType.Major, types);
         Assert.Contains(HarmonyType.Minor, types);
     }
+    
+    #region IsAllowed Tests (for monophonic instrument handling)
+    
+    [Fact]
+    public void AllowedChanged_FiresOnChange()
+    {
+        var settings = new HarmonySettings();
+        bool eventFired = false;
+        bool receivedValue = true;
+        
+        settings.AllowedChanged += (s, e) =>
+        {
+            eventFired = true;
+            receivedValue = e;
+        };
+        settings.IsAllowed = false;
+        
+        Assert.True(eventFired);
+        Assert.False(receivedValue);
+    }
+    
+    [Fact]
+    public void AllowedChanged_DoesNotFireForSameValue()
+    {
+        var settings = new HarmonySettings();
+        int eventCount = 0;
+        
+        settings.AllowedChanged += (s, e) => eventCount++;
+        settings.IsAllowed = true; // Same as default
+        
+        Assert.Equal(0, eventCount);
+    }
+    
+    [Fact]
+    public void IsAllowed_FalseForMonophonicInstruments()
+    {
+        // This test documents the expected behavior:
+        // When switching to a monophonic instrument, IsAllowed should be set to false
+        // and the UI should disable the harmony controls
+        var settings = new HarmonySettings();
+        settings.IsEnabled = true; // Harmony was on
+        
+        // Simulate switching to monophonic instrument
+        settings.IsAllowed = false;
+        
+        Assert.False(settings.IsAllowed);
+        // Note: The UI layer (MainPage) is responsible for also setting IsEnabled = false
+    }
+    
+    #endregion
 }
 

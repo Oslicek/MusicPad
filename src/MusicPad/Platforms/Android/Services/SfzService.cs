@@ -3,6 +3,7 @@ using Android.Content.Res;
 using Android.Media;
 using MusicPad.Core.Audio;
 using MusicPad.Core.Models;
+using MusicPad.Core.NoteProcessing;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -16,6 +17,7 @@ public class SfzService : ISfzService, IDisposable
     
     private readonly AssetManager _assets;
     private readonly SfzPlayer _player;
+    private readonly AudioArpeggiator _arpeggiator;
     private readonly LowPassFilter _lpf;
     private readonly Equalizer _eq;
     private readonly Chorus _chorus;
@@ -77,10 +79,13 @@ public class SfzService : ISfzService, IDisposable
         set => _lpf.Resonance = value;
     }
 
+    public AudioArpeggiator Arpeggiator => _arpeggiator;
+
     public SfzService()
     {
         _assets = Android.App.Application.Context.Assets!;
         _player = new SfzPlayer(SampleRate);
+        _arpeggiator = new AudioArpeggiator(SampleRate);
         _lpf = new LowPassFilter(SampleRate);
         _eq = new Equalizer(SampleRate);
         _chorus = new Chorus(SampleRate);
@@ -551,6 +556,20 @@ public class SfzService : ISfzService, IDisposable
 
         while (!token.IsCancellationRequested)
         {
+            // Process arpeggiator with sample-accurate timing
+            var arpEvents = _arpeggiator.ProcessBuffer(bufferSamples);
+            foreach (var evt in arpEvents)
+            {
+                if (evt.EventType == ArpEventType.NoteOn)
+                {
+                    _player.NoteOn(evt.MidiNote, evt.Velocity);
+                }
+                else
+                {
+                    _player.NoteOff(evt.MidiNote);
+                }
+            }
+            
             _player.GenerateSamples(buffer);
 
             // Apply effects in order: LPF -> EQ -> Chorus -> Delay -> Reverb

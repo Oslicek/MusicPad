@@ -1,6 +1,7 @@
 #if !ANDROID
 
 using MusicPad.Core.Models;
+using MusicPad.Core.NoteProcessing;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -16,6 +17,7 @@ public class SfzService : ISfzService
     public SfzInstrument? CurrentInstrument => null;
     public IReadOnlyList<int> CurrentUniqueMidiNotes => Array.Empty<int>();
     public VoicingType VoicingMode { get; set; } = VoicingType.Polyphonic;
+    public AudioArpeggiator Arpeggiator { get; } = new AudioArpeggiator(44100);
     
     public string GetNoteLabel(int midiNote)
     {
