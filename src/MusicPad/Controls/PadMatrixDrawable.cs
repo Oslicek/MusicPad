@@ -2,6 +2,9 @@ using Microsoft.Maui.Graphics;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
 
+// Scale coloring imports
+using ScaleNoteType = MusicPad.Core.Models.ScaleNoteType;
+
 namespace MusicPad.Controls;
 
 /// <summary>
@@ -54,8 +57,10 @@ public class PadMatrixDrawable : IDrawable
     private Func<int, bool>? _isHalftone;
     private Func<int, float>? _envelopeLevelGetter; // Gets envelope level for a note (0-1)
     private Func<int, string>? _labelGetter; // Gets custom label for a note (for unpitched instruments)
+    private Func<int, ScaleNoteType>? _scaleNoteTypeGetter; // Gets scale membership for a note
     private int _lastTouchCount;
     private bool _glowEnabled = true; // Whether envelope glow effect is enabled
+    private bool _useScaleColors = false; // Use 3-color scale mode
 
     public event EventHandler<int>? NoteOn;
     public event EventHandler<int>? NoteOff;
@@ -134,6 +139,19 @@ public class PadMatrixDrawable : IDrawable
     public void SetLabelGetter(Func<int, string>? getter)
     {
         _labelGetter = getter;
+    }
+    
+    /// <summary>
+    /// Sets scale-based coloring mode.
+    /// When enabled, pads are colored based on their relationship to the scale:
+    /// - Root note: accent color
+    /// - In scale: significant color
+    /// - Out of scale: white/neutral
+    /// </summary>
+    public void SetScaleColoring(Func<int, ScaleNoteType>? scaleNoteTypeGetter)
+    {
+        _scaleNoteTypeGetter = scaleNoteTypeGetter;
+        _useScaleColors = scaleNoteTypeGetter != null;
     }
 
     /// <summary>
@@ -264,17 +282,29 @@ public class PadMatrixDrawable : IDrawable
         float x = _offsetX + col * (_padSize + _spacing);
         float y = _offsetY + visualRow * (_padSize + _spacing);
 
-        // When label getter is set (unpitched instruments), don't use alt colors - all pads same color
-        bool isAltNote = _isHalftone?.Invoke(midiNote) ?? (_labelGetter == null && IsSharp[midiNote % 12]);
         bool isTouched = _activeNotes.Contains(midiNote);
         
         // Get envelope level for this note (0 = silent, 1 = full)
         float envelopeLevel = _envelopeLevelGetter?.Invoke(midiNote) ?? 0f;
         bool isPlaying = envelopeLevel > 0.001f;
         
-        // Base colors
-        Color normalColor = isAltNote ? _padAltColor : _padColor;
-        Color pressedColor = isAltNote ? _padAltPressedColor : _padPressedColor;
+        // Determine colors based on mode
+        Color normalColor;
+        Color pressedColor;
+        
+        if (_useScaleColors && _scaleNoteTypeGetter != null)
+        {
+            // Scale-based 3-color mode
+            var noteType = _scaleNoteTypeGetter(midiNote);
+            (normalColor, pressedColor) = GetScaleColors(noteType);
+        }
+        else
+        {
+            // Standard alt-note mode (black/white keys or custom halftone)
+            bool isAltNote = _isHalftone?.Invoke(midiNote) ?? (_labelGetter == null && IsSharp[midiNote % 12]);
+            normalColor = isAltNote ? _padAltColor : _padColor;
+            pressedColor = isAltNote ? _padAltPressedColor : _padPressedColor;
+        }
         
         Color bgColor;
         
@@ -371,6 +401,35 @@ public class PadMatrixDrawable : IDrawable
             a.Blue + (b.Blue - a.Blue) * t,
             a.Alpha + (b.Alpha - a.Alpha) * t
         );
+    }
+    
+    /// <summary>
+    /// Gets colors for a note based on its scale membership.
+    /// </summary>
+    private static (Color normal, Color pressed) GetScaleColors(ScaleNoteType noteType)
+    {
+        return noteType switch
+        {
+            // Root note: accent color (magenta/pink)
+            ScaleNoteType.Root => (
+                Color.FromArgb(AppColors.Accent),
+                Color.FromArgb(AppColors.AccentDark)
+            ),
+            
+            // In-scale note: significant color (blue)
+            ScaleNoteType.InScale => (
+                Color.FromArgb(AppColors.PadScaleNormal),
+                Color.FromArgb(AppColors.PadScalePressed)
+            ),
+            
+            // Out-of-scale note: white/neutral (still playable)
+            ScaleNoteType.OutOfScale => (
+                Colors.White.WithAlpha(0.85f),
+                Colors.LightGray
+            ),
+            
+            _ => (Color.FromArgb(AppColors.PadChromaticNormal), Color.FromArgb(AppColors.PadChromaticPressed))
+        };
     }
 
     public void OnTouches(IEnumerable<PointF> touches)

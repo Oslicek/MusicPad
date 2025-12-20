@@ -61,9 +61,9 @@ public class ComputedPalette
         PadPentatonicAltPressed = ToHex(Lighter(_palette.Teal, 0.3f));
         
         // Pad Colors - Scales
-        PadScaleNormal = ToHex(_palette.SkyBlue);
-        PadScalePressed = ToHex(_palette.White);
-        PadScaleAlt = ToHex(_palette.Teal);
+        PadScaleNormal = ToHex(_palette.Teal); // Darker blue for in-scale notes
+        PadScalePressed = ToHex(Lighter(_palette.Teal, 0.3f));
+        PadScaleAlt = ToHex(_palette.SkyBlue);
         PadScaleAltPressed = ToHex(Lighter(_palette.SkyBlue, 0.3f));
         
         // Pad Colors - Piano

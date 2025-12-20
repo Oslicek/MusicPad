@@ -720,6 +720,10 @@ public partial class MainPage : ContentPage
     private void BuildScaleOptions()
     {
         _scaleOptions.Clear();
+        
+        // Chromatic (all 12 notes) - at top
+        _scaleOptions.Add(new ScaleOption("Chromatic", 0, ScaleType.Chromatic));
+        
         // Major (12 roots)
         foreach (var (root, name) in RootNotes())
         {
@@ -858,7 +862,7 @@ public partial class MainPage : ContentPage
     {
         if (ScalePicker.SelectedItem is ScaleOption option &&
             _padreaService.CurrentPadrea is Padrea padrea &&
-            padrea.Id == "scales")
+            (padrea.Id == "scales-7x7" || padrea.Id == "scales-8x8" || padrea.Kind == PadreaKind.Scales))
         {
             ApplyScaleOptionToPadrea(padrea, option);
             padrea.CurrentViewpage = 0; // reset paging when scale changes
@@ -1050,6 +1054,7 @@ public partial class MainPage : ContentPage
             _padDrawable.SetHalftoneDetector(null);
             _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
             _padDrawable.SetLabelGetter(null);
+            _padDrawable.SetScaleColoring(null);
         }
         else if (padrea.Kind == PadreaKind.Unpitched)
         {
@@ -1090,6 +1095,27 @@ public partial class MainPage : ContentPage
             _padDrawable.SetHalftoneDetector(null); // No halftone distinction for unpitched
             _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
             _padDrawable.SetLabelGetter(_sfzService.GetNoteLabel);
+            _padDrawable.SetScaleColoring(null); // No scale coloring for unpitched
+            _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
+        }
+        else if (padrea.Kind == PadreaKind.Scales)
+        {
+            // Scales 8x8: chromatic grid with scale-based coloring
+            var notes = padrea.GetViewpageNotes(instrumentMinKey, instrumentMaxKey);
+            
+            if (notes.Count == 0)
+            {
+                LoadingLabel.IsVisible = true;
+                LoadingLabel.Text = "No notes in range";
+                return;
+            }
+            
+            _padDrawable.SetNotes(notes, padrea.Columns, false, false);
+            _padDrawable.SetColors(null, null, null, null); // Use dynamic scale colors
+            _padDrawable.SetHalftoneDetector(null); // Not using halftone mode
+            _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
+            _padDrawable.SetLabelGetter(null);
+            _padDrawable.SetScaleColoring(padrea.GetScaleNoteType); // 3-color scale mode
             _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
         }
         else
@@ -1111,6 +1137,7 @@ public partial class MainPage : ContentPage
             _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
             _padDrawable.SetEnvelopeLevelGetter(_sfzService.GetNoteEnvelopeLevel);
             _padDrawable.SetLabelGetter(null); // No labels for pitched instruments
+            _padDrawable.SetScaleColoring(null); // No scale coloring for normal grid
             _padDrawable.SetGlowEnabled(_settingsService.PadGlowEnabled);
         }
 
@@ -1401,7 +1428,9 @@ public partial class MainPage : ContentPage
 
     private void UpdateScalePickerForPadrea(Padrea padrea)
     {
-        bool isScalePadrea = padrea.Id == "scales" || padrea.NoteFilter == NoteFilterType.HeptatonicScale;
+        bool isScalePadrea = padrea.Id == "scales-7x7" || padrea.Id == "scales-8x8" || 
+                             padrea.Kind == PadreaKind.Scales || 
+                             padrea.NoteFilter == NoteFilterType.HeptatonicScale;
         ScalePicker.IsVisible = isScalePadrea;
         
         // Update layout after visibility change
@@ -1425,7 +1454,19 @@ public partial class MainPage : ContentPage
 
     private void ApplyScaleOptionToPadrea(Padrea padrea, ScaleOption option)
     {
-        padrea.NoteFilter = NoteFilterType.HeptatonicScale;
+        // For Scales 8x8 (Kind == Scales), keep chromatic filter - all notes shown
+        // For Scales 7x7 and other heptatonic padreas, filter to scale notes only
+        if (padrea.Kind == PadreaKind.Scales)
+        {
+            padrea.NoteFilter = NoteFilterType.Chromatic; // Show all notes
+        }
+        else
+        {
+            // For heptatonic 7x7: filter notes, chromatic scale means show all
+            padrea.NoteFilter = option.ScaleType == ScaleType.Chromatic 
+                ? NoteFilterType.Chromatic 
+                : NoteFilterType.HeptatonicScale;
+        }
         padrea.ScaleType = option.ScaleType;
         padrea.RootNote = option.Root;
     }
@@ -1494,10 +1535,13 @@ public partial class MainPage : ContentPage
     private async void OnHamburgerMenuClicked(object? sender, EventArgs e)
     {
         // Show action sheet with menu options
-        var action = await DisplayActionSheet("Menu", "Cancel", null, "Instruments", "Import Instrument", "Settings");
+        var action = await DisplayActionSheet("Menu", "Cancel", null, "Songs", "Instruments", "Import Instrument", "Settings");
         
         switch (action)
         {
+            case "Songs":
+                await Shell.Current.GoToAsync(nameof(Views.SongsPage));
+                break;
             case "Instruments":
                 await Shell.Current.GoToAsync(nameof(Views.InstrumentsPage));
                 break;

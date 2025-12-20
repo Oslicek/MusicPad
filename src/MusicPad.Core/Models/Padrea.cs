@@ -143,10 +143,13 @@ public class Padrea
     /// <summary>
     /// Gets the semitone intervals for a scale type.
     /// </summary>
-    private static HashSet<int> GetScaleIntervals(ScaleType scaleType)
+    public static HashSet<int> GetScaleIntervals(ScaleType scaleType)
     {
         return scaleType switch
         {
+            // Chromatic - all 12 notes
+            ScaleType.Chromatic => new HashSet<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
+            
             // Major modes
             ScaleType.Major or ScaleType.Ionian => new HashSet<int> { 0, 2, 4, 5, 7, 9, 11 },
             ScaleType.Dorian => new HashSet<int> { 0, 2, 3, 5, 7, 9, 10 },
@@ -162,6 +165,40 @@ public class Padrea
             
             _ => new HashSet<int> { 0, 2, 4, 5, 7, 9, 11 } // Default to Major
         };
+    }
+    
+    /// <summary>
+    /// Checks if a MIDI note is the root note of the current scale.
+    /// </summary>
+    public bool IsRootNote(int midiNote)
+    {
+        int noteInOctave = midiNote % 12;
+        return noteInOctave == RootNote;
+    }
+    
+    /// <summary>
+    /// Checks if a MIDI note is in the current scale (not necessarily root).
+    /// </summary>
+    public bool IsNoteInScale(int midiNote)
+    {
+        if (ScaleType == ScaleType.Chromatic)
+            return true; // All notes are in chromatic scale
+            
+        var intervals = GetScaleIntervals(ScaleType);
+        int relativeNote = (midiNote % 12 - RootNote + 12) % 12;
+        return intervals.Contains(relativeNote);
+    }
+    
+    /// <summary>
+    /// Gets the scale membership type for a note: Root, InScale, or OutOfScale.
+    /// </summary>
+    public ScaleNoteType GetScaleNoteType(int midiNote)
+    {
+        if (IsRootNote(midiNote))
+            return ScaleNoteType.Root;
+        if (IsNoteInScale(midiNote))
+            return ScaleNoteType.InScale;
+        return ScaleNoteType.OutOfScale;
     }
     
     /// <summary>
@@ -293,14 +330,19 @@ public enum PadreaKind
     /// <summary>Continuous pitch-volume surface: X = pitch, Y = volume</summary>
     PitchVolume,
     /// <summary>Unpitched percussion/drum pads: each pad triggers a different sound</summary>
-    Unpitched
+    Unpitched,
+    /// <summary>Chromatic scale grid: notes start bottom-left, go right then up; colored by scale membership</summary>
+    Scales
 }
 
 /// <summary>
-/// Types of heptatonic (7-note) scales.
+/// Types of scales.
 /// </summary>
 public enum ScaleType
 {
+    /// <summary>All 12 notes - no filtering.</summary>
+    Chromatic,
+    
     // Major modes
     Major,
     Ionian,         // Same as Major
@@ -315,5 +357,18 @@ public enum ScaleType
     NaturalMinor,   // Same as Aeolian
     HarmonicMinor,
     MelodicMinor
+}
+
+/// <summary>
+/// Indicates how a note relates to the current scale.
+/// </summary>
+public enum ScaleNoteType
+{
+    /// <summary>The root note of the scale.</summary>
+    Root,
+    /// <summary>A note that is part of the scale (but not root).</summary>
+    InScale,
+    /// <summary>A note outside the current scale.</summary>
+    OutOfScale
 }
 

@@ -42,21 +42,37 @@ public class PadreaService : IPadreaService
         };
         _padreas.Add(pentatonicPadrea);
 
-        // Heptatonic scales padrea (default C Major) - colors come from dynamic palette
-        var scalesPadrea = new Padrea
+        // Heptatonic scales padrea 7x7 (default C Major) - colors come from dynamic palette
+        var scales7x7Padrea = new Padrea
         {
-            Id = "scales",
-            Name = "Scales",
-            Description = "Select a heptatonic scale (Major, Minor modes, etc.)",
+            Id = "scales-7x7",
+            Name = "Scales 7x7",
+            Description = "Select a heptatonic scale (Major, Minor modes, etc.) - 7 notes per row",
             NoteFilter = NoteFilterType.HeptatonicScale,
             ScaleType = ScaleType.Major,
             RootNote = 0, // C
             Columns = 7,           // 7 pads per row (one octave of scale)
-            RowsPerViewpage = 4,   // 4 rows = 28 notes = 4 octaves per page
+            RowsPerViewpage = 7,   // 7 rows = 49 notes = 7 octaves per page
             Kind = PadreaKind.Grid
             // Colors are null - drawable will use dynamic palette defaults
         };
-        _padreas.Add(scalesPadrea);
+        _padreas.Add(scales7x7Padrea);
+        
+        // Chromatic scales padrea 8x8 - shows all notes, colored by scale membership
+        var scales8x8Padrea = new Padrea
+        {
+            Id = "scales-8x8",
+            Name = "Scales 8x8",
+            Description = "Chromatic grid with scale highlighting - notes start bottom-left",
+            NoteFilter = NoteFilterType.Chromatic, // All notes shown
+            ScaleType = ScaleType.Major,
+            RootNote = 0, // C
+            Columns = 8,           // 8 pads per row
+            RowsPerViewpage = 8,   // 8 rows = 64 notes per page
+            Kind = PadreaKind.Scales // Special kind for 3-color scale rendering
+            // Colors are null - drawable will use dynamic palette defaults
+        };
+        _padreas.Add(scales8x8Padrea);
 
         // Piano padrea - chromatic keyboard
         var pianoPadrea = new Padrea

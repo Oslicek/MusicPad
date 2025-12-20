@@ -171,6 +171,35 @@ public class RecordingService : IRecordingService
         }
     }
     
+    public async Task<bool> RenameSongAsync(string songId, string newName)
+    {
+        try
+        {
+            var songDir = Path.Combine(_songsDirectory, songId);
+            var metadataPath = Path.Combine(songDir, "metadata.json");
+            
+            if (!File.Exists(metadataPath))
+                return false;
+            
+            var json = await File.ReadAllTextAsync(metadataPath);
+            var song = JsonSerializer.Deserialize<Song>(json);
+            
+            if (song == null)
+                return false;
+            
+            song.Name = newName;
+            
+            var updatedJson = JsonSerializer.Serialize(song, new JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(metadataPath, updatedJson);
+            
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
     private async Task SaveSongAsync(Song song, List<RecordedEvent> events)
     {
         var songDir = Path.Combine(_songsDirectory, song.Id);

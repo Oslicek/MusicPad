@@ -41,6 +41,7 @@ public static class MauiProgram
         builder.Services.AddTransient<InstrumentDetailPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<ImportInstrumentPage>();
+        builder.Services.AddTransient<SongsPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

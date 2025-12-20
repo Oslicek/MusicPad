@@ -66,6 +66,11 @@ public interface IRecordingService
     Task<bool> DeleteSongAsync(string songId);
     
     /// <summary>
+    /// Renames a song.
+    /// </summary>
+    Task<bool> RenameSongAsync(string songId, string newName);
+    
+    /// <summary>
     /// Event raised when recording state changes.
     /// </summary>
     event EventHandler<bool>? RecordingStateChanged;

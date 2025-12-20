@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MusicPad.Views.SongsPage"
+             Shell.NavBarIsVisible="False"
+             x:Name="ThisPage">
+    
+    <Grid RowDefinitions="Auto,*" Padding="0">
+        <!-- Custom Header -->
+        <Grid x:Name="HeaderBar" 
+              Grid.Row="0" 
+              ColumnDefinitions="Auto,*" 
+              Padding="16,12">
+            <Label x:Name="BackArrow"
+                   Text="←"
+                   FontSize="24"
+                   VerticalOptions="Center"
+                   Grid.Column="0">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackClicked" />
+                </Label.GestureRecognizers>
+            </Label>
+            <Label x:Name="HeaderLabel"
+                   Text="Songs"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"
+                   Margin="16,0,0,0"
+                   Grid.Column="1" />
+        </Grid>
+        
+        <!-- Songs List -->
+        <ScrollView Grid.Row="1" Padding="16,0,16,16">
+            <VerticalStackLayout x:Name="SongsList" Spacing="8">
+                <!-- Empty state -->
+                <Label x:Name="EmptyLabel"
+                       Text="No recordings yet. Record a song from the main screen to see it here."
+                       TextColor="{StaticResource TextMuted}"
+                       FontSize="14"
+                       HorizontalTextAlignment="Center"
+                       IsVisible="False"
+                       Margin="0,40,0,0"/>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
+
