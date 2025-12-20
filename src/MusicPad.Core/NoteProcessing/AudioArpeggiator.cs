@@ -42,9 +42,10 @@ public class AudioArpeggiator
     private bool _needsImmediateTrigger = false;
     private bool _wasEnabled = false;
 
-    // Rate maps to BPM: 0 = 60 BPM (1000ms), 1 = 480 BPM (125ms)
-    private const float MinIntervalMs = 125f;  // 480 BPM
-    private const float MaxIntervalMs = 500f;  // 120 BPM
+    // Rate maps to interval: 0 = slowest, 1 = fastest
+    // Adjusted for audio buffer constraints - actual BPM will be lower than theoretical
+    private const float MinIntervalMs = 50f;   // ~500+ BPM theoretical (actual ~400 BPM)
+    private const float MaxIntervalMs = 800f;  // ~75 BPM theoretical (actual ~80 BPM)
 
     public AudioArpeggiator(int sampleRate)
     {

@@ -143,9 +143,9 @@ public class EffectAreaDrawable : IDrawable
         canvas.FillColor = EffectAreaBackground;
         canvas.FillRoundedRectangle(dirtyRect, CornerRadius);
         
-        // Draw outline using same style as pads (background color with alpha)
-        canvas.StrokeColor = EffectAreaBackground.WithAlpha(0.7f);
-        canvas.StrokeSize = 2;
+        // Draw visible outline
+        canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
+        canvas.StrokeSize = 1.5f;
         canvas.DrawRoundedRectangle(dirtyRect, CornerRadius);
 
         // Calculate button layout - square buttons with rounded corners
@@ -373,39 +373,18 @@ public class EffectAreaDrawable : IDrawable
     private void DrawEffectButton(ICanvas canvas, RectF rect, EffectType effect, int index, int totalCount, bool isHorizontal)
     {
         bool isSelected = _selector.IsSelected(effect);
-        bool isFirst = index == 0;
-        bool isLast = index == totalCount - 1;
         
-        // Calculate corner radii - align first/last buttons with effect area corners
-        float outerRadius = CornerRadius;  // Match effect area corner exactly
-        float innerRadius = 3f;
-        
-        float topLeft, topRight, bottomRight, bottomLeft;
-        if (isHorizontal)
-        {
-            // Horizontal: first has left corners rounded, last has right corners rounded
-            topLeft = isFirst ? outerRadius : innerRadius;
-            bottomLeft = isFirst ? outerRadius : innerRadius;
-            topRight = isLast ? outerRadius : innerRadius;
-            bottomRight = isLast ? outerRadius : innerRadius;
-        }
-        else
-        {
-            // Vertical: first has top corners rounded, last has bottom corners rounded
-            topLeft = isFirst ? outerRadius : innerRadius;
-            topRight = isFirst ? outerRadius : innerRadius;
-            bottomLeft = isLast ? outerRadius : innerRadius;
-            bottomRight = isLast ? outerRadius : innerRadius;
-        }
+        // All buttons have the same uniform shape - like smaller pads
+        float cornerRadius = 6f;  // Uniform corner radius for pad-like appearance
 
-        // Button background - rounded square with aligned corners
+        // Button background - uniform rounded square
         canvas.FillColor = isSelected ? ButtonSelectedColor : ButtonBackgroundColor;
-        canvas.FillRoundedRectangle(rect, topLeft, topRight, bottomRight, bottomLeft);
+        canvas.FillRoundedRectangle(rect, cornerRadius);
 
         // Button border - thin outline
         canvas.StrokeColor = isSelected ? ButtonIconSelectedColor : Color.FromArgb(AppColors.ButtonOff);
         canvas.StrokeSize = 1;
-        canvas.DrawRoundedRectangle(rect, topLeft, topRight, bottomRight, bottomLeft);
+        canvas.DrawRoundedRectangle(rect, cornerRadius);
 
         // Draw icon - minimal padding for small buttons
         Color iconColor = isSelected ? ButtonIconSelectedColor : ButtonIconColor;

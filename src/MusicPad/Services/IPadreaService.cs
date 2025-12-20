@@ -18,6 +18,13 @@ public interface IPadreaService
     Padrea? CurrentPadrea { get; set; }
     
     /// <summary>
+    /// Gets padreas available for the specified pitch type.
+    /// Pitched instruments get all padreas except unpitched.
+    /// Unpitched instruments get only the unpitched padrea.
+    /// </summary>
+    IReadOnlyList<Padrea> GetPadreasForPitchType(PitchType pitchType);
+    
+    /// <summary>
     /// Creates a new padrea.
     /// </summary>
     Padrea CreatePadrea(string name);

@@ -140,7 +140,7 @@ public class ArpHarmonyDrawable
         float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up for labels
         
         float circleButtonSize = 24f;
-        float knobSize = 43f;  // Small knob size - same as LPF (+20% bigger)
+        float knobSize = 49f;  // Small knob size - same as LPF (+15% bigger)
         _rateKnobRadius = knobSize * 0.42f;
         
         // Calculate layout - toggle + knob + 4 circular buttons, left-aligned like other effects

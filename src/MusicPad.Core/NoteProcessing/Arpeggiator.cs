@@ -12,9 +12,9 @@ public class Arpeggiator
     private int _currentIndex = 0;
     private bool _goingUp = true;
     
-    // Rate maps to BPM: 0 = 60 BPM (1000ms), 1 = 480 BPM (125ms)
-    private const float MinIntervalMs = 125f;  // 480 BPM
-    private const float MaxIntervalMs = 500f;  // 120 BPM
+    // Rate maps to interval: 0 = slowest, 1 = fastest
+    private const float MinIntervalMs = 50f;   // Fastest
+    private const float MaxIntervalMs = 800f;  // Slowest
 
     public bool IsEnabled { get; set; }
     public float Rate { get; set; } = 0.5f;

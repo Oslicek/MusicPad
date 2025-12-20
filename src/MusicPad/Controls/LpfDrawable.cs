@@ -83,8 +83,8 @@ public class LpfDrawable
         }
         else
         {
-            // Horizontal layout: button on left, knobs side by side - small knob size (+20% bigger)
-            float knobSize = Math.Min(dirtyRect.Height - 12, 43f);
+            // Horizontal layout: button on left, knobs side by side - small knob size (+15% bigger)
+            float knobSize = Math.Min(dirtyRect.Height - 12, 49f);
             _knobRadius = knobSize * 0.42f;
             
             // On/Off button on the left
@@ -96,7 +96,7 @@ public class LpfDrawable
             // Two knobs with even spacing after the button
             float knobsStartX = buttonX + buttonSize + padding * 3;
             float knobY = dirtyRect.Y + dirtyRect.Height / 2;
-            float knobSpacing = _knobRadius * 2 + padding * 6; // More spacing between knobs
+            float knobSpacing = _knobRadius * 2 + padding * 2; // Closer together
             
             float cutoffX = knobsStartX + _knobRadius + padding;
             float resonanceX = cutoffX + knobSpacing;

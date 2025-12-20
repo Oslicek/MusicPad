@@ -645,19 +645,27 @@ public partial class MainPage : ContentPage
         _sfzService.StopAll();
     }
 
-    private void LoadPadreas()
+    private void LoadPadreas(Core.Models.PitchType pitchType = Core.Models.PitchType.Pitched)
     {
-        var padreas = _padreaService.AvailablePadreas;
+        // Filter padreas based on instrument pitch type
+        var padreas = _padreaService.GetPadreasForPitchType(pitchType);
         PadreaPicker.ItemsSource = padreas.ToList();
         ScalePicker.ItemsSource = _scaleOptions.ToList();
         
-        // Select current padrea
+        // Select current padrea if it's in the filtered list
         var currentPadrea = _padreaService.CurrentPadrea;
         if (currentPadrea != null)
         {
             var index = padreas.ToList().FindIndex(p => p.Id == currentPadrea.Id);
             if (index >= 0)
+            {
                 PadreaPicker.SelectedIndex = index;
+            }
+            else if (padreas.Count > 0)
+            {
+                // Current padrea not in filtered list, select first available
+                PadreaPicker.SelectedIndex = 0;
+            }
         }
         else if (padreas.Count > 0)
         {
@@ -800,39 +808,9 @@ public partial class MainPage : ContentPage
                 // Redraw effect area to show disabled state
                 EffectArea.Invalidate();
                 
-                // For unpitched instruments, auto-select the unpitched padrea
-                if (config.PitchType == Core.Models.PitchType.Unpitched)
-                {
-                    var unpitchedPadrea = _padreaService.AvailablePadreas.FirstOrDefault(p => p.Kind == PadreaKind.Unpitched);
-                    if (unpitchedPadrea != null && _padreaService.CurrentPadrea?.Kind != PadreaKind.Unpitched)
-                    {
-                        _padreaService.CurrentPadrea = unpitchedPadrea;
-                        
-                        // Update the picker to reflect the change
-                        var index = _padreaService.AvailablePadreas.ToList().FindIndex(p => p.Id == unpitchedPadrea.Id);
-                        if (index >= 0)
-                        {
-                            PadreaPicker.SelectedIndex = index;
-                        }
-                    }
-                }
-                else
-                {
-                    // For pitched instruments, if currently on unpitched padrea, switch to default
-                    if (_padreaService.CurrentPadrea?.Kind == PadreaKind.Unpitched)
-                    {
-                        var defaultPadrea = _padreaService.AvailablePadreas.FirstOrDefault(p => p.Kind == PadreaKind.Grid);
-                        if (defaultPadrea != null)
-                        {
-                            _padreaService.CurrentPadrea = defaultPadrea;
-                            var index = _padreaService.AvailablePadreas.ToList().FindIndex(p => p.Id == defaultPadrea.Id);
-                            if (index >= 0)
-                            {
-                                PadreaPicker.SelectedIndex = index;
-                            }
-                        }
-                    }
-                }
+                // Reload padreas filtered by pitch type
+                // This automatically restricts the picker to only show appropriate padreas
+                LoadPadreas(config.PitchType);
             }
             else
             {

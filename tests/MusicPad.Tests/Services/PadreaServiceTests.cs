@@ -3,6 +3,72 @@ using MusicPad.Core.Models;
 namespace MusicPad.Tests.Services;
 
 /// <summary>
+/// Tests for padrea filtering by pitch type logic.
+/// </summary>
+public class PadreaFilterTests
+{
+    // Test data: mix of pitched and unpitched padreas
+    private static List<Padrea> CreateTestPadreas() => new()
+    {
+        new Padrea { Id = "chromatic", Name = "Chromatic", Kind = PadreaKind.Grid },
+        new Padrea { Id = "scales", Name = "Scales", Kind = PadreaKind.Grid },
+        new Padrea { Id = "piano", Name = "Piano", Kind = PadreaKind.Piano },
+        new Padrea { Id = "unpitched", Name = "Unpitched", Kind = PadreaKind.Unpitched }
+    };
+    
+    // Helper that mirrors PadreaService.GetPadreasForPitchType logic
+    private static IReadOnlyList<Padrea> FilterPadreasForPitchType(List<Padrea> padreas, PitchType pitchType)
+    {
+        if (pitchType == PitchType.Unpitched)
+            return padreas.Where(p => p.Kind == PadreaKind.Unpitched).ToList();
+        else
+            return padreas.Where(p => p.Kind != PadreaKind.Unpitched).ToList();
+    }
+    
+    [Fact]
+    public void FilterPadreas_Pitched_ReturnsOnlyPitchedPadreas()
+    {
+        var padreas = CreateTestPadreas();
+        
+        var filtered = FilterPadreasForPitchType(padreas, PitchType.Pitched);
+        
+        Assert.Equal(3, filtered.Count);
+        Assert.All(filtered, p => Assert.NotEqual(PadreaKind.Unpitched, p.Kind));
+    }
+    
+    [Fact]
+    public void FilterPadreas_Unpitched_ReturnsOnlyUnpitchedPadrea()
+    {
+        var padreas = CreateTestPadreas();
+        
+        var filtered = FilterPadreasForPitchType(padreas, PitchType.Unpitched);
+        
+        Assert.Single(filtered);
+        Assert.Equal(PadreaKind.Unpitched, filtered[0].Kind);
+    }
+    
+    [Fact]
+    public void FilterPadreas_Pitched_DoesNotIncludeUnpitchedPadrea()
+    {
+        var padreas = CreateTestPadreas();
+        
+        var filtered = FilterPadreasForPitchType(padreas, PitchType.Pitched);
+        
+        Assert.DoesNotContain(filtered, p => p.Kind == PadreaKind.Unpitched);
+    }
+    
+    [Fact]
+    public void FilterPadreas_Unpitched_DoesNotIncludePitchedPadreas()
+    {
+        var padreas = CreateTestPadreas();
+        
+        var filtered = FilterPadreasForPitchType(padreas, PitchType.Unpitched);
+        
+        Assert.DoesNotContain(filtered, p => p.Kind != PadreaKind.Unpitched);
+    }
+}
+
+/// <summary>
 /// Tests for expected padrea configurations.
 /// Note: These test the expected Padrea configurations that should match PadreaService.
 /// </summary>

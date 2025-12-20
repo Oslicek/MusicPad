@@ -130,5 +130,19 @@ public class PadreaService : IPadreaService
         
         return true;
     }
+    
+    public IReadOnlyList<Padrea> GetPadreasForPitchType(PitchType pitchType)
+    {
+        if (pitchType == PitchType.Unpitched)
+        {
+            // Unpitched instruments only get the unpitched padrea
+            return _padreas.Where(p => p.Kind == PadreaKind.Unpitched).ToList();
+        }
+        else
+        {
+            // Pitched instruments get all padreas except unpitched
+            return _padreas.Where(p => p.Kind != PadreaKind.Unpitched).ToList();
+        }
+    }
 }
 
