@@ -16,16 +16,26 @@ public class RecAreaDrawable : IDrawable
     private bool _isPlaying;
     private string _statusText = "";
     
-    // Colors
+    // Colors - dynamic palette colors
     private static Color BackgroundColor => Color.FromArgb(AppColors.BackgroundEffect);
-    private static Color RecordColor => Color.FromArgb("#E53935"); // Red
-    private static Color RecordActiveColor => Color.FromArgb("#FF1744"); // Bright red
-    private static Color PlayColor => Color.FromArgb("#43A047"); // Green
-    private static Color PlayActiveColor => Color.FromArgb("#00E676"); // Bright green
-    private static Color StopColor => Color.FromArgb("#FFA000"); // Amber
+    
+    // Bronze accent for record button (warm copper/amber tone)
+    private static Color RecordColor => Color.FromArgb(AppColors.Secondary); // Amber - bronze accent
+    private static Color RecordActiveColor => Color.FromArgb(AppColors.Accent); // Orange - active bronze
+    
+    // Play button uses primary color (teal)
+    private static Color PlayColor => Color.FromArgb(AppColors.Primary); // Teal
+    private static Color PlayActiveColor => Color.FromArgb(AppColors.PrimaryLight); // Light teal
+    
+    // Stop uses secondary dark (darker amber)
+    private static Color StopColor => Color.FromArgb(AppColors.SecondaryDark);
+    
     private static Color ButtonBgColor => Color.FromArgb(AppColors.ButtonOff);
     private static Color TextColor => Color.FromArgb(AppColors.TextPrimary);
     private static Color TextSecondaryColor => Color.FromArgb(AppColors.TextSecondary);
+    
+    // Border color for the recording area - uses primary color
+    private static Color BorderColor => Color.FromArgb(AppColors.Primary);
     
     public event EventHandler? RecordClicked;
     public event EventHandler? StopClicked;
@@ -81,8 +91,8 @@ public class RecAreaDrawable : IDrawable
         canvas.FillColor = BackgroundColor;
         canvas.FillRoundedRectangle(dirtyRect, cornerRadius);
         
-        // Border - distinctive red/coral outline for recording area
-        canvas.StrokeColor = RecordColor.WithAlpha(0.7f);
+        // Border - uses primary color to match effect area style
+        canvas.StrokeColor = BorderColor.WithAlpha(0.7f);
         canvas.StrokeSize = 2f;
         canvas.DrawRoundedRectangle(dirtyRect, cornerRadius);
         

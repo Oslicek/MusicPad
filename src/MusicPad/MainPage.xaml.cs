@@ -665,8 +665,10 @@ public partial class MainPage : ContentPage
             }
             else
             {
-                // Square padrea - smaller to fit recarea
-                double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea);
+                // Square padrea - use height constraint like piano (0.35) to avoid overlap with efarea
+                // This leaves room for 3 pickers when scale picker is visible
+                double maxPadreaHeight = Math.Min(_pageHeight * 0.35, availableForPadrea);
+                double padreaSize = Math.Min(_pageWidth - padding * 2, maxPadreaHeight);
 
                 // Padrea at the bottom
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
@@ -675,16 +677,16 @@ public partial class MainPage : ContentPage
                 PadContainer.HeightRequest = padreaSize;
                 PadContainer.Margin = new Thickness(0);
                 
-                // Navigation bar above the padrea
+                // Navigation bar above the padrea - full width like piano
                 NavigationBar.HorizontalOptions = LayoutOptions.Center;
                 NavigationBar.VerticalOptions = LayoutOptions.End;
-                NavigationBar.WidthRequest = padreaSize;
+                NavigationBar.WidthRequest = _pageWidth - padding * 2;
                 NavigationBar.Margin = new Thickness(0, 0, 0, padreaSize);
                 
-                // Recording area above the navigation bar
+                // Recording area above the navigation bar - full width like piano
                 RecArea.HorizontalOptions = LayoutOptions.Center;
                 RecArea.VerticalOptions = LayoutOptions.End;
-                RecArea.WidthRequest = padreaSize;
+                RecArea.WidthRequest = _pageWidth - padding * 2;
                 RecArea.HeightRequest = recAreaHeight;
                 RecArea.Margin = new Thickness(0, 0, 0, padreaSize + navBarHeight);
             }
@@ -810,6 +812,14 @@ public partial class MainPage : ContentPage
             {
                 // Current padrea not in filtered list, select first available
                 PadreaPicker.SelectedIndex = 0;
+                // Explicitly update since SelectedIndexChanged might not fire if index was already 0
+                if (PadreaPicker.SelectedItem is Padrea firstPadrea)
+                {
+                    _padreaService.CurrentPadrea = firstPadrea;
+                    UpdateScalePickerForPadrea(firstPadrea);
+                    UpdateLayout();
+                    UpdatePadMatrixForPadrea();
+                }
             }
         }
         else if (padreas.Count > 0)
@@ -1230,8 +1240,23 @@ public partial class MainPage : ContentPage
         _padGraphicsView?.Invalidate();
     }
 
+    private readonly Dictionary<int, long> _lastNoteOnTime = new();
+    private const long NoteOnDebounceMs = 20;
+    
     private void OnNoteOn(object? sender, int midiNote)
     {
+        // Debounce: ignore duplicate NoteOn for same note within 20ms
+        // This prevents double-sound issues from Android touch event quirks
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (_lastNoteOnTime.TryGetValue(midiNote, out long lastTime))
+        {
+            if (now - lastTime < NoteOnDebounceMs)
+            {
+                return; // Skip duplicate
+            }
+        }
+        _lastNoteOnTime[midiNote] = now;
+        
         // Record raw pad touch (before harmony/arpeggiator processing)
         _recordingService.RecordNoteOn(midiNote);
         

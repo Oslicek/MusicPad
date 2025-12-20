@@ -71,18 +71,6 @@
                       HeightRequest="120"
                       WidthRequest="120" />
         
-        <!-- Recording Area - positioned dynamically above navigation bar -->
-        <GraphicsView x:Name="RecArea"
-                      HeightRequest="44"
-                      HorizontalOptions="Fill"
-                      VerticalOptions="End" />
-        
-        <!-- Navigation Bar (Mute + arrows + page dots) - positioned dynamically -->
-        <GraphicsView x:Name="NavigationBar"
-                      HeightRequest="50"
-                      HorizontalOptions="Center"
-                      VerticalOptions="End" />
-        
         <!-- Effect Area - positioned dynamically -->
         <GraphicsView x:Name="EffectArea" />
         
@@ -95,6 +83,18 @@
                    HorizontalOptions="Center"
                    VerticalOptions="Center" />
         </Grid>
+        
+        <!-- Navigation Bar (Mute + arrows + page dots) - positioned dynamically, rendered above PadContainer -->
+        <GraphicsView x:Name="NavigationBar"
+                      HeightRequest="50"
+                      HorizontalOptions="Center"
+                      VerticalOptions="End" />
+        
+        <!-- Recording Area - positioned dynamically above navigation bar, rendered on top -->
+        <GraphicsView x:Name="RecArea"
+                      HeightRequest="44"
+                      HorizontalOptions="Center"
+                      VerticalOptions="End" />
         
     </Grid>
 

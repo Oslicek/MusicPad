@@ -20,6 +20,16 @@ public class SfzPlayer
     private readonly object _lock = new();
     private VoicingType _voicingMode = VoicingType.Polyphonic;
     private int _lastMonoNoteActive = -1; // Track active note in mono mode
+    
+    // Event queue to prevent race conditions between UI and audio threads
+    private readonly Queue<NoteEvent> _pendingEvents = new();
+    
+    private readonly struct NoteEvent
+    {
+        public int MidiNote { get; init; }
+        public int Velocity { get; init; }
+        public bool IsNoteOn { get; init; }
+    }
 
     public SfzPlayer(int sampleRate, int maxVoices = DefaultMaxVoices)
     {
@@ -103,22 +113,33 @@ public class SfzPlayer
     private Voice AllocateVoice()
     {
         // 1. Prefer an idle voice
-        foreach (var voice in _voices)
+        for (int i = 0; i < _voices.Length; i++)
         {
-            if (voice.EnvelopePhase == EnvelopePhase.Idle)
-                return voice;
+            if (_voices[i].EnvelopePhase == EnvelopePhase.Idle)
+            {
+                return _voices[i];
+            }
         }
 
-        // 2. Prefer the oldest voice in release phase (released first)
+        // 2. Prefer voices that are releasing or have pending release
         Voice? oldestReleasing = null;
         long oldestReleaseTicks = long.MaxValue;
         
         foreach (var voice in _voices)
         {
-            if (voice.EnvelopePhase == EnvelopePhase.Release && voice.ReleaseStartTicks < oldestReleaseTicks)
+            // Consider both actual Release phase AND voices with pending release
+            bool isReleasing = voice.EnvelopePhase == EnvelopePhase.Release;
+            bool hasPendingRelease = voice.PendingReleaseAtTicks > 0;
+            
+            if (isReleasing || hasPendingRelease)
             {
-                oldestReleaseTicks = voice.ReleaseStartTicks;
-                oldestReleasing = voice;
+                // Use StartTimeTicks for pending release (hasn't started releasing yet)
+                long releaseTick = isReleasing ? voice.ReleaseStartTicks : voice.StartTimeTicks;
+                if (releaseTick < oldestReleaseTicks)
+                {
+                    oldestReleaseTicks = releaseTick;
+                    oldestReleasing = voice;
+                }
             }
         }
         
@@ -126,6 +147,7 @@ public class SfzPlayer
         {
             // Immediately silence and reuse
             oldestReleasing.EnvelopePhase = EnvelopePhase.Idle;
+            oldestReleasing.PendingReleaseAtTicks = 0;
             return oldestReleasing;
         }
 
@@ -154,142 +176,203 @@ public class SfzPlayer
     }
 
     /// <summary>
-    /// Triggers a note-on event.
+    /// Triggers a note-on event. The event is queued and processed at the next audio buffer boundary
+    /// to prevent race conditions between UI and audio threads.
     /// </summary>
     public void NoteOn(int midiNote, int velocity = 100)
     {
+        velocity = Math.Clamp(velocity, 1, 127);
+        
         lock (_lock)
         {
-            if (_instrument == null)
-                return;
-            
-            // Clamp velocity to valid MIDI range
-            velocity = Math.Clamp(velocity, 1, 127);
-
-            // Find matching regions
-            var regions = _instrument.FindRegions(midiNote, velocity).ToList();
-            if (regions.Count == 0)
-                return;
-
-            // Use the first matching region
-            var region = regions[0];
-            
-            // Get sample data
-            float[]? samples = GetSamplesForRegion(region);
-            if (samples == null || samples.Length == 0)
-                return;
-
-            // Handle monophonic mode - cut off all other notes immediately
-            if (_voicingMode == VoicingType.Monophonic)
-            {
-                // Immediately silence all other voices (no release)
-                foreach (var v in _voices)
-                {
-                    if (v.EnvelopePhase != EnvelopePhase.Idle)
-                    {
-                        v.EnvelopePhase = EnvelopePhase.Idle;
-                        v.EnvelopeLevel = 0;
-                    }
-                }
-                _lastMonoNoteActive = midiNote;
-            }
-
-            // Check if this note is already playing (not idle, not releasing) - retrigger in place
-            Voice? voice = null;
-            foreach (var existingVoice in _voices)
-            {
-                if (existingVoice.MidiNote == midiNote && 
-                    existingVoice.EnvelopePhase != EnvelopePhase.Idle &&
-                    existingVoice.EnvelopePhase != EnvelopePhase.Release)
-                {
-                    // Reuse this voice for retriggering
-                    voice = existingVoice;
-                    break;
-                }
-            }
-            
-            // If not retriggering, allocate a new voice
-            if (voice == null)
-            {
-                voice = AllocateVoice();
-            }
-
-            // Calculate pitch ratio
-            double pitchRatio = region.GetPitchRatio(midiNote);
-
-            // Calculate envelope parameters in samples
-            // Clamp release to max 3 seconds to prevent stuck notes
-            int attackSamples = Math.Max(1, (int)(_sampleRate * region.AmpegAttack));
-            int holdSamples = (int)(_sampleRate * Math.Min(region.AmpegHold, 10f));
-            int decaySamples = Math.Max(1, (int)(_sampleRate * region.AmpegDecay));
-            int releaseSamples = Math.Max(1, Math.Min((int)(_sampleRate * region.AmpegRelease), _sampleRate * 3));
-            
-            // Sustain level - ensure minimum audible level for instruments with very low sustain
-            float sustainLevel = region.AmpegSustain / 100f;
-            if (sustainLevel < 0.01f && (region.AmpegDecay > 0.1f || region.AmpegHold < 0.1f))
-            {
-                sustainLevel = Math.Max(sustainLevel, 0.5f);
-            }
-            
-            // Clamp pitch ratio to prevent extremely slow or fast playback
-            double clampedPitchRatio = Math.Clamp(pitchRatio, 0.1, 10.0);
-
-            // Calculate loop points (relative to sample start)
-            int loopStart = region.LoopStart;
-            int loopEnd = region.LoopEnd > 0 ? region.LoopEnd : (region.End > 0 ? region.End : samples.Length - 1);
-            
-            // Calculate velocity scaling (MIDI velocity 0-127 -> amplitude 0-1)
-            // Use a curve that feels more natural (velocity squared for more dynamic range)
-            float velocityScale = (velocity / 127f);
-            velocityScale = velocityScale * velocityScale; // Square for more natural feel
-            velocityScale = Math.Max(0.1f, velocityScale);  // Minimum 10% volume
-            
-            // Configure the voice with new note
-            voice.MidiNote = midiNote;
-            voice.Samples = samples;
-            voice.Position = region.Offset;
-            voice.EndPosition = region.End > 0 ? region.End : samples.Length - 1;
-            voice.FractionalPosition = 0;
-            voice.PitchRatio = clampedPitchRatio;
-            voice.Volume = DbToLinear(region.Volume) * velocityScale;
-            voice.LoopMode = region.LoopMode;
-            voice.LoopStart = loopStart;
-            voice.LoopEnd = loopEnd;
-            voice.AttackSamples = attackSamples;
-            voice.HoldSamples = holdSamples;
-            voice.DecaySamples = decaySamples;
-            voice.ReleaseSamples = releaseSamples;
-            voice.SustainLevel = sustainLevel;
-            voice.EnvelopePhase = EnvelopePhase.Attack;
-            voice.EnvelopePosition = 0;
-            voice.EnvelopeLevel = 0;
-            voice.ReleaseStartLevel = 0;
-            voice.StartTimeTicks = Stopwatch.GetTimestamp();
-            voice.ReleaseStartTicks = 0;
-            voice.IsFinished = false;
+            _pendingEvents.Enqueue(new NoteEvent 
+            { 
+                MidiNote = midiNote, 
+                Velocity = velocity, 
+                IsNoteOn = true 
+            });
         }
+    }
+    
+    /// <summary>
+    /// Internal note-on processing. Called from audio thread at buffer boundaries.
+    /// Must be called while holding _lock.
+    /// </summary>
+    private void ProcessNoteOnInternal(int midiNote, int velocity)
+    {
+        if (_instrument == null)
+            return;
+
+        // Find matching regions
+        var regions = _instrument.FindRegions(midiNote, velocity).ToList();
+        if (regions.Count == 0)
+            return;
+
+        // Use the first matching region
+        var region = regions[0];
+        
+        // Get sample data
+        float[]? samples = GetSamplesForRegion(region);
+        if (samples == null || samples.Length == 0)
+            return;
+
+        // Handle monophonic mode - cut off all other notes immediately
+        if (_voicingMode == VoicingType.Monophonic)
+        {
+            // Immediately silence all other voices (no release)
+            foreach (var v in _voices)
+            {
+                if (v.EnvelopePhase != EnvelopePhase.Idle)
+                {
+                    v.EnvelopePhase = EnvelopePhase.Idle;
+                    v.EnvelopeLevel = 0;
+                }
+            }
+            _lastMonoNoteActive = midiNote;
+        }
+
+        // Check if this note is already playing - silence it to prevent double sounds
+        foreach (var v in _voices)
+        {
+            if (v.MidiNote == midiNote && v.EnvelopePhase != EnvelopePhase.Idle)
+            {
+                // Immediately silence the old voice to prevent overlap
+                v.EnvelopePhase = EnvelopePhase.Idle;
+                v.EnvelopeLevel = 0;
+                v.PendingReleaseAtTicks = 0;
+                // DON'T break - silence ALL voices with this note!
+            }
+        }
+        
+        // Always allocate a fresh voice
+        Voice voice = AllocateVoice();
+
+        // Calculate pitch ratio
+        double pitchRatio = region.GetPitchRatio(midiNote);
+
+        // Calculate envelope parameters in samples
+        // Clamp release to max 3 seconds to prevent stuck notes
+        int attackSamples = Math.Max(1, (int)(_sampleRate * region.AmpegAttack));
+        int holdSamples = (int)(_sampleRate * Math.Min(region.AmpegHold, 10f));
+        int decaySamples = Math.Max(1, (int)(_sampleRate * region.AmpegDecay));
+        int releaseSamples = Math.Max(1, Math.Min((int)(_sampleRate * region.AmpegRelease), _sampleRate * 3));
+        
+        // Sustain level - ensure minimum audible level for instruments with very low sustain
+        float sustainLevel = region.AmpegSustain / 100f;
+        if (sustainLevel < 0.01f && (region.AmpegDecay > 0.1f || region.AmpegHold < 0.1f))
+        {
+            sustainLevel = Math.Max(sustainLevel, 0.5f);
+        }
+        
+        // Clamp pitch ratio to prevent extremely slow or fast playback
+        double clampedPitchRatio = Math.Clamp(pitchRatio, 0.1, 10.0);
+
+        // Calculate loop points (relative to sample start)
+        int loopStart = region.LoopStart;
+        int loopEnd = region.LoopEnd > 0 ? region.LoopEnd : (region.End > 0 ? region.End : samples.Length - 1);
+        
+        // Calculate velocity scaling (MIDI velocity 0-127 -> amplitude 0-1)
+        // Use a curve that feels more natural (velocity squared for more dynamic range)
+        float velocityScale = (velocity / 127f);
+        velocityScale = velocityScale * velocityScale; // Square for more natural feel
+        velocityScale = Math.Max(0.1f, velocityScale);  // Minimum 10% volume
+        
+        // Configure the voice with new note
+        voice.MidiNote = midiNote;
+        voice.Samples = samples;
+        voice.Position = region.Offset;
+        voice.EndPosition = region.End > 0 ? region.End : samples.Length - 1;
+        voice.FractionalPosition = 0;
+        voice.PitchRatio = clampedPitchRatio;
+        voice.Volume = DbToLinear(region.Volume) * velocityScale;
+        voice.LoopMode = region.LoopMode;
+        voice.LoopStart = loopStart;
+        voice.LoopEnd = loopEnd;
+        voice.AttackSamples = attackSamples;
+        voice.HoldSamples = holdSamples;
+        voice.DecaySamples = decaySamples;
+        voice.ReleaseSamples = releaseSamples;
+        voice.SustainLevel = sustainLevel;
+        voice.EnvelopePhase = EnvelopePhase.Attack;
+        voice.EnvelopePosition = 0;
+        voice.EnvelopeLevel = 0;
+        voice.ReleaseStartLevel = 0;
+        voice.StartTimeTicks = Stopwatch.GetTimestamp();
+        voice.ReleaseStartTicks = 0;
+        voice.PendingReleaseAtTicks = 0;
+        voice.IsFinished = false;
     }
 
     /// <summary>
-    /// Triggers a note-off event.
+    /// Minimum time a note must play before release (in milliseconds).
+    /// Ensures quick taps still produce audible notes with full attack.
+    /// </summary>
+    private const int MinimumHoldTimeMs = 80;
+    
+    /// <summary>
+    /// Gets information about active voices for debugging.
+    /// </summary>
+    public IEnumerable<(int MidiNote, string Phase)> GetActiveVoices()
+    {
+        lock (_lock)
+        {
+            foreach (var v in _voices)
+            {
+                if (v.EnvelopePhase != EnvelopePhase.Idle)
+                {
+                    yield return (v.MidiNote, v.EnvelopePhase.ToString());
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Triggers a note-off event. The event is queued and processed at the next audio buffer boundary
+    /// to prevent race conditions between UI and audio threads.
     /// </summary>
     public void NoteOff(int midiNote)
     {
         lock (_lock)
         {
-            long now = Stopwatch.GetTimestamp();
-            
-            // Find all voices with this note that aren't already releasing or idle
-            foreach (var voice in _voices)
+            _pendingEvents.Enqueue(new NoteEvent 
+            { 
+                MidiNote = midiNote, 
+                Velocity = 0, 
+                IsNoteOn = false 
+            });
+        }
+    }
+    
+    /// <summary>
+    /// Internal note-off processing. Called from audio thread at buffer boundaries.
+    /// Must be called while holding _lock.
+    /// </summary>
+    private void ProcessNoteOffInternal(int midiNote)
+    {
+        long now = Stopwatch.GetTimestamp();
+        long ticksPerMs = Stopwatch.Frequency / 1000;
+        long minimumHoldTicks = MinimumHoldTimeMs * ticksPerMs;
+        
+        // Find all voices with this note that aren't already releasing or idle
+        foreach (var voice in _voices)
+        {
+            if (voice.MidiNote == midiNote && 
+                voice.EnvelopePhase != EnvelopePhase.Release && 
+                voice.EnvelopePhase != EnvelopePhase.Idle)
             {
-                if (voice.MidiNote == midiNote && 
-                    voice.EnvelopePhase != EnvelopePhase.Release && 
-                    voice.EnvelopePhase != EnvelopePhase.Idle)
+                // Check if minimum hold time has passed
+                long elapsedTicks = now - voice.StartTimeTicks;
+                
+                if (elapsedTicks < minimumHoldTicks)
+                {
+                    // Quick tap - schedule release after minimum hold time
+                    voice.PendingReleaseAtTicks = voice.StartTimeTicks + minimumHoldTicks;
+                }
+                else
                 {
                     voice.EnvelopePhase = EnvelopePhase.Release;
                     voice.EnvelopePosition = 0;
                     voice.ReleaseStartTicks = now;
-                    // Ensure release starts from at least a small level to prevent stuck silent voices
                     voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, 0.01f);
                 }
             }
@@ -391,6 +474,24 @@ public class SfzPlayer
     {
         Array.Clear(buffer, 0, buffer.Length);
 
+        // Process all pending note events at buffer boundary (prevents race conditions)
+        lock (_lock)
+        {
+            while (_pendingEvents.Count > 0)
+            {
+                var evt = _pendingEvents.Dequeue();
+                if (evt.IsNoteOn)
+                {
+                    ProcessNoteOnInternal(evt.MidiNote, evt.Velocity);
+                }
+                else
+                {
+                    ProcessNoteOffInternal(evt.MidiNote);
+                }
+            }
+        }
+
+        // Take snapshot for sample generation (voices won't change mid-buffer now)
         Voice[] snapshot;
         lock (_lock)
         {
@@ -505,6 +606,25 @@ public class SfzPlayer
     private float CalculateEnvelope(Voice voice)
     {
         float level = voice.EnvelopeLevel;
+        
+        // Check if there's a pending release that should now activate
+        if (voice.PendingReleaseAtTicks > 0 && 
+            voice.EnvelopePhase != EnvelopePhase.Release && 
+            voice.EnvelopePhase != EnvelopePhase.Idle)
+        {
+            long now = Stopwatch.GetTimestamp();
+            if (now >= voice.PendingReleaseAtTicks)
+            {
+                // Time to release - transition now with current envelope level
+                // Use sustainLevel as fallback if envelope hasn't progressed yet
+                voice.EnvelopePhase = EnvelopePhase.Release;
+                voice.EnvelopePosition = 0;
+                voice.ReleaseStartTicks = now;
+                float fallbackLevel = Math.Max(0.5f, voice.SustainLevel);
+                voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, fallbackLevel);
+                voice.PendingReleaseAtTicks = 0; // Clear pending flag
+            }
+        }
 
         switch (voice.EnvelopePhase)
         {
@@ -612,6 +732,9 @@ public class SfzPlayer
         // Timing for voice allocation
         public long StartTimeTicks { get; set; }
         public long ReleaseStartTicks { get; set; }
+        
+        // Pending release - when non-zero, voice should transition to Release at this tick
+        public long PendingReleaseAtTicks { get; set; }
         
         public bool IsFinished { get; set; }
     }

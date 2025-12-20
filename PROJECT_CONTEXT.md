@@ -218,6 +218,12 @@ Instruments support two voicing modes, configurable per instrument:
 - Then steals oldest voice in release phase (minimal disruption)
 - Finally steals oldest playing voice (last resort)
 
+**Thread-Safe Note Processing:**
+- NoteOn/NoteOff events are queued and processed atomically at audio buffer boundaries
+- Prevents race conditions between UI touch events and audio thread
+- UI-level debounce (20ms) prevents duplicate events from Android touch quirks
+- Minimum hold time (80ms) ensures quick taps produce audible notes
+
 **Mute Button:**
 - Positioned close to the padrea (left side in portrait, near padrea edge in landscape)
 - Immediately stops all playing notes with a short release (~45ms) to avoid clicks
