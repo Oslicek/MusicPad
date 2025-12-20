@@ -640,51 +640,53 @@ public partial class MainPage : ContentPage
             
             if (isPiano)
             {
-                // Piano padrea - full width, reduced to fit recarea
+                // Piano padrea - full width, reduced to fit recarea, aligned to bottom
                 double pianoHeight = Math.Min(_pageHeight * 0.35, availableForPadrea);
+                
+                // Piano at the very bottom
+                PadContainer.HorizontalOptions = LayoutOptions.Fill;
+                PadContainer.VerticalOptions = LayoutOptions.End;
+                PadContainer.WidthRequest = _pageWidth - padding * 2;
+                PadContainer.HeightRequest = pianoHeight;
+                PadContainer.Margin = new Thickness(0);
+                
+                // Navigation bar above the piano
+                NavigationBar.HorizontalOptions = LayoutOptions.Center;
+                NavigationBar.VerticalOptions = LayoutOptions.End;
+                NavigationBar.WidthRequest = _pageWidth - padding * 2;
+                NavigationBar.Margin = new Thickness(0, 0, 0, pianoHeight);
                 
                 // Recording area above the navigation bar  
                 RecArea.HorizontalOptions = LayoutOptions.Center;
                 RecArea.VerticalOptions = LayoutOptions.End;
                 RecArea.WidthRequest = _pageWidth - padding * 2;
                 RecArea.HeightRequest = recAreaHeight;
-                RecArea.Margin = new Thickness(0, 0, 0, pianoHeight + navBarHeight + padding);
-                
-                // Navigation bar above the piano
-                NavigationBar.HorizontalOptions = LayoutOptions.Center;
-                NavigationBar.VerticalOptions = LayoutOptions.End;
-                NavigationBar.WidthRequest = _pageWidth - padding * 2;
-                NavigationBar.Margin = new Thickness(0, 0, 0, pianoHeight + padding);
-
-                PadContainer.HorizontalOptions = LayoutOptions.Fill;
-                PadContainer.VerticalOptions = LayoutOptions.End;
-                PadContainer.WidthRequest = _pageWidth - padding * 2;
-                PadContainer.HeightRequest = pianoHeight;
-                PadContainer.Margin = new Thickness(0);
+                RecArea.Margin = new Thickness(0, 0, 0, pianoHeight + navBarHeight);
             }
             else
             {
                 // Square padrea - smaller to fit recarea
                 double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea);
 
-                // Recording area above the navigation bar
-                RecArea.HorizontalOptions = LayoutOptions.Center;
-                RecArea.VerticalOptions = LayoutOptions.End;
-                RecArea.WidthRequest = padreaSize;
-                RecArea.HeightRequest = recAreaHeight;
-                RecArea.Margin = new Thickness(0, 0, 0, padreaSize + navBarHeight + padding);
-                
-                // Navigation bar above the padrea
-                NavigationBar.HorizontalOptions = LayoutOptions.Center;
-                NavigationBar.VerticalOptions = LayoutOptions.End;
-                NavigationBar.WidthRequest = padreaSize;
-                NavigationBar.Margin = new Thickness(0, 0, 0, padreaSize + padding);
-
+                // Padrea at the bottom
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.End;
                 PadContainer.WidthRequest = padreaSize;
                 PadContainer.HeightRequest = padreaSize;
                 PadContainer.Margin = new Thickness(0);
+                
+                // Navigation bar above the padrea
+                NavigationBar.HorizontalOptions = LayoutOptions.Center;
+                NavigationBar.VerticalOptions = LayoutOptions.End;
+                NavigationBar.WidthRequest = padreaSize;
+                NavigationBar.Margin = new Thickness(0, 0, 0, padreaSize);
+                
+                // Recording area above the navigation bar
+                RecArea.HorizontalOptions = LayoutOptions.Center;
+                RecArea.VerticalOptions = LayoutOptions.End;
+                RecArea.WidthRequest = padreaSize;
+                RecArea.HeightRequest = recAreaHeight;
+                RecArea.Margin = new Thickness(0, 0, 0, padreaSize + navBarHeight);
             }
         }
         
