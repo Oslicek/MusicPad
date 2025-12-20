@@ -51,6 +51,9 @@ public class RotaryKnobDrawable : IDrawable
         _knobCenterX = dirtyRect.Width / 2;
         _knobCenterY = dirtyRect.Height / 2 - 10;
 
+        // Draw radial marker lines around the knob
+        DrawRadialMarkers(canvas);
+        
         // Draw simple knob body with subtle 3D effect
         DrawKnobBody(canvas);
         
@@ -59,6 +62,36 @@ public class RotaryKnobDrawable : IDrawable
         
         // Draw label
         DrawLabel(canvas, dirtyRect);
+    }
+    
+    private void DrawRadialMarkers(ICanvas canvas)
+    {
+        // Draw small tick marks around the knob's rotation range
+        canvas.StrokeColor = IndicatorColor;
+        canvas.StrokeSize = 2;
+        canvas.StrokeLineCap = LineCap.Round;
+        
+        float outerRadius = _knobRadius + 8;
+        float innerRadius = _knobRadius + 3;
+        
+        // Draw markers from minAngle to maxAngle
+        float totalAngle = _maxAngle - _minAngle;
+        if (totalAngle > 0) totalAngle -= 360;
+        
+        int markerCount = 8;
+        for (int i = 0; i <= markerCount; i++)
+        {
+            float t = i / (float)markerCount;
+            float angle = _minAngle + totalAngle * t;
+            float radians = angle * MathF.PI / 180f;
+            
+            float innerX = _knobCenterX + innerRadius * MathF.Cos(radians);
+            float innerY = _knobCenterY - innerRadius * MathF.Sin(radians);
+            float outerX = _knobCenterX + outerRadius * MathF.Cos(radians);
+            float outerY = _knobCenterY - outerRadius * MathF.Sin(radians);
+            
+            canvas.DrawLine(innerX, innerY, outerX, outerY);
+        }
     }
 
     private void DrawKnobBody(ICanvas canvas)

@@ -112,40 +112,29 @@ public class LpfDrawable
     private void DrawOnOffButton(ICanvas canvas, RectF rect)
     {
         bool isOn = _settings.IsEnabled;
+        float cx = rect.Center.X;
+        float cy = rect.Center.Y;
+        float toggleWidth = rect.Width * 0.85f;
+        float toggleHeight = rect.Height * 0.5f;
+        float knobRadius = toggleHeight * 0.4f;
         
-        // Button background
+        // Toggle track
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
-        canvas.FillRoundedRectangle(rect, 4);
+        canvas.FillRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
         
-        // Border
         canvas.StrokeColor = isOn ? ButtonOnColor.WithAlpha(0.8f) : Color.FromArgb(AppColors.ButtonBorder);
         canvas.StrokeSize = 1;
-        canvas.DrawRoundedRectangle(rect, 4);
+        canvas.DrawRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
         
-        // Power icon (simple circle with line)
-        float iconSize = rect.Width * 0.5f;
-        float centerX = rect.Center.X;
-        float centerY = rect.Center.Y;
+        // Toggle knob position
+        float knobOffset = toggleWidth / 2 - toggleHeight / 2;
+        float knobX = isOn ? cx + knobOffset : cx - knobOffset;
         
-        canvas.StrokeColor = Colors.White;
-        canvas.StrokeSize = 2;
+        canvas.FillColor = KnobShadowColor.WithAlpha(0.5f);
+        canvas.FillCircle(knobX + 1, cy + 1, knobRadius);
         
-        // Draw arc (open at top)
-        var path = new PathF();
-        for (int a = 60; a <= 300; a += 10)
-        {
-            float rad = a * MathF.PI / 180f;
-            float x = centerX + MathF.Cos(rad) * iconSize * 0.4f;
-            float y = centerY + MathF.Sin(rad) * iconSize * 0.4f;
-            if (a == 60)
-                path.MoveTo(x, y);
-            else
-                path.LineTo(x, y);
-        }
-        canvas.DrawPath(path);
-        
-        // Vertical line at top
-        canvas.DrawLine(centerX, centerY - iconSize * 0.5f, centerX, centerY);
+        canvas.FillColor = Colors.White;
+        canvas.FillCircle(knobX, cy, knobRadius);
     }
 
     private void DrawKnob(ICanvas canvas, float centerX, float centerY, float radius, float value, string label, bool isEnabled)
@@ -153,6 +142,34 @@ public class LpfDrawable
         Color baseColor = isEnabled ? KnobBaseColor : DisabledColor;
         Color highlightColor = isEnabled ? KnobHighlightColor : DisabledColor.WithAlpha(0.6f);
         Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledDark);
+        
+        // Draw radial marker lines
+        float minAngle = 225f;
+        float maxAngle = -45f;
+        float totalAngle = maxAngle - minAngle;
+        if (totalAngle > 0) totalAngle -= 360;
+        
+        canvas.StrokeColor = isEnabled ? IndicatorColor : DisabledColor;
+        canvas.StrokeSize = 1.5f;
+        canvas.StrokeLineCap = LineCap.Round;
+        
+        float outerRadius = radius + 5;
+        float innerRadius = radius + 2;
+        
+        int markerCount = 6;
+        for (int i = 0; i <= markerCount; i++)
+        {
+            float t = i / (float)markerCount;
+            float angle = minAngle + totalAngle * t;
+            float rads = angle * MathF.PI / 180f;
+            
+            float innerX = centerX + innerRadius * MathF.Cos(rads);
+            float innerY = centerY - innerRadius * MathF.Sin(rads);
+            float outerX = centerX + outerRadius * MathF.Cos(rads);
+            float outerY = centerY - outerRadius * MathF.Sin(rads);
+            
+            canvas.DrawLine(innerX, innerY, outerX, outerY);
+        }
         
         // Shadow/depth effect
         canvas.FillColor = shadowColor;
@@ -176,10 +193,6 @@ public class LpfDrawable
         canvas.DrawCircle(centerX, centerY, radius);
 
         // Draw indicator
-        float minAngle = 225f;
-        float maxAngle = -45f;
-        float totalAngle = maxAngle - minAngle;
-        if (totalAngle > 0) totalAngle -= 360;
         float currentAngle = minAngle + totalAngle * value;
         float radians = currentAngle * MathF.PI / 180f;
         
@@ -194,7 +207,7 @@ public class LpfDrawable
         // Label below
         canvas.FontSize = 9;
         canvas.FontColor = isEnabled ? LabelColor : DisabledColor;
-        canvas.DrawString(label, centerX - radius, centerY + radius + 2, radius * 2, 12,
+        canvas.DrawString(label, centerX - radius, centerY + radius + 4, radius * 2, 12,
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 

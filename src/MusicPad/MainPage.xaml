@@ -45,7 +45,7 @@
                     TitleColor="{StaticResource TextSecondary}"
                     TextColor="{StaticResource White}"
                     BackgroundColor="{StaticResource BackgroundPicker}"
-                    WidthRequest="180"
+                    WidthRequest="150"
                     SelectedIndexChanged="OnInstrumentChanged" />
             
             <Picker x:Name="PadreaPicker"
@@ -53,7 +53,7 @@
                     TitleColor="{StaticResource TextSecondary}"
                     TextColor="{StaticResource White}"
                     BackgroundColor="{StaticResource BackgroundPicker}"
-                    WidthRequest="180"
+                    WidthRequest="150"
                     SelectedIndexChanged="OnPadreaChanged" />
 
             <Picker x:Name="ScalePicker"
@@ -61,7 +61,7 @@
                     TitleColor="{StaticResource TextSecondary}"
                     TextColor="{StaticResource White}"
                     BackgroundColor="{StaticResource BackgroundPicker}"
-                    WidthRequest="180"
+                    WidthRequest="150"
                     IsVisible="False"
                     SelectedIndexChanged="OnScaleChanged" />
         </StackLayout>

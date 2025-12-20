@@ -248,6 +248,15 @@ public class Padrea
         }
         return false;
     }
+    
+    /// <summary>
+    /// Centers the viewpage to show the middle of the instrument range.
+    /// </summary>
+    public void CenterViewpage(int instrumentMinNote, int instrumentMaxNote)
+    {
+        int totalPages = GetTotalViewpages(instrumentMinNote, instrumentMaxNote);
+        CurrentViewpage = totalPages / 2;
+    }
 }
 
 /// <summary>

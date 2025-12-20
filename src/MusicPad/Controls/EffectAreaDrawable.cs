@@ -119,9 +119,9 @@ public class EffectAreaDrawable : IDrawable
         canvas.FillColor = EffectAreaBackground;
         canvas.FillRectangle(dirtyRect);
 
-        // Calculate button layout
-        float buttonSize = 25f;
-        float buttonSpacing = 4f;
+        // Calculate button layout - larger circular buttons
+        float buttonSize = 30f;
+        float buttonSpacing = 3f;
         float buttonMargin = 4f;
 
         var effects = EffectSelector.AllEffects;
@@ -338,19 +338,24 @@ public class EffectAreaDrawable : IDrawable
     private void DrawEffectButton(ICanvas canvas, RectF rect, EffectType effect)
     {
         bool isSelected = _selector.IsSelected(effect);
+        
+        // Calculate circle center and radius
+        float centerX = rect.Center.X;
+        float centerY = rect.Center.Y;
+        float radius = Math.Min(rect.Width, rect.Height) / 2f;
 
-        // Button background
+        // Button background - circle
         canvas.FillColor = isSelected ? ButtonSelectedColor : ButtonBackgroundColor;
-        canvas.FillRoundedRectangle(rect, 8);
+        canvas.FillCircle(centerX, centerY, radius);
 
-        // Button border
+        // Button border - circle
         canvas.StrokeColor = isSelected ? ButtonIconSelectedColor : Color.FromArgb(AppColors.ButtonOff);
         canvas.StrokeSize = isSelected ? 2 : 1;
-        canvas.DrawRoundedRectangle(rect, 8);
+        canvas.DrawCircle(centerX, centerY, radius);
 
         // Draw icon - minimal padding for small buttons
         Color iconColor = isSelected ? ButtonIconSelectedColor : ButtonIconColor;
-        float iconPadding = 4f;
+        float iconPadding = 6f;
         var iconRect = new RectF(
             rect.X + iconPadding,
             rect.Y + iconPadding,

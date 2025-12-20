@@ -95,35 +95,27 @@ public class ReverbDrawable
     private void DrawOnOffButton(ICanvas canvas, RectF rect)
     {
         bool isOn = _settings.IsEnabled;
+        float cx = rect.Center.X;
+        float cy = rect.Center.Y;
+        float toggleWidth = rect.Width * 0.85f;
+        float toggleHeight = rect.Height * 0.5f;
+        float knobRadius = toggleHeight * 0.4f;
         
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
-        canvas.FillRoundedRectangle(rect, 4);
+        canvas.FillRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
         
         canvas.StrokeColor = isOn ? ButtonOnColor.WithAlpha(0.8f) : Color.FromArgb(AppColors.ButtonBorder);
         canvas.StrokeSize = 1;
-        canvas.DrawRoundedRectangle(rect, 4);
+        canvas.DrawRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
         
-        float iconSize = rect.Width * 0.5f;
-        float centerX = rect.Center.X;
-        float centerY = rect.Center.Y;
+        float knobOffset = toggleWidth / 2 - toggleHeight / 2;
+        float knobX = isOn ? cx + knobOffset : cx - knobOffset;
         
-        canvas.StrokeColor = Colors.White;
-        canvas.StrokeSize = 2;
+        canvas.FillColor = KnobShadowColor.WithAlpha(0.5f);
+        canvas.FillCircle(knobX + 1, cy + 1, knobRadius);
         
-        var path = new PathF();
-        for (int a = 60; a <= 300; a += 10)
-        {
-            float rad = a * MathF.PI / 180f;
-            float x = centerX + MathF.Cos(rad) * iconSize * 0.4f;
-            float y = centerY + MathF.Sin(rad) * iconSize * 0.4f;
-            if (a == 60)
-                path.MoveTo(x, y);
-            else
-                path.LineTo(x, y);
-        }
-        canvas.DrawPath(path);
-        
-        canvas.DrawLine(centerX, centerY - iconSize * 0.5f, centerX, centerY);
+        canvas.FillColor = Colors.White;
+        canvas.FillCircle(knobX, cy, knobRadius);
     }
 
     private void DrawKnob(ICanvas canvas, float centerX, float centerY, float radius, float value, string label, bool isEnabled)
@@ -131,6 +123,26 @@ public class ReverbDrawable
         Color baseColor = isEnabled ? KnobBaseColor : DisabledColor;
         Color highlightColor = isEnabled ? KnobHighlightColor : DisabledColor.WithAlpha(0.6f);
         Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledDark);
+        
+        float minAngle = 225f;
+        float maxAngle = -45f;
+        float totalAngle = maxAngle - minAngle;
+        if (totalAngle > 0) totalAngle -= 360;
+        
+        // Draw radial markers
+        canvas.StrokeColor = isEnabled ? IndicatorColor : DisabledColor;
+        canvas.StrokeSize = 1.5f;
+        canvas.StrokeLineCap = LineCap.Round;
+        float outerRadius = radius + 5;
+        float innerRadius = radius + 2;
+        for (int i = 0; i <= 6; i++)
+        {
+            float t = i / 6f;
+            float angle = minAngle + totalAngle * t;
+            float rads = angle * MathF.PI / 180f;
+            canvas.DrawLine(centerX + innerRadius * MathF.Cos(rads), centerY - innerRadius * MathF.Sin(rads),
+                           centerX + outerRadius * MathF.Cos(rads), centerY - outerRadius * MathF.Sin(rads));
+        }
         
         canvas.FillColor = shadowColor;
         canvas.FillCircle(centerX + 1, centerY + 1, radius);
@@ -148,10 +160,6 @@ public class ReverbDrawable
         canvas.StrokeSize = 1;
         canvas.DrawCircle(centerX, centerY, radius);
 
-        float minAngle = 225f;
-        float maxAngle = -45f;
-        float totalAngle = maxAngle - minAngle;
-        if (totalAngle > 0) totalAngle -= 360;
         float currentAngle = minAngle + totalAngle * value;
         float radians = currentAngle * MathF.PI / 180f;
         
@@ -165,7 +173,7 @@ public class ReverbDrawable
 
         canvas.FontSize = 9;
         canvas.FontColor = isEnabled ? LabelColor : DisabledColor;
-        canvas.DrawString(label, centerX - radius, centerY + radius + 2, radius * 2, 12,
+        canvas.DrawString(label, centerX - radius, centerY + radius + 4, radius * 2, 12,
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 

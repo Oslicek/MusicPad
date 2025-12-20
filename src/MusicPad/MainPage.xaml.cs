@@ -375,7 +375,7 @@ public partial class MainPage : ContentPage
         bool isPiano = currentPadrea?.Kind == PadreaKind.Piano;
 
         // Calculate available space
-        double controlsWidth = 180 + 16; // picker width + margins
+        double controlsWidth = 150 + 16; // picker width + margins
         double controlsHeight = GetControlsStackHeight();
         double volumeSize = 120;
         double padding = 8;
@@ -476,9 +476,9 @@ public partial class MainPage : ContentPage
             VolumeKnob.VerticalOptions = LayoutOptions.Start;
             VolumeKnob.Margin = new Thickness(controlsWidth + 8, 0, 0, 0);
 
-            // Calculate sizes - efarea needs height for 4 effect buttons (25px each + spacing)
+            // Calculate sizes - efarea needs height for 5 effect buttons (30px each + spacing)
             double topAreaHeight = Math.Max(controlsHeight, volumeSize) + padding;
-            double efareaHeight = 125; // Height for 4 buttons: 4*25 + 3*4 spacing + 2*4 margins = 120+
+            double efareaHeight = 165; // Height for 5 buttons: 5*30 + 4*4 spacing + margins
             
             _effectAreaDrawable.SetOrientation(false); // Vertical buttons on left
             _effectAreaDrawable.SetLandscapeSquare(false);
@@ -489,7 +489,8 @@ public partial class MainPage : ContentPage
             EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
             
             double padreaTop = topAreaHeight + efareaHeight + padding * 2;
-            double availableForPadrea = _pageHeight - padreaTop - padding - muteButtonHeight - padding;
+            // Available space for padrea + mute button (bottom padding is in Grid)
+            double availableForPadrea = _pageHeight - padreaTop - muteButtonHeight - padding;
             
             if (isPiano)
             {
@@ -732,6 +733,9 @@ public partial class MainPage : ContentPage
             
             // Apply voicing mode from instrument config
             await ApplyInstrumentVoicingModeAsync(instrumentName);
+            
+            // Center the viewpage to show middle of instrument range
+            CenterPadreaViewpage();
             
             // Setup pad matrix
             SetupPadMatrix();
@@ -984,6 +988,22 @@ public partial class MainPage : ContentPage
         {
             SetupPadMatrix();
         }
+    }
+    
+    /// <summary>
+    /// Centers the padrea viewpage to show the middle of the instrument range.
+    /// </summary>
+    private void CenterPadreaViewpage()
+    {
+        var padrea = _padreaService.CurrentPadrea;
+        if (padrea == null) return;
+        
+        // Only center for grid-type padreas (not piano or pitch-volume)
+        if (padrea.Kind == PadreaKind.Piano || padrea.Kind == PadreaKind.PitchVolume)
+            return;
+        
+        var (minKey, maxKey) = _sfzService.CurrentKeyRange;
+        padrea.CenterViewpage(minKey, maxKey);
     }
 
     private void OnStartInteraction(object? sender, TouchEventArgs e)

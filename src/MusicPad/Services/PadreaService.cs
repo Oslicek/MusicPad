@@ -24,7 +24,7 @@ public class PadreaService : IPadreaService
             Description = "Shows all chromatic notes from the instrument's range",
             NoteFilter = NoteFilterType.Chromatic,
             Columns = 6,           // 6 pads per row (half octave)
-            RowsPerViewpage = 4    // 4 rows = 24 notes = 2 octaves per page
+            RowsPerViewpage = 6    // 6 rows = 36 notes = 3 octaves per page
             // Colors are null - drawable will use dynamic palette defaults
         };
         _padreas.Add(fullRangePadrea);

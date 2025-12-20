@@ -551,5 +551,62 @@ public class PadreaTests
     }
 
     #endregion
+    
+    #region CenterViewpage Tests
+
+    [Fact]
+    public void CenterViewpage_SetsToMiddlePage()
+    {
+        // 61 notes / (6 * 6) = 61 / 36 = 2 pages (ceil) = 2
+        // Middle = 2 / 2 = 1
+        var padrea = new Padrea
+        {
+            Columns = 6,
+            RowsPerViewpage = 6,
+            NoteFilter = NoteFilterType.Chromatic,
+            CurrentViewpage = 0
+        };
+        
+        padrea.CenterViewpage(36, 96); // 61 notes
+        
+        Assert.Equal(1, padrea.CurrentViewpage);
+    }
+
+    [Fact]
+    public void CenterViewpage_WithThreePages_SetsToMiddle()
+    {
+        // For 5 octaves (60 notes) with 24 notes per page: ceil(60/24) = 3 pages
+        // Middle = 3 / 2 = 1
+        var padrea = new Padrea
+        {
+            Columns = 6,
+            RowsPerViewpage = 4, // 24 notes per page
+            NoteFilter = NoteFilterType.Chromatic,
+            CurrentViewpage = 0
+        };
+        
+        padrea.CenterViewpage(36, 95); // 60 notes (5 octaves)
+        
+        Assert.Equal(1, padrea.CurrentViewpage);
+    }
+
+    [Fact]
+    public void CenterViewpage_SinglePage_StaysAtZero()
+    {
+        // Small range fits in one page
+        var padrea = new Padrea
+        {
+            Columns = 6,
+            RowsPerViewpage = 4, // 24 notes per page
+            NoteFilter = NoteFilterType.Chromatic,
+            CurrentViewpage = 0
+        };
+        
+        padrea.CenterViewpage(48, 60); // 13 notes - fits in one page
+        
+        Assert.Equal(0, padrea.CurrentViewpage);
+    }
+
+    #endregion
 }
 
