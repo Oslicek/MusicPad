@@ -125,13 +125,15 @@ public class EffectAreaDrawable : IDrawable
         string title = EffectTitles.GetValueOrDefault(effect, "");
         if (string.IsNullOrEmpty(title)) return;
         
+        // Add more space between title and top edge
+        float topPadding = 4f;
         canvas.FontSize = 11;
         canvas.FontColor = Color.FromArgb(AppColors.TextSecondary);
-        canvas.DrawString(title, controlsRect.X, controlsRect.Y, controlsRect.Width, 16,
+        canvas.DrawString(title, controlsRect.X, controlsRect.Y + topPadding, controlsRect.Width, 16,
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
-    private const float CornerRadius = 12f;  // Rounded corner radius for effect area
+    private const float CornerRadius = 8f;  // Match pad corner radius
     
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
@@ -140,11 +142,16 @@ public class EffectAreaDrawable : IDrawable
         // Draw effect area background with rounded corners
         canvas.FillColor = EffectAreaBackground;
         canvas.FillRoundedRectangle(dirtyRect, CornerRadius);
+        
+        // Draw outline to match pad styling
+        canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
+        canvas.StrokeSize = 1.5f;
+        canvas.DrawRoundedRectangle(dirtyRect, CornerRadius);
 
         // Calculate button layout - square buttons with rounded corners
         float buttonSize = 30f;
-        float buttonSpacing = 3f;
-        float buttonMargin = 6f;  // Slightly larger margin to fit inside rounded corners
+        float buttonSpacing = 2f;
+        float buttonMargin = 4f;  // Margin to align with rounded corners
 
         var effects = EffectSelector.AllEffects;
 
@@ -370,8 +377,8 @@ public class EffectAreaDrawable : IDrawable
         bool isLast = index == totalCount - 1;
         
         // Calculate corner radii - align first/last buttons with effect area corners
-        float outerRadius = CornerRadius - 2;  // Slightly smaller to fit inside
-        float innerRadius = 4f;
+        float outerRadius = CornerRadius;  // Match effect area corner exactly
+        float innerRadius = 3f;
         
         float topLeft, topRight, bottomRight, bottomLeft;
         if (isHorizontal)

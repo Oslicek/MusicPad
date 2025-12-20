@@ -67,23 +67,20 @@ public class RotaryKnobDrawable : IDrawable
     
     private void DrawRadialMarkers(ICanvas canvas)
     {
-        // Draw tick marks around the knob's rotation range - use accent color for visibility
+        // Draw tick marks at specific angles - use accent color for visibility
         canvas.StrokeColor = AccentColor;
         canvas.StrokeSize = 2.5f;
         canvas.StrokeLineCap = LineCap.Round;
         
-        float outerRadius = _knobRadius + 12;  // Increased for visibility
+        float outerRadius = _knobRadius + 12;
         float innerRadius = _knobRadius + 4;
         
-        // Draw markers from minAngle to maxAngle
-        float totalAngle = _maxAngle - _minAngle;
-        if (totalAngle > 0) totalAngle -= 360;
+        // 7 markers at specific positions (angles in math coordinates where 0=right, 90=top)
+        // User angles: 0° (top), ±45°, ±90°, ±135° relative to 12 o'clock
+        float[] markerAngles = { 90f, 135f, 180f, 225f, 45f, 0f, -45f };
         
-        int markerCount = 10;  // More markers
-        for (int i = 0; i <= markerCount; i++)
+        foreach (float angle in markerAngles)
         {
-            float t = i / (float)markerCount;
-            float angle = _minAngle + totalAngle * t;
             float radians = angle * MathF.PI / 180f;
             
             float innerX = _knobCenterX + innerRadius * MathF.Cos(radians);

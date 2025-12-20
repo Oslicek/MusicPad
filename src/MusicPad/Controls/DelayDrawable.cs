@@ -53,11 +53,9 @@ public class DelayDrawable
         float padding = 4f;
         float buttonSize = 28f;
         
-        // Calculate knob size based on available space (3 knobs)
-        float availableWidth = dirtyRect.Width - buttonSize - padding * 5;
-        float knobSize = Math.Min(dirtyRect.Height - 16, availableWidth / 3 - padding);
-        knobSize = Math.Max(knobSize, 25f);
-        _knobRadius = knobSize * 0.35f;
+        // Large knob size - consistent with Chorus and Reverb
+        float knobSize = Math.Min(dirtyRect.Height - 16, 50f);
+        _knobRadius = knobSize * 0.4f;
         
         bool isEnabled = _settings.IsEnabled;
         

@@ -113,10 +113,10 @@ public class ArpHarmonyDrawable
         
         float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up to make room for labels
         
-        // Calculate layout - toggle + 4 circular buttons evenly spaced
+        // Calculate layout - toggle + 4 circular buttons, right-aligned
         float circleButtonSize = 24f;
         float totalButtonsWidth = buttonSize + padding * 2 + (circleButtonSize + padding) * 4;
-        float startX = rowRect.X + (rowRect.Width - totalButtonsWidth) / 2;
+        float startX = rowRect.Right - totalButtonsWidth - padding;
         float x = startX;
         
         // On/Off toggle
@@ -141,12 +141,12 @@ public class ArpHarmonyDrawable
         float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up for labels
         
         float circleButtonSize = 24f;
-        float knobSize = 28f;
-        _rateKnobRadius = knobSize * 0.4f;
+        float knobSize = 36f;  // Small knob size - same as LPF
+        _rateKnobRadius = knobSize * 0.42f;
         
-        // Calculate layout - toggle + knob + 4 circular buttons
+        // Calculate layout - toggle + knob + 4 circular buttons, right-aligned
         float totalWidth = buttonSize + padding * 2 + knobSize + padding * 2 + (circleButtonSize + padding + 8) * 4;
-        float startX = rowRect.X + (rowRect.Width - totalWidth) / 2;
+        float startX = rowRect.Right - totalWidth - padding;
         float x = startX;
         
         // On/Off toggle
