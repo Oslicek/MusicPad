@@ -33,6 +33,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IPadreaService, PadreaService>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<IInstrumentConfigService, InstrumentConfigService>();
+        builder.Services.AddSingleton<IRecordingService, RecordingService>();
         
         // Register pages
         builder.Services.AddTransient<MainPage>();

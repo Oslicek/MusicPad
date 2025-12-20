@@ -1,6 +1,7 @@
 using MusicPad.Controls;
 using MusicPad.Core.Models;
 using MusicPad.Core.NoteProcessing;
+using MusicPad.Core.Recording;
 using MusicPad.Core.Theme;
 using MusicPad.Services;
 
@@ -12,10 +13,12 @@ public partial class MainPage : ContentPage
     private readonly IPadreaService _padreaService;
     private readonly ISettingsService _settingsService;
     private readonly IInstrumentConfigService _instrumentConfigService;
+    private readonly IRecordingService _recordingService;
     private readonly PadMatrixDrawable _padDrawable;
     private readonly RotaryKnobDrawable _volumeKnobDrawable;
     private readonly EffectAreaDrawable _effectAreaDrawable;
     private readonly NavigationBarDrawable _navigationBarDrawable;
+    private readonly RecAreaDrawable _recAreaDrawable;
     private readonly List<ScaleOption> _scaleOptions = new();
     private readonly PianoKeyboardDrawable _pianoDrawable = new();
     private readonly PitchVolumeDrawable _pitchVolumeDrawable = new();
@@ -33,13 +36,14 @@ public partial class MainPage : ContentPage
     // Envelope animation timer for pad glow effect
     private IDispatcherTimer? _envelopeAnimationTimer;
 
-    public MainPage(ISfzService sfzService, IPadreaService padreaService, ISettingsService settingsService, IInstrumentConfigService instrumentConfigService)
+    public MainPage(ISfzService sfzService, IPadreaService padreaService, ISettingsService settingsService, IInstrumentConfigService instrumentConfigService, IRecordingService recordingService)
     {
         InitializeComponent();
         _sfzService = sfzService;
         _padreaService = padreaService;
         _settingsService = settingsService;
         _instrumentConfigService = instrumentConfigService;
+        _recordingService = recordingService;
         _padDrawable = new PadMatrixDrawable();
         _padDrawable.NoteOn += OnNoteOn;
         _padDrawable.NoteOff += OnNoteOff;
@@ -51,6 +55,14 @@ public partial class MainPage : ContentPage
         _navigationBarDrawable.NavigateDown += OnNavigateDown;
         _navigationBarDrawable.InvalidateRequested += (s, e) => NavigationBar?.Invalidate();
         SetupNavigationBar();
+        
+        // Setup recording area
+        _recAreaDrawable = new RecAreaDrawable();
+        _recAreaDrawable.RecordClicked += OnRecordClicked;
+        _recAreaDrawable.StopClicked += OnStopClicked;
+        _recAreaDrawable.PlayClicked += OnPlayClicked;
+        _recAreaDrawable.InvalidateRequested += (s, e) => RecArea?.Invalidate();
+        SetupRecArea();
         
         // Build scale options (common scales)
         BuildScaleOptions();
@@ -192,6 +204,110 @@ public partial class MainPage : ContentPage
                 }
             }
         };
+    }
+    
+    private void SetupRecArea()
+    {
+        RecArea.Drawable = _recAreaDrawable;
+        
+        RecArea.StartInteraction += (s, e) =>
+        {
+            var touch = e.Touches.FirstOrDefault();
+            if (touch != default)
+            {
+                _recAreaDrawable.OnTouchStart(new PointF((float)touch.X, (float)touch.Y));
+                RecArea.Invalidate();
+            }
+        };
+        
+        // Wire up playback events
+        _recordingService.PlaybackNoteEvent += OnPlaybackNoteEvent;
+        _recordingService.PlaybackStateChanged += (s, isPlaying) =>
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                _recAreaDrawable.IsPlaying = isPlaying;
+                if (!isPlaying)
+                {
+                    _recAreaDrawable.StatusText = "Ready";
+                }
+                RecArea.Invalidate();
+            });
+        };
+        _recordingService.RecordingStateChanged += (s, isRecording) =>
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                _recAreaDrawable.IsRecording = isRecording;
+                RecArea.Invalidate();
+            });
+        };
+    }
+    
+    private void OnRecordClicked(object? sender, EventArgs e)
+    {
+        var instrumentId = InstrumentPicker.SelectedItem?.ToString();
+        _recordingService.StartRecording(instrumentId, null);
+        _recAreaDrawable.StatusText = "● REC";
+        RecArea.Invalidate();
+    }
+    
+    private async void OnStopClicked(object? sender, EventArgs e)
+    {
+        if (_recordingService.IsRecording)
+        {
+            var song = await _recordingService.StopRecordingAsync();
+            if (song != null)
+            {
+                _recAreaDrawable.StatusText = $"Saved: {song.Name}";
+            }
+            else
+            {
+                _recAreaDrawable.StatusText = "Ready";
+            }
+        }
+        else if (_recordingService.IsPlaying)
+        {
+            _recordingService.StopPlayback();
+            _sfzService.StopAll();
+        }
+        RecArea.Invalidate();
+    }
+    
+    private async void OnPlayClicked(object? sender, EventArgs e)
+    {
+        // Get the most recent song and play it
+        var songs = await _recordingService.GetSongsAsync();
+        if (songs.Count > 0)
+        {
+            var latestSong = songs[0]; // Already sorted by CreatedAt descending
+            if (await _recordingService.LoadSongAsync(latestSong.Id))
+            {
+                _recAreaDrawable.StatusText = $"▶ {latestSong.Name}";
+                RecArea.Invalidate();
+                _recordingService.StartPlayback(liveMode: true); // Use current instrument
+            }
+        }
+        else
+        {
+            _recAreaDrawable.StatusText = "No recordings";
+            RecArea.Invalidate();
+        }
+    }
+    
+    private void OnPlaybackNoteEvent(object? sender, RecordedEvent evt)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (evt.EventType == RecordedEventType.NoteOn)
+            {
+                OnNoteOn(this, evt.MidiNote);
+            }
+            else if (evt.EventType == RecordedEventType.NoteOff)
+            {
+                OnNoteOff(this, evt.MidiNote);
+            }
+        });
     }
 
     private void SetupEffectArea()
@@ -396,8 +512,9 @@ public partial class MainPage : ContentPage
         double volumeSize = 120;
         double padding = 8;
 
-        // Navigation bar height
+        // Navigation and recording area heights
         double navBarHeight = 50;
+        double recAreaHeight = 44;
 
         if (_isLandscape)
         {
@@ -415,6 +532,12 @@ public partial class MainPage : ContentPage
                 // Piano at bottom - compact height in landscape
                 double pianoHeight = _pageHeight * 0.45;
                 double topAreaHeight = _pageHeight - pianoHeight - padding;
+                
+                // Recording area above navigation bar
+                RecArea.HorizontalOptions = LayoutOptions.Center;
+                RecArea.VerticalOptions = LayoutOptions.End;
+                RecArea.WidthRequest = _pageWidth - padding * 2;
+                RecArea.Margin = new Thickness(0, 0, 0, pianoHeight + navBarHeight + padding * 2);
 
                 // Navigation bar above the piano
                 NavigationBar.HorizontalOptions = LayoutOptions.Center;
@@ -457,11 +580,17 @@ public partial class MainPage : ContentPage
                 double padreaCenterX = _pageWidth / 2;
                 double padreaLeft = padreaCenterX - padreaSize / 2;
 
+                // Recording area in landscape square mode
+                RecArea.HorizontalOptions = LayoutOptions.Center;
+                RecArea.VerticalOptions = LayoutOptions.Start;
+                RecArea.WidthRequest = padreaSize;
+                RecArea.Margin = new Thickness(0, controlsHeight + 16, 0, 0);
+                
                 // Navigation bar above the padrea (landscape square mode)
                 NavigationBar.HorizontalOptions = LayoutOptions.Center;
                 NavigationBar.VerticalOptions = LayoutOptions.Start;
                 NavigationBar.WidthRequest = padreaSize;
-                NavigationBar.Margin = new Thickness(0, controlsHeight + 16 + volumeSize + padding, 0, 0);
+                NavigationBar.Margin = new Thickness(0, controlsHeight + 16 + recAreaHeight + padding, 0, 0);
 
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.Center;
@@ -514,6 +643,12 @@ public partial class MainPage : ContentPage
                 // Piano padrea - full width
                 double pianoHeight = Math.Min(_pageHeight * 0.42, availableForPadrea);
                 
+                // Recording area above the navigation bar  
+                RecArea.HorizontalOptions = LayoutOptions.Center;
+                RecArea.VerticalOptions = LayoutOptions.End;
+                RecArea.WidthRequest = _pageWidth - padding * 2;
+                RecArea.Margin = new Thickness(0, 0, 0, pianoHeight + navBarHeight + padding * 2);
+                
                 // Navigation bar above the piano
                 NavigationBar.HorizontalOptions = LayoutOptions.Center;
                 NavigationBar.VerticalOptions = LayoutOptions.End;
@@ -531,6 +666,12 @@ public partial class MainPage : ContentPage
                 // Square padrea - centered, with mute button above the padrea
                 double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea);
 
+                // Recording area above the navigation bar
+                RecArea.HorizontalOptions = LayoutOptions.Center;
+                RecArea.VerticalOptions = LayoutOptions.End;
+                RecArea.WidthRequest = padreaSize;
+                RecArea.Margin = new Thickness(0, 0, 0, padreaSize + navBarHeight + padding * 2);
+                
                 // Navigation bar above the padrea
                 NavigationBar.HorizontalOptions = LayoutOptions.Center;
                 NavigationBar.VerticalOptions = LayoutOptions.End;
@@ -540,7 +681,7 @@ public partial class MainPage : ContentPage
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.End;
                 PadContainer.WidthRequest = padreaSize;
-                PadContainer.HeightRequest = padreaSize;
+                PadContainer.HeightRequest = padreaSize - recAreaHeight - padding;
                 PadContainer.Margin = new Thickness(0);
             }
         }
@@ -1087,6 +1228,9 @@ public partial class MainPage : ContentPage
 
     private void OnNoteOn(object? sender, int midiNote)
     {
+        // Record raw pad touch (before harmony/arpeggiator processing)
+        _recordingService.RecordNoteOn(midiNote);
+        
         // Apply harmony (generates chord from single note) if allowed
         var notes = _harmonyAllowed ? _harmony.ProcessNoteOn(midiNote) : new[] { midiNote };
         var audioArp = _sfzService.Arpeggiator;
@@ -1111,6 +1255,9 @@ public partial class MainPage : ContentPage
 
     private void OnNoteOff(object? sender, int midiNote)
     {
+        // Record raw pad release (before harmony/arpeggiator processing)
+        _recordingService.RecordNoteOff(midiNote);
+        
         // Get all notes that were generated for this root note
         var notes = _harmonyAllowed ? _harmony.ProcessNoteOff(midiNote) : new[] { midiNote };
         var audioArp = _sfzService.Arpeggiator;

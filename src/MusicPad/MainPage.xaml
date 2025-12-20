@@ -71,6 +71,12 @@
                       HeightRequest="120"
                       WidthRequest="120" />
         
+        <!-- Recording Area - positioned dynamically above navigation bar -->
+        <GraphicsView x:Name="RecArea"
+                      HeightRequest="44"
+                      HorizontalOptions="Fill"
+                      VerticalOptions="End" />
+        
         <!-- Navigation Bar (Mute + arrows + page dots) - positioned dynamically -->
         <GraphicsView x:Name="NavigationBar"
                       HeightRequest="50"

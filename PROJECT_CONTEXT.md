@@ -33,7 +33,8 @@ MusicPad/
 │   │   │   ├── EqDrawable.cs        # Equalizer controls
 │   │   │   ├── ChorusDrawable.cs    # Chorus effect controls
 │   │   │   ├── DelayDrawable.cs     # Delay effect controls
-│   │   │   └── ReverbDrawable.cs    # Reverb effect controls
+│   │   │   ├── ReverbDrawable.cs    # Reverb effect controls
+│   │   │   └── RecAreaDrawable.cs   # Recording controls (rec/stop/play)
 │   │   ├── Views/
 │   │   │   ├── InstrumentsPage.xaml # List of available instruments
 │   │   │   └── InstrumentDetailPage.xaml # Instrument metadata/credits
@@ -46,6 +47,8 @@ MusicPad/
 │   │   │   ├── ISfzService.cs        # SFZ playback interface
 │   │   │   ├── IPadreaService.cs     # Padrea management interface
 │   │   │   ├── PadreaService.cs      # Padrea configuration
+│   │   │   ├── IRecordingService.cs  # Recording/playback interface
+│   │   │   ├── RecordingService.cs   # Recording implementation
 │   │   │   └── SfzService.Stub.cs    # Stub for non-Android
 │   │   ├── Resources/
 │   │   │   ├── Styles/               # Colors.xaml, Styles.xaml
@@ -75,6 +78,10 @@ MusicPad/
 │       │   ├── Harmony.cs            # Auto harmony processor
 │       │   ├── Arpeggiator.cs        # Arpeggiator processor (UI)
 │       │   └── AudioArpeggiator.cs   # Sample-accurate audio-thread arpeggiator
+│       ├── Recording/
+│       │   ├── RecordedEvent.cs      # Event types and data for recording
+│       │   ├── RecordingSession.cs   # Active recording session manager
+│       │   └── Song.cs               # Song metadata model
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -99,6 +106,9 @@ MusicPad/
 │       │   ├── HarmonyTests.cs
 │       │   ├── ArpeggiatorTests.cs
 │       │   └── AudioArpeggiatorTests.cs  # Audio-thread arpeggiator tests
+│       ├── Recording/
+│       │   ├── RecordingSessionTests.cs  # Recording session tests
+│       │   └── SongTests.cs              # Song metadata tests
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │
@@ -157,6 +167,10 @@ MusicPad/
 | `PadreaService` | Services | Padrea management (Full Range, Pentatonic) |
 | `SettingsService` | Services | App settings with persistence (glow toggles) |
 | `InstrumentConfigService` | Services | Instrument configs (bundled + user-imported) |
+| `RecordingService` | Services | Recording and playback of performances |
+| `RecordingSession` | Core/Recording | Active recording session with timestamped events |
+| `Song` | Core/Recording | Song metadata (name, duration, instruments) |
+| `RecAreaDrawable` | Controls | Recording controls (record/stop/play) |
 | `PaletteService` | Core/Theme | Runtime palette switching with computed colors |
 | `ColorHelper` | Core/Theme | Color manipulation (Lighter, Darker, Mix, WithAlpha) |
 | `MainPage` | MusicPad | Synth UI with pads, pickers, volume knob |
@@ -224,6 +238,30 @@ Instruments support two voicing modes, configurable per instrument:
 | **Chorus** | Depth, Rate | Stereo width, detuning |
 | **Delay** | Time, Feedback, Level | Echo effect |
 | **Reverb** | Level, Type (Room/Hall/Plate/Church) | Space/ambience |
+
+## Recording
+
+**Recording captures raw pad touches** (before harmony/arpeggiator processing), allowing playback with different effect settings.
+
+**Features:**
+- Record/Stop/Play buttons in RecArea (above navigation bar)
+- Directory-based storage: `Songs/{songId}/metadata.json + events.json`
+- Auto-generated song names: `YYYY-MM-DD_HHmm_Instrument_Duration`
+- Live mode playback: uses current instruments/effects instead of recorded ones
+- Instrument changes during recording are captured as timestamped events
+
+**Playback Modes:**
+| Mode | Description |
+|------|-------------|
+| **Original** | Uses recorded instruments and settings |
+| **Live** | Uses current UI instruments/effects, re-applies harmony and arpeggiator |
+
+**Future:**
+- Overdubbing (layer recordings)
+- Looping
+- Songs list page
+- MIDI export
+- WAV export (rendered audio)
 
 ## Padrea System
 
@@ -329,13 +367,17 @@ Features:
 - [x] Custom navigation headers on all pages
 - [x] Voicing modes (polyphonic/monophonic) per instrument
 - [x] Mute button with quick release
+- [x] Recording functionality (basic record/playback)
+- [x] Directory-based song storage
 - [x] Unit tests passing
 - [x] GitHub repository connected
 
 **Pending:**
 - [ ] Save/load custom padreas
-- [ ] Recording functionality
-- [ ] MIDI support
+- [ ] Recording - overdubbing and looping
+- [ ] Songs list page
+- [ ] MIDI export
+- [ ] WAV export (rendered audio)
 
 ## Notes
 
