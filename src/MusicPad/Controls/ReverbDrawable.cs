@@ -38,8 +38,7 @@ public class ReverbDrawable
     private bool _isDraggingLevel;
     private float _lastAngle;
 
-    private static readonly string[] TypeLabels = { "R", "H", "P", "C" };
-    private static readonly string[] TypeFullNames = { "ROOM", "HALL", "PLATE", "CHUR" };
+    private static readonly string[] TypeLabels = { "ROOM", "HALL", "PLATE", "CATH" };
 
     public event EventHandler? InvalidateRequested;
 
@@ -78,18 +77,16 @@ public class ReverbDrawable
                                     _knobRadius * 2 + 10, _knobRadius * 2 + 10);
         DrawKnob(canvas, knobX, knobY, _knobRadius, _settings.Level, "LVL", isEnabled);
         
-        // Type selector buttons after the knob
-        float selectorStartX = knobX + _knobRadius + padding * 3;
-        float availableWidth = dirtyRect.Right - selectorStartX - padding;
-        float typeButtonWidth = Math.Min(availableWidth / 4 - 2, 28f);
-        float typeButtonHeight = Math.Min(dirtyRect.Height - padding * 4, 24f);
-        float selectorY = dirtyRect.Y + (dirtyRect.Height - typeButtonHeight) / 2;
+        // Type selector buttons (circular with labels below) after the knob
+        float selectorStartX = knobX + _knobRadius + padding * 4;
+        float circleButtonSize = 24f;
+        float centerY = dirtyRect.Y + dirtyRect.Height / 2 - 5; // Shift up for labels
         
         for (int i = 0; i < 4; i++)
         {
-            float x = selectorStartX + i * (typeButtonWidth + 2);
-            _typeButtonRects[i] = new RectF(x, selectorY, typeButtonWidth, typeButtonHeight);
-            DrawTypeButton(canvas, _typeButtonRects[i], (ReverbType)i, isEnabled);
+            float x = selectorStartX + i * (circleButtonSize + padding + 10);
+            _typeButtonRects[i] = new RectF(x, centerY - circleButtonSize / 2, circleButtonSize, circleButtonSize);
+            DrawCircleTypeButton(canvas, _typeButtonRects[i], TypeLabels[i], (int)_settings.Type == i, isEnabled);
         }
     }
 
@@ -221,6 +218,35 @@ public class ReverbDrawable
         canvas.FontColor = isSelected && isEnabled ? TypeButtonTextSelectedColor : 
                           (isEnabled ? TypeButtonTextColor : DisabledColor);
         canvas.DrawString(TypeLabels[index], rect, HorizontalAlignment.Center, VerticalAlignment.Center);
+    }
+    
+    private void DrawCircleTypeButton(ICanvas canvas, RectF rect, string label, bool isSelected, bool isEnabled)
+    {
+        float centerX = rect.Center.X;
+        float centerY = rect.Center.Y;
+        float radius = Math.Min(rect.Width, rect.Height) / 2f;
+        
+        // Circle background
+        if (isSelected && isEnabled)
+        {
+            canvas.FillColor = TypeButtonSelectedColor;
+        }
+        else
+        {
+            canvas.FillColor = isEnabled ? TypeButtonBaseColor : DisabledColor.WithAlpha(0.3f);
+        }
+        canvas.FillCircle(centerX, centerY, radius);
+        
+        // Circle border
+        canvas.StrokeColor = isSelected && isEnabled ? AccentColor : (isEnabled ? Color.FromArgb(AppColors.ButtonBorder) : DisabledColor);
+        canvas.StrokeSize = isSelected ? 2 : 1;
+        canvas.DrawCircle(centerX, centerY, radius);
+        
+        // Label below the button
+        canvas.FontSize = 7;
+        canvas.FontColor = isEnabled ? LabelColor : DisabledColor;
+        canvas.DrawString(label, centerX - 20, centerY + radius + 2, 40, 12,
+            HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
     public bool OnTouch(float x, float y, bool isStart)

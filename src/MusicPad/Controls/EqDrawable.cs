@@ -14,10 +14,10 @@ public class EqDrawable
     // Colors (dynamic for palette switching)
     private static Color SliderTrackColor => Color.FromArgb(AppColors.SliderTrack);
     private static Color SliderFillColor => Color.FromArgb(AppColors.SliderFill);
-    private static Color SliderThumbColor => Color.FromArgb(AppColors.SliderThumb);
-    private static Color SliderThumbHighlight => Color.FromArgb(AppColors.SliderThumbHighlight);
+    private static Color AccentColor => Color.FromArgb(AppColors.Accent);
     private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
     private static Color CenterLineColor => Color.FromArgb(AppColors.SliderCenterLine);
+    private static Color GrooveColor => Color.FromArgb(AppColors.KnobShadow);
 
     private readonly RectF[] _sliderRects = new RectF[4];
     private readonly float[] _sliderTrackTops = new float[4];
@@ -62,14 +62,29 @@ public class EqDrawable
             _sliderTrackTops[i] = trackTop;
             _sliderTrackBottoms[i] = trackBottom;
 
+            // Draw track groove (inset look for skeuomorphic style)
+            canvas.FillColor = GrooveColor.WithAlpha(0.4f);
+            canvas.FillRoundedRectangle(new RectF(centerX - trackWidth / 2 - 1, trackTop - 1, trackWidth + 2, trackHeight + 2), trackWidth / 2 + 1);
+            
             // Draw track background
             canvas.FillColor = SliderTrackColor;
             var trackRect = new RectF(centerX - trackWidth / 2, trackTop, trackWidth, trackHeight);
             canvas.FillRoundedRectangle(trackRect, trackWidth / 2);
 
-            // Draw center line (0 position)
-            canvas.StrokeColor = CenterLineColor;
+            // Draw tick marks along the track (hardware EQ style)
+            canvas.StrokeColor = CenterLineColor.WithAlpha(0.4f);
             canvas.StrokeSize = 1;
+            float tickSpacing = trackHeight / 6;
+            for (int t = 0; t <= 6; t++)
+            {
+                float tickY = trackTop + t * tickSpacing;
+                float tickWidth = (t == 3) ? sliderWidth / 2.5f : sliderWidth / 4; // Center tick is longer
+                canvas.DrawLine(centerX - tickWidth, tickY, centerX + tickWidth, tickY);
+            }
+            
+            // Draw center line (0 position) - emphasized
+            canvas.StrokeColor = CenterLineColor;
+            canvas.StrokeSize = 1.5f;
             canvas.DrawLine(centerX - sliderWidth / 3, trackCenterY, centerX + sliderWidth / 3, trackCenterY);
 
             // Calculate thumb position from gain (-1 to 1 maps to bottom to top)
@@ -95,22 +110,27 @@ public class EqDrawable
                 }
             }
 
-            // Draw thumb
-            float thumbWidth = sliderWidth * 0.6f;
-            float thumbHeight = 8f;
+            // Draw thumb - bigger, more skeuomorphic with orange accent
+            float thumbWidth = sliderWidth * 0.85f;  // Bigger width
+            float thumbHeight = 12f;  // Taller
             var thumbRect = new RectF(centerX - thumbWidth / 2, thumbY - thumbHeight / 2, thumbWidth, thumbHeight);
             
-            // Shadow
-            canvas.FillColor = Color.FromArgb(AppColors.KnobIndicator);
-            canvas.FillRoundedRectangle(new RectF(thumbRect.X + 1, thumbRect.Y + 1, thumbRect.Width, thumbRect.Height), 2);
+            // Shadow for depth
+            canvas.FillColor = GrooveColor.WithAlpha(0.6f);
+            canvas.FillRoundedRectangle(new RectF(thumbRect.X + 1, thumbRect.Y + 2, thumbRect.Width, thumbRect.Height), 3);
             
-            // Thumb body
-            canvas.FillColor = SliderThumbColor;
-            canvas.FillRoundedRectangle(thumbRect, 2);
+            // Thumb body - orange accent color
+            canvas.FillColor = AccentColor;
+            canvas.FillRoundedRectangle(thumbRect, 3);
             
-            // Highlight
-            canvas.FillColor = SliderThumbHighlight.WithAlpha(0.4f);
-            canvas.FillRoundedRectangle(new RectF(thumbRect.X + 1, thumbRect.Y + 1, thumbRect.Width - 2, thumbRect.Height / 2 - 1), 1);
+            // Top highlight for 3D effect
+            canvas.FillColor = Colors.White.WithAlpha(0.3f);
+            canvas.FillRoundedRectangle(new RectF(thumbRect.X + 1, thumbRect.Y + 1, thumbRect.Width - 2, 3), 2);
+            
+            // Center groove line on thumb (hardware EQ style)
+            canvas.StrokeColor = GrooveColor.WithAlpha(0.5f);
+            canvas.StrokeSize = 1;
+            canvas.DrawLine(centerX - thumbWidth / 4, thumbY, centerX + thumbWidth / 4, thumbY);
 
             // Draw label
             string label = GetShortLabel(i);
