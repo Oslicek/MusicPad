@@ -20,6 +20,7 @@ public class SfzPlayer
     private readonly object _lock = new();
     private VoicingType _voicingMode = VoicingType.Polyphonic;
     private int _lastMonoNoteActive = -1; // Track active note in mono mode
+    private long _totalSamplesGenerated; // Sample-based time tracking
     
     // Event queue to prevent race conditions between UI and audio threads
     private readonly Queue<NoteEvent> _pendingEvents = new();
@@ -99,6 +100,8 @@ public class SfzPlayer
                 voice.EnvelopePhase = EnvelopePhase.Idle;
                 voice.IsFinished = false;
             }
+            // Clear any pending events from the old instrument
+            _pendingEvents.Clear();
             // Reset mono mode tracking
             _lastMonoNoteActive = -1;
         }
@@ -123,21 +126,20 @@ public class SfzPlayer
 
         // 2. Prefer voices that are releasing or have pending release
         Voice? oldestReleasing = null;
-        long oldestReleaseTicks = long.MaxValue;
+        long oldestReleaseSamples = long.MaxValue;
         
         foreach (var voice in _voices)
         {
             // Consider both actual Release phase AND voices with pending release
             bool isReleasing = voice.EnvelopePhase == EnvelopePhase.Release;
-            bool hasPendingRelease = voice.PendingReleaseAtTicks > 0;
+            bool hasPendingRelease = voice.PendingReleaseAtSamples > 0;
             
             if (isReleasing || hasPendingRelease)
             {
-                // Use StartTimeTicks for pending release (hasn't started releasing yet)
-                long releaseTick = isReleasing ? voice.ReleaseStartTicks : voice.StartTimeTicks;
-                if (releaseTick < oldestReleaseTicks)
+                // Use StartTimeSamples for comparison (sample-based)
+                if (voice.StartTimeSamples < oldestReleaseSamples)
                 {
-                    oldestReleaseTicks = releaseTick;
+                    oldestReleaseSamples = voice.StartTimeSamples;
                     oldestReleasing = voice;
                 }
             }
@@ -147,19 +149,19 @@ public class SfzPlayer
         {
             // Immediately silence and reuse
             oldestReleasing.EnvelopePhase = EnvelopePhase.Idle;
-            oldestReleasing.PendingReleaseAtTicks = 0;
+            oldestReleasing.PendingReleaseAtSamples = 0;
             return oldestReleasing;
         }
 
         // 3. Steal the oldest playing voice (started first)
         Voice? oldestPlaying = null;
-        long oldestStartTicks = long.MaxValue;
+        long oldestStartSamples = long.MaxValue;
         
         foreach (var voice in _voices)
         {
-            if (voice.StartTimeTicks < oldestStartTicks)
+            if (voice.StartTimeSamples < oldestStartSamples)
             {
-                oldestStartTicks = voice.StartTimeTicks;
+                oldestStartSamples = voice.StartTimeSamples;
                 oldestPlaying = voice;
             }
         }
@@ -239,7 +241,7 @@ public class SfzPlayer
                 // Immediately silence the old voice to prevent overlap
                 v.EnvelopePhase = EnvelopePhase.Idle;
                 v.EnvelopeLevel = 0;
-                v.PendingReleaseAtTicks = 0;
+                v.PendingReleaseAtSamples = 0;
                 // DON'T break - silence ALL voices with this note!
             }
         }
@@ -297,9 +299,9 @@ public class SfzPlayer
         voice.EnvelopePosition = 0;
         voice.EnvelopeLevel = 0;
         voice.ReleaseStartLevel = 0;
-        voice.StartTimeTicks = Stopwatch.GetTimestamp();
+        voice.StartTimeSamples = _totalSamplesGenerated;
         voice.ReleaseStartTicks = 0;
-        voice.PendingReleaseAtTicks = 0;
+        voice.PendingReleaseAtSamples = 0;
         voice.IsFinished = false;
     }
 
@@ -350,8 +352,8 @@ public class SfzPlayer
     private void ProcessNoteOffInternal(int midiNote)
     {
         long now = Stopwatch.GetTimestamp();
-        long ticksPerMs = Stopwatch.Frequency / 1000;
-        long minimumHoldTicks = MinimumHoldTimeMs * ticksPerMs;
+        // Calculate minimum hold in samples (80ms * sampleRate / 1000)
+        long minimumHoldSamples = (long)(_sampleRate * MinimumHoldTimeMs / 1000);
         
         // Find all voices with this note that aren't already releasing or idle
         foreach (var voice in _voices)
@@ -360,13 +362,13 @@ public class SfzPlayer
                 voice.EnvelopePhase != EnvelopePhase.Release && 
                 voice.EnvelopePhase != EnvelopePhase.Idle)
             {
-                // Check if minimum hold time has passed
-                long elapsedTicks = now - voice.StartTimeTicks;
+                // Check if minimum hold time has passed (in samples)
+                long elapsedSamples = _totalSamplesGenerated - voice.StartTimeSamples;
                 
-                if (elapsedTicks < minimumHoldTicks)
+                if (elapsedSamples < minimumHoldSamples)
                 {
                     // Quick tap - schedule release after minimum hold time
-                    voice.PendingReleaseAtTicks = voice.StartTimeTicks + minimumHoldTicks;
+                    voice.PendingReleaseAtSamples = voice.StartTimeSamples + minimumHoldSamples;
                 }
                 else
                 {
@@ -502,6 +504,7 @@ public class SfzPlayer
         for (int i = 0; i < buffer.Length; i++)
         {
             float sample = 0f;
+            long currentSamplePosition = _totalSamplesGenerated + i;
 
             foreach (var voice in snapshot)
             {
@@ -511,8 +514,8 @@ public class SfzPlayer
                 // Get sample with linear interpolation
                 float voiceSample = GetInterpolatedSample(voice);
 
-                // Apply envelope
-                float envelope = CalculateEnvelope(voice);
+                // Apply envelope (with sample-accurate pending release check)
+                float envelope = CalculateEnvelope(voice, currentSamplePosition);
 
                 // Apply volume and envelope, add to mix
                 sample += voiceSample * voice.Volume * envelope;
@@ -559,6 +562,9 @@ public class SfzPlayer
             buffer[i] = sample;
         }
 
+        // Update sample counter for time tracking
+        _totalSamplesGenerated += buffer.Length;
+        
         // Mark finished voices as idle (instead of removing)
         lock (_lock)
         {
@@ -603,26 +609,25 @@ public class SfzPlayer
         return s0 + (s1 - s0) * frac;
     }
 
-    private float CalculateEnvelope(Voice voice)
+    private float CalculateEnvelope(Voice voice, long currentSamplePosition)
     {
         float level = voice.EnvelopeLevel;
         
-        // Check if there's a pending release that should now activate
-        if (voice.PendingReleaseAtTicks > 0 && 
+        // Check if there's a pending release that should now activate (sample-based)
+        if (voice.PendingReleaseAtSamples > 0 && 
             voice.EnvelopePhase != EnvelopePhase.Release && 
             voice.EnvelopePhase != EnvelopePhase.Idle)
         {
-            long now = Stopwatch.GetTimestamp();
-            if (now >= voice.PendingReleaseAtTicks)
+            if (currentSamplePosition >= voice.PendingReleaseAtSamples)
             {
                 // Time to release - transition now with current envelope level
                 // Use sustainLevel as fallback if envelope hasn't progressed yet
                 voice.EnvelopePhase = EnvelopePhase.Release;
                 voice.EnvelopePosition = 0;
-                voice.ReleaseStartTicks = now;
+                voice.ReleaseStartTicks = Stopwatch.GetTimestamp();
                 float fallbackLevel = Math.Max(0.5f, voice.SustainLevel);
                 voice.ReleaseStartLevel = Math.Max(voice.EnvelopeLevel, fallbackLevel);
-                voice.PendingReleaseAtTicks = 0; // Clear pending flag
+                voice.PendingReleaseAtSamples = 0; // Clear pending flag
             }
         }
 
@@ -729,12 +734,12 @@ public class SfzPlayer
         public float EnvelopeLevel { get; set; }
         public float ReleaseStartLevel { get; set; }
         
-        // Timing for voice allocation
-        public long StartTimeTicks { get; set; }
+        // Timing for voice allocation (sample-based for deterministic testing)
+        public long StartTimeSamples { get; set; }
         public long ReleaseStartTicks { get; set; }
         
-        // Pending release - when non-zero, voice should transition to Release at this tick
-        public long PendingReleaseAtTicks { get; set; }
+        // Pending release - when non-zero, voice should transition to Release at this sample count
+        public long PendingReleaseAtSamples { get; set; }
         
         public bool IsFinished { get; set; }
     }

@@ -49,13 +49,14 @@ public class SfzPlayerPolyphonyTests
         var player = new SfzPlayer(44100, maxVoices: 10);
         player.LoadInstrument(CreateTestInstrument());
         
-        player.NoteOn(60, 100); // C4
-        player.NoteOn(64, 100); // E4
+        player.NoteOn(60, 100); // C4 (queued)
+        player.NoteOn(64, 100); // E4 (queued)
         
-        Assert.Equal(2, player.ActiveVoiceCount);
-        
+        // Process buffer to trigger queued NoteOn events
         var buffer = new float[512];
         player.GenerateSamples(buffer);
+        
+        Assert.Equal(2, player.ActiveVoiceCount);
         
         // Should have non-zero samples from both voices
         Assert.Contains(buffer, v => Math.Abs(v) > 0.001f);
@@ -70,18 +71,19 @@ public class SfzPlayerPolyphonyTests
         player.NoteOn(60, 100);
         player.NoteOn(64, 100);
         
-        Assert.Equal(2, player.ActiveVoiceCount);
-        
-        player.NoteOff(60); // Release first note
-        
-        // Voice still active but in release phase
-        Assert.Equal(2, player.ActiveVoiceCount);
-        
-        // After release phase completes, voice should be removed
-        var buffer = new float[4096]; // Long enough for release
+        // Process buffer to trigger queued NoteOn events
+        var buffer = new float[4000]; // ~90ms, enough to satisfy minimum hold time
         player.GenerateSamples(buffer);
         
-        // One voice should still be playing
+        Assert.Equal(2, player.ActiveVoiceCount);
+        
+        player.NoteOff(60); // Release first note (queued)
+        
+        // After release phase completes, one voice should still be playing
+        var buffer2 = new float[4096]; // Long enough for release
+        player.GenerateSamples(buffer2);
+        
+        // One voice should still be playing (note 64)
         Assert.True(player.ActiveVoiceCount >= 1);
     }
 
@@ -94,6 +96,10 @@ public class SfzPlayerPolyphonyTests
         player.NoteOn(60, 100);
         player.NoteOn(64, 100);
         player.NoteOn(67, 100); // Third note should drop the first
+        
+        // Process buffer to trigger queued NoteOn events
+        var buffer = new float[512];
+        player.GenerateSamples(buffer);
         
         Assert.Equal(2, player.ActiveVoiceCount);
     }
@@ -108,13 +114,17 @@ public class SfzPlayerPolyphonyTests
         player.NoteOn(64, 100);
         player.NoteOn(67, 100);
         
+        // Process buffer to trigger queued NoteOn events
+        var buffer1 = new float[512];
+        player.GenerateSamples(buffer1);
+        
         Assert.Equal(3, player.ActiveVoiceCount);
         
         player.StopAll();
         
         // All voices should be in release or finished
-        var buffer = new float[4096];
-        player.GenerateSamples(buffer);
+        var buffer2 = new float[4096];
+        player.GenerateSamples(buffer2);
         
         // After buffer, voices should be done
         Assert.Equal(0, player.ActiveVoiceCount);
@@ -149,6 +159,10 @@ public class SfzPlayerPolyphonyTests
         
         player.NoteOn(60, 100);
         player.NoteOn(60, 100); // Same note again
+        
+        // Process buffer to trigger queued NoteOn events
+        var buffer = new float[512];
+        player.GenerateSamples(buffer);
         
         // Should not create duplicate voice for same note
         Assert.Equal(1, player.ActiveVoiceCount);
@@ -191,10 +205,16 @@ public class SfzPlayerPolyphonyTests
             player.NoteOn(i, 100);
         }
         
+        // Process buffer to trigger queued NoteOn events
+        var buffer = new float[512];
+        player.GenerateSamples(buffer);
+        
         Assert.Equal(10, player.ActiveVoiceCount);
         
         // 11th note should steal oldest
         player.NoteOn(70, 100);
+        player.GenerateSamples(buffer);
+        
         Assert.Equal(10, player.ActiveVoiceCount);
     }
 }

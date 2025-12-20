@@ -4,6 +4,7 @@ using Android.Media;
 using MusicPad.Core.Audio;
 using MusicPad.Core.Models;
 using MusicPad.Core.NoteProcessing;
+using MusicPad.Core.Recording;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -18,6 +19,7 @@ public class SfzService : ISfzService, IDisposable
     private readonly AssetManager _assets;
     private readonly SfzPlayer _player;
     private readonly AudioArpeggiator _arpeggiator;
+    private readonly AudioPlayback _audioPlayback;
     private readonly LowPassFilter _lpf;
     private readonly Equalizer _eq;
     private readonly Chorus _chorus;
@@ -80,12 +82,18 @@ public class SfzService : ISfzService, IDisposable
     }
 
     public AudioArpeggiator Arpeggiator => _arpeggiator;
+    
+    // Audio-thread playback
+    public bool IsPlaybackActive => _audioPlayback.IsPlaying;
+    public event EventHandler<bool>? PlaybackStateChanged;
+    public event EventHandler<RecordedEvent>? PlaybackUiEvent;
 
     public SfzService()
     {
         _assets = Android.App.Application.Context.Assets!;
         _player = new SfzPlayer(SampleRate);
         _arpeggiator = new AudioArpeggiator(SampleRate);
+        _audioPlayback = new AudioPlayback(SampleRate);
         _lpf = new LowPassFilter(SampleRate);
         _eq = new Equalizer(SampleRate);
         _chorus = new Chorus(SampleRate);
@@ -511,6 +519,25 @@ public class SfzService : ISfzService, IDisposable
         _player.Mute();
     }
     
+    // ========== Audio-Thread Playback ==========
+    
+    public void LoadPlaybackEvents(IReadOnlyList<RecordedEvent> events)
+    {
+        _audioPlayback.LoadEvents(events);
+    }
+    
+    public void StartPlayback()
+    {
+        _audioPlayback.Start();
+        PlaybackStateChanged?.Invoke(this, true);
+    }
+    
+    public void StopPlayback()
+    {
+        _audioPlayback.Stop();
+        PlaybackStateChanged?.Invoke(this, false);
+    }
+    
     public float GetNoteEnvelopeLevel(int midiNote)
     {
         return _player.GetEnvelopeLevel(midiNote);
@@ -553,9 +580,40 @@ public class SfzService : ISfzService, IDisposable
     private void PlaybackLoop(int bufferSamples, CancellationToken token)
     {
         var buffer = new float[bufferSamples];
+        bool wasPlaying = false;
 
         while (!token.IsCancellationRequested)
         {
+            // Process recorded playback with sample-accurate timing
+            var playbackEvents = _audioPlayback.ProcessBuffer(bufferSamples);
+            foreach (var evt in playbackEvents)
+            {
+                if (evt.IsNoteOn)
+                {
+                    _player.NoteOn(evt.MidiNote, evt.Velocity);
+                }
+                else
+                {
+                    _player.NoteOff(evt.MidiNote);
+                }
+            }
+            
+            // Check for UI events that need main thread dispatch
+            var uiEvents = _audioPlayback.GetPendingUiEvents();
+            foreach (var evt in uiEvents)
+            {
+                // Fire event for UI thread handling (instrument/effect changes)
+                PlaybackUiEvent?.Invoke(this, evt);
+            }
+            
+            // Check if playback just stopped
+            bool isPlaying = _audioPlayback.IsPlaying;
+            if (wasPlaying && !isPlaying)
+            {
+                PlaybackStateChanged?.Invoke(this, false);
+            }
+            wasPlaying = isPlaying;
+            
             // Process arpeggiator with sample-accurate timing
             var arpEvents = _arpeggiator.ProcessBuffer(bufferSamples);
             foreach (var evt in arpEvents)

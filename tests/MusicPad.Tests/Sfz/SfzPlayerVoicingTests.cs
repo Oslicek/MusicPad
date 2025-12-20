@@ -44,15 +44,17 @@ public class SfzPlayerVoicingTests
         float level60Before = player.GetEnvelopeLevel(60);
         Assert.True(level60Before > 0f, "Note 60 should be playing");
         
-        // Play a second note
+        // Play a second note (queued for next buffer)
         player.NoteOn(64, velocity: 100);
         
-        // Note 60 should be immediately stopped (no release phase)
+        // Process buffer to trigger the queued NoteOn
+        player.GenerateSamples(buffer);
+        
+        // Note 60 should be stopped (no release phase in mono)
         float level60After = player.GetEnvelopeLevel(60);
         Assert.Equal(0f, level60After);
         
         // Note 64 should be playing
-        player.GenerateSamples(buffer);
         float level64 = player.GetEnvelopeLevel(64);
         Assert.True(level64 > 0f, "Note 64 should be playing");
         
@@ -115,14 +117,17 @@ public class SfzPlayerVoicingTests
         float level60During = player.GetEnvelopeLevel(60);
         Assert.True(level60During > 0f, "Should be in release phase");
         
-        // Play new note - should immediately stop the release
+        // Play new note (queued for next buffer)
         player.NoteOn(64, velocity: 100);
         
+        // Process buffer to trigger the queued NoteOn
+        player.GenerateSamples(buffer);
+        
+        // Old note should be stopped
         float level60After = player.GetEnvelopeLevel(60);
         Assert.Equal(0f, level60After);
         
         // New note should be playing
-        player.GenerateSamples(buffer);
         float level64 = player.GetEnvelopeLevel(64);
         Assert.True(level64 > 0f);
     }

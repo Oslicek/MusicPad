@@ -13,11 +13,6 @@ public interface IRecordingService
     bool IsRecording { get; }
     
     /// <summary>
-    /// Whether playback is currently active.
-    /// </summary>
-    bool IsPlaying { get; }
-    
-    /// <summary>
     /// The currently loaded song (for playback).
     /// </summary>
     Song? CurrentSong { get; }
@@ -51,20 +46,14 @@ public interface IRecordingService
     void RecordInstrumentChange(string instrumentId);
     
     /// <summary>
-    /// Loads a song for playback.
+    /// Loads a song for playback. Returns the events for audio-thread playback.
     /// </summary>
-    Task<bool> LoadSongAsync(string songId);
+    Task<IReadOnlyList<RecordedEvent>?> LoadSongAsync(string songId);
     
     /// <summary>
-    /// Starts playback of the loaded song.
+    /// Gets the initial instrument ID from the currently loaded song.
     /// </summary>
-    /// <param name="liveMode">If true, uses current instruments/effects instead of recorded ones.</param>
-    void StartPlayback(bool liveMode = false);
-    
-    /// <summary>
-    /// Stops playback.
-    /// </summary>
-    void StopPlayback();
+    string? LoadedSongInitialInstrumentId { get; }
     
     /// <summary>
     /// Gets all saved songs.
@@ -80,21 +69,6 @@ public interface IRecordingService
     /// Event raised when recording state changes.
     /// </summary>
     event EventHandler<bool>? RecordingStateChanged;
-    
-    /// <summary>
-    /// Event raised when playback state changes.
-    /// </summary>
-    event EventHandler<bool>? PlaybackStateChanged;
-    
-    /// <summary>
-    /// Event raised during playback when a note should be played.
-    /// </summary>
-    event EventHandler<RecordedEvent>? PlaybackNoteEvent;
-    
-    /// <summary>
-    /// Event raised during playback when instrument should change (original mode only).
-    /// </summary>
-    event EventHandler<string>? PlaybackInstrumentChange;
 }
 
 

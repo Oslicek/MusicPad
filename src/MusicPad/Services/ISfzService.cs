@@ -1,5 +1,6 @@
 using MusicPad.Core.Models;
 using MusicPad.Core.NoteProcessing;
+using MusicPad.Core.Recording;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -168,5 +169,38 @@ public interface ISfzService
     /// Gets or sets the reverb type.
     /// </summary>
     MusicPad.Core.Models.ReverbType ReverbType { get; set; }
+    
+    // ========== Audio-Thread Playback ==========
+    
+    /// <summary>
+    /// Loads recorded events for audio-thread playback.
+    /// </summary>
+    void LoadPlaybackEvents(IReadOnlyList<RecordedEvent> events);
+    
+    /// <summary>
+    /// Starts audio-thread playback.
+    /// </summary>
+    void StartPlayback();
+    
+    /// <summary>
+    /// Stops audio-thread playback.
+    /// </summary>
+    void StopPlayback();
+    
+    /// <summary>
+    /// Whether audio-thread playback is currently active.
+    /// </summary>
+    bool IsPlaybackActive { get; }
+    
+    /// <summary>
+    /// Event fired when playback state changes (started/stopped).
+    /// </summary>
+    event EventHandler<bool>? PlaybackStateChanged;
+    
+    /// <summary>
+    /// Event fired when a UI event (instrument/effect change) needs to be processed.
+    /// These are dispatched from the audio thread and need UI thread handling.
+    /// </summary>
+    event EventHandler<RecordedEvent>? PlaybackUiEvent;
 }
 

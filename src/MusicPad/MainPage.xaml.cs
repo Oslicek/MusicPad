@@ -220,9 +220,8 @@ public partial class MainPage : ContentPage
             }
         };
         
-        // Wire up playback events
-        _recordingService.PlaybackNoteEvent += OnPlaybackNoteEvent;
-        _recordingService.PlaybackStateChanged += (s, isPlaying) =>
+        // Wire up audio-thread playback events
+        _sfzService.PlaybackStateChanged += (s, isPlaying) =>
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
@@ -234,6 +233,8 @@ public partial class MainPage : ContentPage
                 RecArea.Invalidate();
             });
         };
+        _sfzService.PlaybackUiEvent += OnPlaybackUiEvent;
+        
         _recordingService.RecordingStateChanged += (s, isRecording) =>
         {
             MainThread.BeginInvokeOnMainThread(() =>
@@ -266,9 +267,9 @@ public partial class MainPage : ContentPage
                 _recAreaDrawable.StatusText = "Ready";
             }
         }
-        else if (_recordingService.IsPlaying)
+        else if (_sfzService.IsPlaybackActive)
         {
-            _recordingService.StopPlayback();
+            _sfzService.StopPlayback();
             _sfzService.StopAll();
         }
         RecArea.Invalidate();
@@ -281,11 +282,15 @@ public partial class MainPage : ContentPage
         if (songs.Count > 0)
         {
             var latestSong = songs[0]; // Already sorted by CreatedAt descending
-            if (await _recordingService.LoadSongAsync(latestSong.Id))
+            var events = await _recordingService.LoadSongAsync(latestSong.Id);
+            if (events != null && events.Count > 0)
             {
                 _recAreaDrawable.StatusText = $"▶ {latestSong.Name}";
                 RecArea.Invalidate();
-                _recordingService.StartPlayback(liveMode: true); // Use current instrument
+                
+                // Load events into audio service and start sample-accurate playback
+                _sfzService.LoadPlaybackEvents(events);
+                _sfzService.StartPlayback();
             }
         }
         else
@@ -295,19 +300,29 @@ public partial class MainPage : ContentPage
         }
     }
     
-    private void OnPlaybackNoteEvent(object? sender, RecordedEvent evt)
+    private void OnPlaybackUiEvent(object? sender, RecordedEvent evt)
     {
-        MainThread.BeginInvokeOnMainThread(() =>
+        // Handle UI events from audio-thread playback (instrument/effect changes)
+        MainThread.BeginInvokeOnMainThread(async () =>
         {
-            if (evt.EventType == RecordedEventType.NoteOn)
+            if (evt.EventType == RecordedEventType.InstrumentChange && evt.InstrumentId != null)
             {
-                OnNoteOn(this, evt.MidiNote);
-            }
-            else if (evt.EventType == RecordedEventType.NoteOff)
-            {
-                OnNoteOff(this, evt.MidiNote);
+                await _sfzService.LoadInstrumentAsync(evt.InstrumentId);
+                UpdateInstrumentPickerSelection(evt.InstrumentId);
             }
         });
+    }
+    
+    private void UpdateInstrumentPickerSelection(string instrumentName)
+    {
+        for (int i = 0; i < InstrumentPicker.Items.Count; i++)
+        {
+            if (InstrumentPicker.Items[i] == instrumentName)
+            {
+                InstrumentPicker.SelectedIndex = i;
+                break;
+            }
+        }
     }
 
     private void SetupEffectArea()

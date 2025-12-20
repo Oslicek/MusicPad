@@ -11,20 +11,15 @@ public class RecordingService : IRecordingService
     private readonly RecordingSession _session = new();
     private readonly string _songsDirectory;
     private Song? _currentSong;
-    private List<RecordedEvent>? _playbackEvents;
-    private CancellationTokenSource? _playbackCts;
-    private bool _isPlaying;
+    private List<RecordedEvent>? _loadedEvents;
     private string? _initialInstrumentId;
     private string? _initialSettingsJson;
     
     public bool IsRecording => _session.IsRecording;
-    public bool IsPlaying => _isPlaying;
     public Song? CurrentSong => _currentSong;
+    public string? LoadedSongInitialInstrumentId => _currentSong?.InitialInstrumentId;
     
     public event EventHandler<bool>? RecordingStateChanged;
-    public event EventHandler<bool>? PlaybackStateChanged;
-    public event EventHandler<RecordedEvent>? PlaybackNoteEvent;
-    public event EventHandler<string>? PlaybackInstrumentChange;
     
     public RecordingService()
     {
@@ -101,111 +96,31 @@ public class RecordingService : IRecordingService
         _session.RecordInstrumentChange(instrumentId);
     }
     
-    public async Task<bool> LoadSongAsync(string songId)
+    public async Task<IReadOnlyList<RecordedEvent>?> LoadSongAsync(string songId)
     {
         try
         {
             var songDir = Path.Combine(_songsDirectory, songId);
             if (!Directory.Exists(songDir))
-                return false;
+                return null;
             
             var metadataPath = Path.Combine(songDir, "metadata.json");
             var eventsPath = Path.Combine(songDir, "events.json");
             
             if (!File.Exists(metadataPath) || !File.Exists(eventsPath))
-                return false;
+                return null;
             
             var metadataJson = await File.ReadAllTextAsync(metadataPath);
             var eventsJson = await File.ReadAllTextAsync(eventsPath);
             
             _currentSong = JsonSerializer.Deserialize<Song>(metadataJson);
-            _playbackEvents = JsonSerializer.Deserialize<List<RecordedEvent>>(eventsJson);
+            _loadedEvents = JsonSerializer.Deserialize<List<RecordedEvent>>(eventsJson);
             
-            return _currentSong != null && _playbackEvents != null;
+            return _loadedEvents;
         }
         catch
         {
-            return false;
-        }
-    }
-    
-    public void StartPlayback(bool liveMode = false)
-    {
-        if (_playbackEvents == null || _playbackEvents.Count == 0)
-            return;
-        
-        if (_isPlaying)
-            StopPlayback();
-        
-        _isPlaying = true;
-        _playbackCts = new CancellationTokenSource();
-        PlaybackStateChanged?.Invoke(this, true);
-        
-        // Start playback in background
-        _ = PlaybackLoopAsync(liveMode, _playbackCts.Token);
-    }
-    
-    public void StopPlayback()
-    {
-        _playbackCts?.Cancel();
-        _isPlaying = false;
-        PlaybackStateChanged?.Invoke(this, false);
-    }
-    
-    private async Task PlaybackLoopAsync(bool liveMode, CancellationToken token)
-    {
-        if (_playbackEvents == null) return;
-        
-        var startTime = DateTime.UtcNow;
-        int eventIndex = 0;
-        
-        // Apply initial settings if not in live mode
-        if (!liveMode && _currentSong?.InitialInstrumentId != null)
-        {
-            PlaybackInstrumentChange?.Invoke(this, _currentSong.InitialInstrumentId);
-        }
-        
-        try
-        {
-            while (eventIndex < _playbackEvents.Count && !token.IsCancellationRequested)
-            {
-                var nextEvent = _playbackEvents[eventIndex];
-                var elapsed = (DateTime.UtcNow - startTime).TotalMilliseconds;
-                var waitTime = nextEvent.TimestampMs - elapsed;
-                
-                if (waitTime > 0)
-                {
-                    await Task.Delay((int)Math.Min(waitTime, 100), token);
-                    continue; // Check again
-                }
-                
-                // Fire the event
-                switch (nextEvent.EventType)
-                {
-                    case RecordedEventType.NoteOn:
-                    case RecordedEventType.NoteOff:
-                        PlaybackNoteEvent?.Invoke(this, nextEvent);
-                        break;
-                    
-                    case RecordedEventType.InstrumentChange:
-                        if (!liveMode && nextEvent.InstrumentId != null)
-                        {
-                            PlaybackInstrumentChange?.Invoke(this, nextEvent.InstrumentId);
-                        }
-                        break;
-                }
-                
-                eventIndex++;
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Normal cancellation
-        }
-        finally
-        {
-            _isPlaying = false;
-            PlaybackStateChanged?.Invoke(this, false);
+            return null;
         }
     }
     

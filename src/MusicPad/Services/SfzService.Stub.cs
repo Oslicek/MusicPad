@@ -2,6 +2,7 @@
 
 using MusicPad.Core.Models;
 using MusicPad.Core.NoteProcessing;
+using MusicPad.Core.Recording;
 using MusicPad.Core.Sfz;
 
 namespace MusicPad.Services;
@@ -50,6 +51,14 @@ public class SfzService : ISfzService
     public bool ReverbEnabled { get; set; } = false;
     public float ReverbLevel { get; set; } = 0.3f;
     public ReverbType ReverbType { get; set; } = ReverbType.Room;
+    
+    // Audio-thread playback stubs
+    public bool IsPlaybackActive => false;
+    public event EventHandler<bool>? PlaybackStateChanged;
+    public event EventHandler<RecordedEvent>? PlaybackUiEvent;
+    public void LoadPlaybackEvents(IReadOnlyList<RecordedEvent> events) { }
+    public void StartPlayback() { }
+    public void StopPlayback() { }
 }
 #endif
 

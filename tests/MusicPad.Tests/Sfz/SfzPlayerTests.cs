@@ -173,8 +173,8 @@ public class SfzPlayerTests
         
         player.NoteOn(60, velocity: 100);
         
-        // Play a bit, then release
-        var buffer1 = new float[200];
+        // Play at least 80ms to satisfy minimum hold time (80ms * 44.1 = 3528 samples)
+        var buffer1 = new float[4000];
         player.GenerateSamples(buffer1);
         Assert.Equal(1, player.ActiveVoiceCount); // Still playing (looping)
         
