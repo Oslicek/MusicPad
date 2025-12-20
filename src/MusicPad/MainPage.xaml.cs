@@ -15,6 +15,7 @@ public partial class MainPage : ContentPage
     private readonly PadMatrixDrawable _padDrawable;
     private readonly RotaryKnobDrawable _volumeKnobDrawable;
     private readonly EffectAreaDrawable _effectAreaDrawable;
+    private readonly NavigationBarDrawable _navigationBarDrawable;
     private readonly List<ScaleOption> _scaleOptions = new();
     private readonly PianoKeyboardDrawable _pianoDrawable = new();
     private readonly PitchVolumeDrawable _pitchVolumeDrawable = new();
@@ -42,8 +43,14 @@ public partial class MainPage : ContentPage
         _padDrawable = new PadMatrixDrawable();
         _padDrawable.NoteOn += OnNoteOn;
         _padDrawable.NoteOff += OnNoteOff;
-        _padDrawable.NavigateUp += OnNavigateUp;
-        _padDrawable.NavigateDown += OnNavigateDown;
+        
+        // Setup navigation bar (mute + arrows + page dots)
+        _navigationBarDrawable = new NavigationBarDrawable();
+        _navigationBarDrawable.MuteClicked += OnMuteButtonClicked;
+        _navigationBarDrawable.NavigateUp += OnNavigateUp;
+        _navigationBarDrawable.NavigateDown += OnNavigateDown;
+        _navigationBarDrawable.InvalidateRequested += (s, e) => NavigationBar?.Invalidate();
+        SetupNavigationBar();
         
         // Build scale options (common scales)
         BuildScaleOptions();
@@ -125,16 +132,8 @@ public partial class MainPage : ContentPage
                 CommitHashLabel.TextColor = Color.FromArgb(AppColors.TextCommit);
             }
             
-            // Update mute button
-            if (MuteButton != null)
-            {
-                MuteButton.BackgroundColor = pickerBgColor;
-                MuteButton.Stroke = new SolidColorBrush(Color.FromArgb(AppColors.BorderDark));
-            }
-            if (MuteLabel != null)
-            {
-                MuteLabel.TextColor = Color.FromArgb(AppColors.Accent);
-            }
+            // Update navigation bar
+            NavigationBar?.Invalidate();
         });
     }
 
@@ -176,6 +175,23 @@ public partial class MainPage : ContentPage
         
         // Apply initial volume
         _sfzService.Volume = _volumeKnobDrawable.Value;
+    }
+    
+    private void SetupNavigationBar()
+    {
+        NavigationBar.Drawable = _navigationBarDrawable;
+        
+        NavigationBar.StartInteraction += (s, e) =>
+        {
+            var touch = e.Touches.FirstOrDefault();
+            if (touch != default)
+            {
+                if (_navigationBarDrawable.OnTouchStart((float)touch.X, (float)touch.Y))
+                {
+                    NavigationBar.Invalidate();
+                }
+            }
+        };
     }
 
     private void SetupEffectArea()
@@ -380,9 +396,8 @@ public partial class MainPage : ContentPage
         double volumeSize = 120;
         double padding = 8;
 
-        // Calculate mute button position - closer to padrea
-        double muteButtonHeight = 44;
-        double muteButtonWidth = 80;
+        // Navigation bar height
+        double navBarHeight = 50;
 
         if (_isLandscape)
         {
@@ -401,10 +416,11 @@ public partial class MainPage : ContentPage
                 double pianoHeight = _pageHeight * 0.45;
                 double topAreaHeight = _pageHeight - pianoHeight - padding;
 
-                // Mute button at bottom-left, adjacent to piano
-                MuteButton.HorizontalOptions = LayoutOptions.Start;
-                MuteButton.VerticalOptions = LayoutOptions.End;
-                MuteButton.Margin = new Thickness(0, 0, 0, pianoHeight + padding);
+                // Navigation bar above the piano
+                NavigationBar.HorizontalOptions = LayoutOptions.Center;
+                NavigationBar.VerticalOptions = LayoutOptions.End;
+                NavigationBar.WidthRequest = _pageWidth - padding * 2;
+                NavigationBar.Margin = new Thickness(0, 0, 0, pianoHeight + padding);
 
                 // Effect area: positioned in top-right, constrained to top area
                 double efareaLeft = controlsWidth + volumeSize + 24;
@@ -441,10 +457,11 @@ public partial class MainPage : ContentPage
                 double padreaCenterX = _pageWidth / 2;
                 double padreaLeft = padreaCenterX - padreaSize / 2;
 
-                // Mute button to the left of padrea, vertically centered
-                MuteButton.HorizontalOptions = LayoutOptions.Start;
-                MuteButton.VerticalOptions = LayoutOptions.Center;
-                MuteButton.Margin = new Thickness(padreaLeft - muteButtonWidth - padding, 0, 0, 0);
+                // Navigation bar above the padrea (landscape square mode)
+                NavigationBar.HorizontalOptions = LayoutOptions.Center;
+                NavigationBar.VerticalOptions = LayoutOptions.Start;
+                NavigationBar.WidthRequest = padreaSize;
+                NavigationBar.Margin = new Thickness(0, controlsHeight + 16 + volumeSize + padding, 0, 0);
 
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.Center;
@@ -489,18 +506,19 @@ public partial class MainPage : ContentPage
             EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
             
             double padreaTop = topAreaHeight + efareaHeight + padding * 2;
-            // Available space for padrea + mute button (bottom padding is in Grid)
-            double availableForPadrea = _pageHeight - padreaTop - muteButtonHeight - padding;
+            // Available space for padrea + navigation bar (bottom padding is in Grid)
+            double availableForPadrea = _pageHeight - padreaTop - navBarHeight - padding;
             
             if (isPiano)
             {
                 // Piano padrea - full width
                 double pianoHeight = Math.Min(_pageHeight * 0.42, availableForPadrea);
                 
-                // Mute button just above the piano, left-aligned
-                MuteButton.HorizontalOptions = LayoutOptions.Start;
-                MuteButton.VerticalOptions = LayoutOptions.End;
-                MuteButton.Margin = new Thickness(0, 0, 0, pianoHeight + padding);
+                // Navigation bar above the piano
+                NavigationBar.HorizontalOptions = LayoutOptions.Center;
+                NavigationBar.VerticalOptions = LayoutOptions.End;
+                NavigationBar.WidthRequest = _pageWidth - padding * 2;
+                NavigationBar.Margin = new Thickness(0, 0, 0, pianoHeight + padding);
 
                 PadContainer.HorizontalOptions = LayoutOptions.Fill;
                 PadContainer.VerticalOptions = LayoutOptions.End;
@@ -513,10 +531,11 @@ public partial class MainPage : ContentPage
                 // Square padrea - centered, with mute button above the padrea
                 double padreaSize = Math.Min(_pageWidth - padding * 2, availableForPadrea);
 
-                // Mute button above the padrea, left-aligned
-                MuteButton.HorizontalOptions = LayoutOptions.Start;
-                MuteButton.VerticalOptions = LayoutOptions.End;
-                MuteButton.Margin = new Thickness(0, 0, 0, padreaSize + padding);
+                // Navigation bar above the padrea
+                NavigationBar.HorizontalOptions = LayoutOptions.Center;
+                NavigationBar.VerticalOptions = LayoutOptions.End;
+                NavigationBar.WidthRequest = padreaSize;
+                NavigationBar.Margin = new Thickness(0, 0, 0, padreaSize + padding);
 
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.End;
@@ -916,12 +935,8 @@ public partial class MainPage : ContentPage
                 return;
             }
             
-            // Navigation arrows
-            int totalViewpages = (int)Math.Ceiling((double)uniqueNotes.Count / notesPerViewpage);
-            bool hasUpArrow = padrea.CurrentViewpage < totalViewpages - 1;
-            bool hasDownArrow = padrea.CurrentViewpage > 0;
-            
-            _padDrawable.SetNotes(pageNotes, columns, hasUpArrow, hasDownArrow);
+            // Navigation is now in NavigationBar, no arrows in pad matrix
+            _padDrawable.SetNotes(pageNotes, columns, false, false);
             _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
                                    padrea.PadAltColor, padrea.PadAltPressedColor);
             _padDrawable.SetHalftoneDetector(null); // No halftone distinction for unpitched
@@ -941,13 +956,8 @@ public partial class MainPage : ContentPage
                 return;
             }
             
-            // Check if we need navigation arrows
-            int totalViewpages = padrea.GetTotalViewpages(instrumentMinKey, instrumentMaxKey);
-            bool hasUpArrow = padrea.CurrentViewpage < totalViewpages - 1;
-            bool hasDownArrow = padrea.CurrentViewpage > 0;
-            
-            // Set notes and colors
-            _padDrawable.SetNotes(notes, padrea.Columns, hasUpArrow, hasDownArrow);
+            // Navigation is now in NavigationBar, no arrows in pad matrix
+            _padDrawable.SetNotes(notes, padrea.Columns, false, false);
             _padDrawable.SetColors(padrea.PadColor, padrea.PadPressedColor, 
                                    padrea.PadAltColor, padrea.PadAltPressedColor);
             _padDrawable.SetHalftoneDetector(padrea.IsHalftone);
@@ -958,6 +968,7 @@ public partial class MainPage : ContentPage
 
         EnsurePadGraphicsView(_padDrawable);
         EnsureEnvelopeAnimationTimer();
+        UpdateNavigationBarPageInfo();
     }
 
     private void SetupPianoPadrea(Padrea padrea, int instrumentMinKey, int instrumentMaxKey)
@@ -979,6 +990,7 @@ public partial class MainPage : ContentPage
         
         EnsurePadGraphicsView(_pianoDrawable);
         EnsureEnvelopeAnimationTimer();
+        UpdateNavigationBarPageInfo();
     }
 
     private void UpdatePadMatrixForPadrea()
@@ -1184,6 +1196,7 @@ public partial class MainPage : ContentPage
         if (padrea.NextViewpage(minKey, maxKey))
         {
             SetupPadMatrix();
+            UpdateNavigationBarPageInfo();
         }
     }
 
@@ -1196,7 +1209,25 @@ public partial class MainPage : ContentPage
         if (padrea.PreviousViewpage(minKey, maxKey))
         {
             SetupPadMatrix();
+            UpdateNavigationBarPageInfo();
         }
+    }
+    
+    private void UpdateNavigationBarPageInfo()
+    {
+        var padrea = _padreaService.CurrentPadrea;
+        if (padrea == null)
+        {
+            _navigationBarDrawable.TotalPages = 1;
+            _navigationBarDrawable.CurrentPage = 0;
+            return;
+        }
+        
+        var (minKey, maxKey) = _sfzService.CurrentKeyRange;
+        int totalPages = padrea.GetTotalViewpages(minKey, maxKey);
+        _navigationBarDrawable.TotalPages = totalPages;
+        _navigationBarDrawable.CurrentPage = padrea.CurrentViewpage;
+        NavigationBar?.Invalidate();
     }
 
     private void UpdateScalePickerForPadrea(Padrea padrea)
@@ -1280,16 +1311,14 @@ public partial class MainPage : ContentPage
     {
         _sfzService.Mute();
         
-        // Brief visual feedback
+        // Brief visual feedback via NavigationBar
         MainThread.BeginInvokeOnMainThread(async () =>
         {
-            if (MuteButton != null)
-            {
-                var originalBg = MuteButton.BackgroundColor;
-                MuteButton.BackgroundColor = Color.FromArgb(AppColors.Accent);
-                await Task.Delay(100);
-                MuteButton.BackgroundColor = originalBg;
-            }
+            _navigationBarDrawable.IsMuted = true;
+            NavigationBar?.Invalidate();
+            await Task.Delay(100);
+            _navigationBarDrawable.IsMuted = false;
+            NavigationBar?.Invalidate();
         });
     }
     

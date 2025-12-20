@@ -16,6 +16,7 @@ public class LpfDrawable
     private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
     private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
     private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color AccentColor => Color.FromArgb(AppColors.Accent);
     private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
     private static Color DisabledColor => Color.FromArgb(AppColors.Disabled);
     
@@ -49,7 +50,7 @@ public class LpfDrawable
     public void Draw(ICanvas canvas, RectF dirtyRect, bool isVertical = false)
     {
         float padding = 4f;
-        float buttonSize = 20f;
+        float buttonSize = 28f;
         bool isEnabled = _settings.IsEnabled;
         
         if (isVertical)
@@ -149,7 +150,8 @@ public class LpfDrawable
         float totalAngle = maxAngle - minAngle;
         if (totalAngle > 0) totalAngle -= 360;
         
-        canvas.StrokeColor = isEnabled ? IndicatorColor : DisabledColor;
+        // Draw radial markers - use accent color when enabled
+        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
         canvas.StrokeSize = 1.5f;
         canvas.StrokeLineCap = LineCap.Round;
         

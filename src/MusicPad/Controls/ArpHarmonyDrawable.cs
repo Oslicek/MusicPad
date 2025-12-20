@@ -19,6 +19,7 @@ public class ArpHarmonyDrawable
     private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
     private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
     private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color AccentColor => Color.FromArgb(AppColors.Accent);
     private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
     private static Color DisabledColor => Color.FromArgb(AppColors.Disabled);
     
@@ -43,8 +44,10 @@ public class ArpHarmonyDrawable
     private bool _isDraggingRate;
     private float _lastAngle;
 
-    private static readonly string[] HarmonyLabels = { "O", "5", "M", "m" }; // Oct, 5th, Maj, Min
-    private static readonly string[] PatternLabels = { "▲", "▼", "↕", "?" }; // Up, Down, UpDown, Random
+    // New order: MAJ, MIN, OCT, 5TH (as requested)
+    private static readonly string[] HarmonyLabels = { "MAJ", "MIN", "OCT", "5TH" };
+    private static readonly int[] HarmonyTypeMap = { 2, 3, 0, 1 }; // Maps button index to HarmonyType enum
+    private static readonly string[] PatternLabels = { "UP", "DOWN", "U+D", "RAND" };
 
     public event EventHandler? InvalidateRequested;
 
@@ -67,88 +70,135 @@ public class ArpHarmonyDrawable
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
         float padding = 4f;
-        float buttonSize = 20f;
-        float rowHeight = (dirtyRect.Height - padding) / 2;
+        float buttonSize = 28f;
+        float titleHeight = 16f;
+        float controlsHeight = (dirtyRect.Height - titleHeight * 2 - padding * 2) / 2;
         
-        // Row 1: Harmony
-        float row1Y = dirtyRect.Y;
-        DrawHarmonyRow(canvas, new RectF(dirtyRect.X, row1Y, dirtyRect.Width, rowHeight), padding, buttonSize);
+        // 4-row layout:
+        // Row 1: "HARMONY" title
+        // Row 2: Harmony controls
+        // Row 3: "ARPEGGIO" title
+        // Row 4: Arpeggio controls
         
-        // Row 2: Arpeggiator
-        float row2Y = dirtyRect.Y + rowHeight + padding;
-        DrawArpRow(canvas, new RectF(dirtyRect.X, row2Y, dirtyRect.Width, rowHeight), padding, buttonSize);
+        float y = dirtyRect.Y;
+        
+        // Row 1: HARMONY title
+        DrawSectionTitle(canvas, "HARMONY", dirtyRect.X, y, dirtyRect.Width, titleHeight);
+        y += titleHeight;
+        
+        // Row 2: Harmony controls
+        DrawHarmonyRow(canvas, new RectF(dirtyRect.X, y, dirtyRect.Width, controlsHeight), padding, buttonSize);
+        y += controlsHeight + padding;
+        
+        // Row 3: ARPEGGIO title
+        DrawSectionTitle(canvas, "ARPEGGIO", dirtyRect.X, y, dirtyRect.Width, titleHeight);
+        y += titleHeight;
+        
+        // Row 4: Arpeggio controls
+        DrawArpRow(canvas, new RectF(dirtyRect.X, y, dirtyRect.Width, controlsHeight), padding, buttonSize);
+    }
+    
+    private void DrawSectionTitle(ICanvas canvas, string title, float x, float y, float width, float height)
+    {
+        canvas.FontSize = 10;
+        canvas.FontColor = Color.FromArgb(AppColors.TextSecondary);
+        canvas.DrawString(title, x, y, width, height, HorizontalAlignment.Center, VerticalAlignment.Center);
     }
 
     private void DrawHarmonyRow(ICanvas canvas, RectF rowRect, float padding, float buttonSize)
     {
         bool isEnabled = _harmonySettings.IsEnabled;
         bool isAllowed = _harmonySettings.IsAllowed;
-        float x = rowRect.X + padding;
-        float centerY = rowRect.Y + rowRect.Height / 2;
-        
-        // Label - dimmed when not allowed
-        canvas.FontSize = 9;
-        canvas.FontColor = isAllowed ? LabelColor : DisabledColor;
-        canvas.DrawString("HARM", x, centerY - 6, 30, 12, HorizontalAlignment.Left, VerticalAlignment.Center);
-        x += 32;
-        
-        // On/Off button - disabled when not allowed
-        _harmonyOnOffRect = new RectF(x, centerY - buttonSize / 2, buttonSize, buttonSize);
-        DrawOnOffButton(canvas, _harmonyOnOffRect, isEnabled, isAllowed);
-        x += buttonSize + padding * 2;
-        
-        // Type selector (4 buttons) - all disabled when not allowed
-        float typeButtonWidth = 22f;
-        float typeButtonHeight = 20f;
-        
-        // When not allowed, treat as if disabled
         bool effectiveEnabled = isEnabled && isAllowed;
         
+        float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up to make room for labels
+        
+        // Calculate layout - toggle + 4 circular buttons evenly spaced
+        float circleButtonSize = 24f;
+        float totalButtonsWidth = buttonSize + padding * 2 + (circleButtonSize + padding) * 4;
+        float startX = rowRect.X + (rowRect.Width - totalButtonsWidth) / 2;
+        float x = startX;
+        
+        // On/Off toggle
+        _harmonyOnOffRect = new RectF(x, centerY - buttonSize / 2, buttonSize, buttonSize);
+        DrawOnOffButton(canvas, _harmonyOnOffRect, isEnabled, isAllowed);
+        x += buttonSize + padding * 3;
+        
+        // Type buttons (circular with labels below) - MAJ, MIN, OCT, 5TH
         for (int i = 0; i < 4; i++)
         {
-            float bx = x + i * (typeButtonWidth + 2);
-            _harmonyTypeRects[i] = new RectF(bx, centerY - typeButtonHeight / 2, typeButtonWidth, typeButtonHeight);
-            DrawTypeButton(canvas, _harmonyTypeRects[i], HarmonyLabels[i], (int)_harmonySettings.Type == i, effectiveEnabled, i == 0, i == 3);
+            float bx = x + i * (circleButtonSize + padding + 8);
+            _harmonyTypeRects[i] = new RectF(bx, centerY - circleButtonSize / 2, circleButtonSize, circleButtonSize);
+            
+            bool isSelected = HarmonyTypeMap[i] == (int)_harmonySettings.Type;
+            DrawCircleButtonWithLabel(canvas, _harmonyTypeRects[i], HarmonyLabels[i], isSelected, effectiveEnabled);
         }
     }
 
     private void DrawArpRow(ICanvas canvas, RectF rowRect, float padding, float buttonSize)
     {
         bool isEnabled = _arpSettings.IsEnabled;
-        float x = rowRect.X + padding;
-        float centerY = rowRect.Y + rowRect.Height / 2;
+        float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up for labels
         
-        // Label
-        canvas.FontSize = 9;
-        canvas.FontColor = LabelColor;
-        canvas.DrawString("ARP", x, centerY - 6, 30, 12, HorizontalAlignment.Left, VerticalAlignment.Center);
-        x += 32;
+        float circleButtonSize = 24f;
+        float knobSize = 28f;
+        _rateKnobRadius = knobSize * 0.4f;
         
-        // On/Off button
+        // Calculate layout - toggle + knob + 4 circular buttons
+        float totalWidth = buttonSize + padding * 2 + knobSize + padding * 2 + (circleButtonSize + padding + 8) * 4;
+        float startX = rowRect.X + (rowRect.Width - totalWidth) / 2;
+        float x = startX;
+        
+        // On/Off toggle
         _arpOnOffRect = new RectF(x, centerY - buttonSize / 2, buttonSize, buttonSize);
         DrawOnOffButton(canvas, _arpOnOffRect, isEnabled);
-        x += buttonSize + padding * 2;
+        x += buttonSize + padding * 3;
         
         // Rate knob
-        float knobSize = Math.Min(rowRect.Height - 8, 36f);
-        _rateKnobRadius = knobSize * 0.4f;
-        float knobX = x + _rateKnobRadius;
-        
-        _arpRateKnobRect = new RectF(knobX - _rateKnobRadius - 5, centerY - _rateKnobRadius - 5,
+        float knobCenterX = x + _rateKnobRadius + 5;
+        _arpRateKnobRect = new RectF(knobCenterX - _rateKnobRadius - 5, centerY - _rateKnobRadius - 5,
                                       _rateKnobRadius * 2 + 10, _rateKnobRadius * 2 + 10);
-        DrawKnob(canvas, knobX, centerY, _rateKnobRadius, _arpSettings.Rate, "RATE", isEnabled);
-        x += _rateKnobRadius * 2 + padding * 3;
+        DrawKnob(canvas, knobCenterX, centerY, _rateKnobRadius, _arpSettings.Rate, "RATE", isEnabled);
+        x += knobSize + padding * 4;
         
-        // Pattern selector (4 buttons)
-        float patternButtonWidth = 22f;
-        float patternButtonHeight = 20f;
-        
+        // Pattern buttons (circular with labels below) - UP, DOWN, U+D, RAND
         for (int i = 0; i < 4; i++)
         {
-            float bx = x + i * (patternButtonWidth + 2);
-            _arpPatternRects[i] = new RectF(bx, centerY - patternButtonHeight / 2, patternButtonWidth, patternButtonHeight);
-            DrawTypeButton(canvas, _arpPatternRects[i], PatternLabels[i], (int)_arpSettings.Pattern == i, isEnabled, i == 0, i == 3);
+            float bx = x + i * (circleButtonSize + padding + 8);
+            _arpPatternRects[i] = new RectF(bx, centerY - circleButtonSize / 2, circleButtonSize, circleButtonSize);
+            
+            bool isSelected = (int)_arpSettings.Pattern == i;
+            DrawCircleButtonWithLabel(canvas, _arpPatternRects[i], PatternLabels[i], isSelected, isEnabled);
         }
+    }
+    
+    private void DrawCircleButtonWithLabel(ICanvas canvas, RectF rect, string label, bool isSelected, bool isEnabled)
+    {
+        float centerX = rect.Center.X;
+        float centerY = rect.Center.Y;
+        float radius = Math.Min(rect.Width, rect.Height) / 2f;
+        
+        // Circle background
+        if (isSelected && isEnabled)
+        {
+            canvas.FillColor = TypeButtonSelectedColor;
+        }
+        else
+        {
+            canvas.FillColor = isEnabled ? TypeButtonBaseColor : DisabledColor.WithAlpha(0.3f);
+        }
+        canvas.FillCircle(centerX, centerY, radius);
+        
+        // Circle border
+        canvas.StrokeColor = isSelected && isEnabled ? AccentColor : (isEnabled ? Color.FromArgb(AppColors.ButtonBorder) : DisabledColor);
+        canvas.StrokeSize = isSelected ? 2 : 1;
+        canvas.DrawCircle(centerX, centerY, radius);
+        
+        // Label below the button
+        canvas.FontSize = 7;
+        canvas.FontColor = isEnabled ? LabelColor : DisabledColor;
+        canvas.DrawString(label, centerX - 20, centerY + radius + 2, 40, 12,
+            HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
     private void DrawOnOffButton(ICanvas canvas, RectF rect, bool isOn, bool isAllowed = true)
@@ -244,7 +294,8 @@ public class ArpHarmonyDrawable
         float totalAngle = maxAngle - minAngle;
         if (totalAngle > 0) totalAngle -= 360;
         
-        canvas.StrokeColor = isEnabled ? IndicatorColor : DisabledColor;
+        // Draw radial markers - use accent color when enabled
+        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
         canvas.StrokeSize = 1.5f;
         canvas.StrokeLineCap = LineCap.Round;
         
@@ -318,7 +369,7 @@ public class ArpHarmonyDrawable
                 {
                     if (_harmonyTypeRects[i].Contains(point) && _harmonySettings.IsEnabled)
                     {
-                        _harmonySettings.Type = (HarmonyType)i;
+                        _harmonySettings.Type = (HarmonyType)HarmonyTypeMap[i];
                         return true;
                     }
                 }

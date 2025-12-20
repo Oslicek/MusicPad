@@ -16,6 +16,7 @@ public class ReverbDrawable
     private static Color KnobHighlightColor => Color.FromArgb(AppColors.KnobHighlight);
     private static Color KnobShadowColor => Color.FromArgb(AppColors.KnobShadow);
     private static Color IndicatorColor => Color.FromArgb(AppColors.KnobIndicator);
+    private static Color AccentColor => Color.FromArgb(AppColors.Accent);
     private static Color LabelColor => Color.FromArgb(AppColors.TextSecondary);
     private static Color DisabledColor => Color.FromArgb(AppColors.Disabled);
     
@@ -58,7 +59,7 @@ public class ReverbDrawable
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
         float padding = 4f;
-        float buttonSize = 20f;
+        float buttonSize = 28f;
         float knobSize = Math.Min(dirtyRect.Height - 16, 50f);
         _knobRadius = knobSize * 0.4f;
         bool isEnabled = _settings.IsEnabled;
@@ -129,8 +130,8 @@ public class ReverbDrawable
         float totalAngle = maxAngle - minAngle;
         if (totalAngle > 0) totalAngle -= 360;
         
-        // Draw radial markers
-        canvas.StrokeColor = isEnabled ? IndicatorColor : DisabledColor;
+        // Draw radial markers - use accent color when enabled
+        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
         canvas.StrokeSize = 1.5f;
         canvas.StrokeLineCap = LineCap.Round;
         float outerRadius = radius + 5;

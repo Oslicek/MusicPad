@@ -110,6 +110,26 @@ public class EffectAreaDrawable : IDrawable
     {
         _isLandscapeSquare = isLandscapeSquare;
     }
+    
+    private static readonly Dictionary<EffectType, string> EffectTitles = new()
+    {
+        { EffectType.ArpHarmony, "" }, // Has internal titles for HARMONY and ARPEGGIO
+        { EffectType.EQ, "EQUALIZER" },
+        { EffectType.Chorus, "CHORUS" },
+        { EffectType.Delay, "DELAY" },
+        { EffectType.Reverb, "REVERB" }
+    };
+    
+    private void DrawEffectTitle(ICanvas canvas, RectF controlsRect, EffectType effect)
+    {
+        string title = EffectTitles.GetValueOrDefault(effect, "");
+        if (string.IsNullOrEmpty(title)) return;
+        
+        canvas.FontSize = 11;
+        canvas.FontColor = Color.FromArgb(AppColors.TextSecondary);
+        canvas.DrawString(title, controlsRect.X, controlsRect.Y, controlsRect.Width, 16,
+            HorizontalAlignment.Center, VerticalAlignment.Top);
+    }
 
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
@@ -238,6 +258,7 @@ public class EffectAreaDrawable : IDrawable
         }
 
         _chorusRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        DrawEffectTitle(canvas, _chorusRect, EffectType.Chorus);
         _chorusDrawable.Draw(canvas, _chorusRect);
     }
 
@@ -261,6 +282,7 @@ public class EffectAreaDrawable : IDrawable
         }
 
         _delayRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        DrawEffectTitle(canvas, _delayRect, EffectType.Delay);
         _delayDrawable.Draw(canvas, _delayRect);
     }
 
@@ -284,6 +306,7 @@ public class EffectAreaDrawable : IDrawable
         }
 
         _reverbRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        DrawEffectTitle(canvas, _reverbRect, EffectType.Reverb);
         _reverbDrawable.Draw(canvas, _reverbRect);
     }
 
@@ -308,6 +331,9 @@ public class EffectAreaDrawable : IDrawable
             controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
             controlsHeight = dirtyRect.Height;
         }
+
+        // Draw title at top
+        DrawEffectTitle(canvas, new RectF(controlsX, controlsY, controlsWidth, controlsHeight), EffectType.EQ);
 
         if (_isLandscapeSquare)
         {
@@ -338,24 +364,20 @@ public class EffectAreaDrawable : IDrawable
     private void DrawEffectButton(ICanvas canvas, RectF rect, EffectType effect)
     {
         bool isSelected = _selector.IsSelected(effect);
-        
-        // Calculate circle center and radius
-        float centerX = rect.Center.X;
-        float centerY = rect.Center.Y;
-        float radius = Math.Min(rect.Width, rect.Height) / 2f;
+        float cornerRadius = 6f;
 
-        // Button background - circle
+        // Button background - rounded square
         canvas.FillColor = isSelected ? ButtonSelectedColor : ButtonBackgroundColor;
-        canvas.FillCircle(centerX, centerY, radius);
+        canvas.FillRoundedRectangle(rect, cornerRadius);
 
-        // Button border - circle
+        // Button border - thin outline
         canvas.StrokeColor = isSelected ? ButtonIconSelectedColor : Color.FromArgb(AppColors.ButtonOff);
-        canvas.StrokeSize = isSelected ? 2 : 1;
-        canvas.DrawCircle(centerX, centerY, radius);
+        canvas.StrokeSize = 1;
+        canvas.DrawRoundedRectangle(rect, cornerRadius);
 
         // Draw icon - minimal padding for small buttons
         Color iconColor = isSelected ? ButtonIconSelectedColor : ButtonIconColor;
-        float iconPadding = 6f;
+        float iconPadding = 5f;
         var iconRect = new RectF(
             rect.X + iconPadding,
             rect.Y + iconPadding,
