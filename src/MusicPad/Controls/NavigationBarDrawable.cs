@@ -70,32 +70,33 @@ public class NavigationBarDrawable : IDrawable
         float padding = 8f;
         float buttonHeight = dirtyRect.Height - padding * 2;
         float muteWidth = 70f;
-        float arrowSize = 36f;
-        float dotRadius = 5f;
-        float dotSpacing = 12f;
+        float arrowSize = 44f;  // Bigger arrows
+        float dotRadius = 7f;   // Bigger dots
+        float dotSpacing = 18f;
         
         float totalDotsWidth = _totalPages * dotRadius * 2 + (_totalPages - 1) * (dotSpacing - dotRadius * 2);
         
         // Calculate total width of navigation elements
         float elementsWidth = muteWidth + padding + arrowSize + padding + totalDotsWidth + padding + arrowSize;
-        float startX = (dirtyRect.Width - elementsWidth) / 2;
+        float startX = dirtyRect.X + (dirtyRect.Width - elementsWidth) / 2;
+        float buttonY = dirtyRect.Y + padding;
         
         // Draw MUTE button
-        _muteRect = new RectF(startX, padding, muteWidth, buttonHeight);
+        _muteRect = new RectF(startX, buttonY, muteWidth, buttonHeight);
         DrawMuteButton(canvas, _muteRect);
         
         // Draw Up arrow
         float upX = _muteRect.Right + padding;
-        _upArrowRect = new RectF(upX, padding, arrowSize, buttonHeight);
+        _upArrowRect = new RectF(upX, buttonY, arrowSize, buttonHeight);
         DrawArrow(canvas, _upArrowRect, isUp: true, enabled: _currentPage < _totalPages - 1);
         
         // Draw page indicator dots
         float dotsX = _upArrowRect.Right + padding;
-        DrawPageDots(canvas, dotsX, dirtyRect.Height / 2, dotRadius, dotSpacing);
+        DrawPageDots(canvas, dotsX, dirtyRect.Y + dirtyRect.Height / 2, dotRadius, dotSpacing);
         
         // Draw Down arrow
         float downX = dotsX + totalDotsWidth + padding;
-        _downArrowRect = new RectF(downX, padding, arrowSize, buttonHeight);
+        _downArrowRect = new RectF(downX, buttonY, arrowSize, buttonHeight);
         DrawArrow(canvas, _downArrowRect, isUp: false, enabled: _currentPage > 0);
     }
     
@@ -118,7 +119,7 @@ public class NavigationBarDrawable : IDrawable
     
     private void DrawArrow(ICanvas canvas, RectF rect, bool isUp, bool enabled)
     {
-        float arrowSize = Math.Min(rect.Width, rect.Height) * 0.5f;
+        float arrowSize = Math.Min(rect.Width, rect.Height) * 0.65f; // Bigger arrows
         float centerX = rect.Center.X;
         float centerY = rect.Center.Y;
         
@@ -126,7 +127,7 @@ public class NavigationBarDrawable : IDrawable
         
         canvas.StrokeColor = arrowColor;
         canvas.FillColor = arrowColor;
-        canvas.StrokeSize = 2.5f;
+        canvas.StrokeSize = 3f;  // Thicker stroke
         canvas.StrokeLineCap = LineCap.Round;
         canvas.StrokeLineJoin = LineJoin.Round;
         

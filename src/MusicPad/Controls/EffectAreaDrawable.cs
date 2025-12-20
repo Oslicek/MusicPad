@@ -131,18 +131,20 @@ public class EffectAreaDrawable : IDrawable
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
+    private const float CornerRadius = 12f;  // Rounded corner radius for effect area
+    
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
         _buttonRects.Clear();
 
-        // Draw effect area background
+        // Draw effect area background with rounded corners
         canvas.FillColor = EffectAreaBackground;
-        canvas.FillRectangle(dirtyRect);
+        canvas.FillRoundedRectangle(dirtyRect, CornerRadius);
 
-        // Calculate button layout - larger circular buttons
+        // Calculate button layout - square buttons with rounded corners
         float buttonSize = 30f;
         float buttonSpacing = 3f;
-        float buttonMargin = 4f;
+        float buttonMargin = 6f;  // Slightly larger margin to fit inside rounded corners
 
         var effects = EffectSelector.AllEffects;
 
@@ -157,7 +159,7 @@ public class EffectAreaDrawable : IDrawable
                 var effect = effects[i];
                 var rect = new RectF(startX + i * (buttonSize + buttonSpacing), startY, buttonSize, buttonSize);
                 _buttonRects.Add(rect);
-                DrawEffectButton(canvas, rect, effect);
+                DrawEffectButton(canvas, rect, effect, i, effects.Count, isHorizontal: true);
             }
         }
         else
@@ -171,7 +173,7 @@ public class EffectAreaDrawable : IDrawable
                 var effect = effects[i];
                 var rect = new RectF(startX, startY + i * (buttonSize + buttonSpacing), buttonSize, buttonSize);
                 _buttonRects.Add(rect);
-                DrawEffectButton(canvas, rect, effect);
+                DrawEffectButton(canvas, rect, effect, i, effects.Count, isHorizontal: false);
             }
         }
 
@@ -361,19 +363,42 @@ public class EffectAreaDrawable : IDrawable
         }
     }
 
-    private void DrawEffectButton(ICanvas canvas, RectF rect, EffectType effect)
+    private void DrawEffectButton(ICanvas canvas, RectF rect, EffectType effect, int index, int totalCount, bool isHorizontal)
     {
         bool isSelected = _selector.IsSelected(effect);
-        float cornerRadius = 6f;
+        bool isFirst = index == 0;
+        bool isLast = index == totalCount - 1;
+        
+        // Calculate corner radii - align first/last buttons with effect area corners
+        float outerRadius = CornerRadius - 2;  // Slightly smaller to fit inside
+        float innerRadius = 4f;
+        
+        float topLeft, topRight, bottomRight, bottomLeft;
+        if (isHorizontal)
+        {
+            // Horizontal: first has left corners rounded, last has right corners rounded
+            topLeft = isFirst ? outerRadius : innerRadius;
+            bottomLeft = isFirst ? outerRadius : innerRadius;
+            topRight = isLast ? outerRadius : innerRadius;
+            bottomRight = isLast ? outerRadius : innerRadius;
+        }
+        else
+        {
+            // Vertical: first has top corners rounded, last has bottom corners rounded
+            topLeft = isFirst ? outerRadius : innerRadius;
+            topRight = isFirst ? outerRadius : innerRadius;
+            bottomLeft = isLast ? outerRadius : innerRadius;
+            bottomRight = isLast ? outerRadius : innerRadius;
+        }
 
-        // Button background - rounded square
+        // Button background - rounded square with aligned corners
         canvas.FillColor = isSelected ? ButtonSelectedColor : ButtonBackgroundColor;
-        canvas.FillRoundedRectangle(rect, cornerRadius);
+        canvas.FillRoundedRectangle(rect, topLeft, topRight, bottomRight, bottomLeft);
 
         // Button border - thin outline
         canvas.StrokeColor = isSelected ? ButtonIconSelectedColor : Color.FromArgb(AppColors.ButtonOff);
         canvas.StrokeSize = 1;
-        canvas.DrawRoundedRectangle(rect, cornerRadius);
+        canvas.DrawRoundedRectangle(rect, topLeft, topRight, bottomRight, bottomLeft);
 
         // Draw icon - minimal padding for small buttons
         Color iconColor = isSelected ? ButtonIconSelectedColor : ButtonIconColor;
