@@ -81,9 +81,9 @@ public class RecAreaDrawable : IDrawable
         canvas.FillColor = BackgroundColor;
         canvas.FillRoundedRectangle(dirtyRect, cornerRadius);
         
-        // Border
-        canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
-        canvas.StrokeSize = 1f;
+        // Border - distinctive red/coral outline for recording area
+        canvas.StrokeColor = RecordColor.WithAlpha(0.7f);
+        canvas.StrokeSize = 2f;
         canvas.DrawRoundedRectangle(dirtyRect, cornerRadius);
         
         // Layout: [REC/STOP] [Status...] [PLAY/STOP]

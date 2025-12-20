@@ -143,9 +143,9 @@ public class EffectAreaDrawable : IDrawable
         canvas.FillColor = EffectAreaBackground;
         canvas.FillRoundedRectangle(dirtyRect, CornerRadius);
         
-        // Draw visible outline
-        canvas.StrokeColor = Color.FromArgb(AppColors.BorderMedium);
-        canvas.StrokeSize = 1.5f;
+        // Draw visible outline - distinctive teal for effect area
+        canvas.StrokeColor = Color.FromArgb(AppColors.Teal).WithAlpha(0.7f);
+        canvas.StrokeSize = 2f;
         canvas.DrawRoundedRectangle(dirtyRect, CornerRadius);
 
         // Calculate button layout - square buttons with rounded corners

@@ -635,8 +635,8 @@ public partial class MainPage : ContentPage
             EffectArea.Margin = new Thickness(0, topAreaHeight + padding, 0, 0);
             
             double padreaTop = topAreaHeight + efareaHeight + padding * 2;
-            // Available space for padrea + navigation bar (bottom padding is in Grid)
-            double availableForPadrea = _pageHeight - padreaTop - navBarHeight - padding;
+            // Available space for padrea + navigation bar + recarea (bottom padding is in Grid)
+            double availableForPadrea = _pageHeight - padreaTop - navBarHeight - recAreaHeight - padding * 2;
             
             if (isPiano)
             {
@@ -647,7 +647,7 @@ public partial class MainPage : ContentPage
                 RecArea.HorizontalOptions = LayoutOptions.Center;
                 RecArea.VerticalOptions = LayoutOptions.End;
                 RecArea.WidthRequest = _pageWidth - padding * 2;
-                RecArea.Margin = new Thickness(0, 0, 0, pianoHeight + navBarHeight + padding * 2);
+                RecArea.Margin = new Thickness(0, 0, 0, pianoHeight + navBarHeight + padding);
                 
                 // Navigation bar above the piano
                 NavigationBar.HorizontalOptions = LayoutOptions.Center;
@@ -670,7 +670,7 @@ public partial class MainPage : ContentPage
                 RecArea.HorizontalOptions = LayoutOptions.Center;
                 RecArea.VerticalOptions = LayoutOptions.End;
                 RecArea.WidthRequest = padreaSize;
-                RecArea.Margin = new Thickness(0, 0, 0, padreaSize + navBarHeight + padding * 2);
+                RecArea.Margin = new Thickness(0, 0, 0, padreaSize + navBarHeight + padding);
                 
                 // Navigation bar above the padrea
                 NavigationBar.HorizontalOptions = LayoutOptions.Center;
@@ -681,7 +681,7 @@ public partial class MainPage : ContentPage
                 PadContainer.HorizontalOptions = LayoutOptions.Center;
                 PadContainer.VerticalOptions = LayoutOptions.End;
                 PadContainer.WidthRequest = padreaSize;
-                PadContainer.HeightRequest = padreaSize - recAreaHeight - padding;
+                PadContainer.HeightRequest = padreaSize;
                 PadContainer.Margin = new Thickness(0);
             }
         }
