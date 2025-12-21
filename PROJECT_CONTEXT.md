@@ -51,7 +51,7 @@ MusicPad/
 │   │   │   ├── PadreaService.cs      # Padrea configuration
 │   │   │   ├── IRecordingService.cs  # Recording/playback interface
 │   │   │   ├── RecordingService.cs   # Recording implementation
-│   │   │   ├── ExportService.cs      # Song export (MIDI, WAV, FLAC)
+│   │   │   ├── ExportService.cs      # Song export (MIDI, WAV, FLAC, MP3)
 │   │   │   └── SfzService.Stub.cs    # Stub for non-Android
 │   │   ├── Resources/
 │   │   │   ├── Styles/               # Colors.xaml, Styles.xaml
@@ -87,7 +87,10 @@ MusicPad/
 │       │   ├── AudioPlayback.cs      # Sample-accurate playback on audio thread
 │       │   └── Song.cs               # Song metadata model
 │       ├── Export/
-│       │   └── FlacEncoder.cs        # FLAC audio encoder
+│       │   ├── IAudioEncoder.cs      # Audio encoder interface
+│       │   ├── FallbackAudioEncoder.cs # Fallback using custom encoders
+│       │   ├── FlacEncoder.cs        # FLAC audio encoder
+│       │   └── ShineEncoder.cs       # MP3 audio encoder (pure C#)
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -174,11 +177,14 @@ MusicPad/
 | `SettingsService` | Services | App settings with persistence (glow toggles) |
 | `InstrumentConfigService` | Services | Instrument configs (bundled + user-imported) |
 | `RecordingService` | Services | Recording and playback of performances |
-| `ExportService` | Services | Song export (MIDI, WAV, FLAC) |
+| `ExportService` | Services | Song export (MIDI, WAV, FLAC, MP3) |
 | `RecordingSession` | Core/Recording | Active recording session with timestamped events |
 | `AudioPlayback` | Core/Recording | Sample-accurate playback on audio thread |
 | `Song` | Core/Recording | Song metadata (name, duration, instruments) |
 | `FlacEncoder` | Core/Export | FLAC audio encoder |
+| `ShineEncoder` | Core/Export | MP3 audio encoder (pure C#) |
+| `IAudioEncoder` | Core/Export | Audio encoder interface |
+| `FallbackAudioEncoder` | Core/Export | Fallback using custom encoders |
 | `SongsPage` | Views | Song list with rename/delete/export |
 | `CreditsPage` | Views | Application credits and open source licenses |
 | `RecAreaDrawable` | Controls | Recording controls (record/stop/play) |
@@ -286,7 +292,7 @@ Instruments support two voicing modes, configurable per instrument:
 | **MIDI Enhanced** | Notes + instrument changes + effects as metadata |
 | **MIDI Complete** | Harmony and arpeggio baked into output |
 | **WAV** | Rendered 16-bit stereo audio (offline synthesis) |
-| **MP3** | Compressed audio (requires FFmpeg - coming soon) |
+| **MP3** | Compressed audio (ShineEncoder - pure C#) |
 | **FLAC** | Lossless compressed audio (custom encoder) |
 
 **Offline Rendering:**
@@ -379,6 +385,8 @@ The main synthesizer interface is divided into named areas:
 | `ColorHelperTests` | Color manipulation (Lighter, Darker, Mix) |
 | `PaletteTests` | Palette definitions and computed colors |
 | `FlacEncoderTests` | FLAC encoding tests |
+| `Mp3EncoderTests` | MP3 encoding tests (ShineEncoder) |
+| `AudioEncoderTests` | Audio encoder interface tests |
 | `OfflineRenderingTests` | Offline audio rendering, effects processing |
 
 ## Test Devices

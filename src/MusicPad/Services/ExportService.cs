@@ -282,7 +282,7 @@ public class ExportService
     
     /// <summary>
     /// MP3 export - renders the song to compressed audio.
-    /// Note: Requires FFmpeg integration (coming soon).
+    /// Uses ShineEncoder (pure C# MP3 encoder) as fallback.
     /// </summary>
     private async Task<(string?, string?)> ExportMp3Async(
         Song song,
@@ -298,13 +298,13 @@ public class ExportService
         
         var audioBuffer = await RenderAudioAsync(song, events, sampleRate);
         
-        // Try FFmpeg encoder (not yet implemented)
+        // Use FallbackAudioEncoder which uses ShineEncoder for MP3
         var encoder = new FallbackAudioEncoder(new StubAudioEncoder());
         var success = await encoder.EncodeToMp3Async(audioBuffer, sampleRate, channels, bitrate, filePath);
         
         if (!success)
         {
-            // MP3 encoding not available - return null to indicate failure
+            // MP3 encoding failed
             return (null, null);
         }
         

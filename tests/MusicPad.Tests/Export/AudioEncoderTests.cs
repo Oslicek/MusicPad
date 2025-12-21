@@ -79,19 +79,34 @@ public class AudioEncoderTests
     }
     
     [Fact]
-    public async Task FallbackEncoder_Mp3Encode_WithoutFFmpeg_ReturnsFalse()
+    public void FallbackEncoder_Mp3Encode_CanUseFallback()
     {
-        // MP3 encoding requires FFmpeg, cannot fall back
+        // MP3 encoding can now fall back to ShineEncoder
         var fallback = new FallbackAudioEncoder(new StubAudioEncoder());
-        var samples = new float[4410 * 2];
+        
+        Assert.True(fallback.CanEncodeFallbackMp3);
+    }
+    
+    [Fact]
+    public async Task FallbackEncoder_Mp3Encode_CreatesFile()
+    {
+        // MP3 encoding should work using ShineEncoder fallback
+        var fallback = new FallbackAudioEncoder(new StubAudioEncoder());
+        var samples = new float[4410 * 2]; // 0.1 second stereo
         
         var tempPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.mp3");
         try
         {
             var result = await fallback.EncodeToMp3Async(samples, 44100, 2, 192, tempPath);
             
-            // Should fail because stub encoder returns false and there's no MP3 fallback
-            Assert.False(result);
+            Assert.True(result);
+            Assert.True(File.Exists(tempPath));
+            
+            // Verify file has content (MP3 frame starts with sync word 0xFF 0xFB)
+            var bytes = await File.ReadAllBytesAsync(tempPath);
+            Assert.True(bytes.Length > 4);
+            Assert.Equal(0xFF, bytes[0]);
+            Assert.Equal(0xFB, bytes[1]);
         }
         finally
         {
