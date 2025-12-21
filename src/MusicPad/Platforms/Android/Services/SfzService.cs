@@ -656,6 +656,42 @@ public class SfzService : ISfzService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Generates samples for offline rendering (includes all effects).
+    /// </summary>
+    public void GenerateSamples(float[] buffer)
+    {
+        _player.GenerateSamples(buffer);
+        
+        // Apply effects in order: LPF -> EQ -> Chorus -> Delay -> Reverb
+        _lpf.Process(buffer);
+        _eq.Process(buffer);
+        _chorus.Process(buffer);
+        _delay.Process(buffer);
+        _reverb.Process(buffer);
+        
+        // Apply volume and soft limiting
+        float vol = _volume;
+        for (int i = 0; i < buffer.Length; i++)
+        {
+            float s = buffer[i] * vol;
+            buffer[i] = (float)Math.Tanh(s);
+        }
+    }
+    
+    /// <summary>
+    /// Resets player and effects state for clean offline rendering.
+    /// </summary>
+    public void ResetState()
+    {
+        _player.StopAll();
+        _lpf.Reset();
+        _eq.Reset();
+        _chorus.Reset();
+        _delay.Reset();
+        _reverb.Reset();
+    }
+
     public void Dispose()
     {
         _cts?.Cancel();

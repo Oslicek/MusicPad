@@ -1,6 +1,6 @@
 # Project Context
 
-> **Last Updated:** 2025-12-20
+> **Last Updated:** 2025-12-21
 
 ## Overview
 
@@ -37,18 +37,20 @@ MusicPad/
 │   │   │   └── RecAreaDrawable.cs   # Recording controls (rec/stop/play)
 │   │   ├── Views/
 │   │   │   ├── InstrumentsPage.xaml # List of available instruments
-│   │   │   └── InstrumentDetailPage.xaml # Instrument metadata/credits
+│   │   │   ├── InstrumentDetailPage.xaml # Instrument metadata/credits
+│   │   │   └── SongsPage.xaml       # Song list with export/manage
 │   │   ├── Platforms/
 │   │   │   └── Android/
 │   │   │       ├── Assets/instruments/ # Bundled SFZ instruments
 │   │   │       └── Services/
 │   │   │           └── SfzService.cs   # Android SFZ playback
 │   │   ├── Services/
-│   │   │   ├── ISfzService.cs        # SFZ playback interface
+│   │   │   ├── ISfzService.cs        # SFZ playback interface (with offline rendering)
 │   │   │   ├── IPadreaService.cs     # Padrea management interface
 │   │   │   ├── PadreaService.cs      # Padrea configuration
 │   │   │   ├── IRecordingService.cs  # Recording/playback interface
 │   │   │   ├── RecordingService.cs   # Recording implementation
+│   │   │   ├── ExportService.cs      # Song export (MIDI, WAV, FLAC)
 │   │   │   └── SfzService.Stub.cs    # Stub for non-Android
 │   │   ├── Resources/
 │   │   │   ├── Styles/               # Colors.xaml, Styles.xaml
@@ -81,7 +83,10 @@ MusicPad/
 │       ├── Recording/
 │       │   ├── RecordedEvent.cs      # Event types and data for recording
 │       │   ├── RecordingSession.cs   # Active recording session manager
+│       │   ├── AudioPlayback.cs      # Sample-accurate playback on audio thread
 │       │   └── Song.cs               # Song metadata model
+│       ├── Export/
+│       │   └── FlacEncoder.cs        # FLAC audio encoder
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -168,8 +173,12 @@ MusicPad/
 | `SettingsService` | Services | App settings with persistence (glow toggles) |
 | `InstrumentConfigService` | Services | Instrument configs (bundled + user-imported) |
 | `RecordingService` | Services | Recording and playback of performances |
+| `ExportService` | Services | Song export (MIDI, WAV, FLAC) |
 | `RecordingSession` | Core/Recording | Active recording session with timestamped events |
+| `AudioPlayback` | Core/Recording | Sample-accurate playback on audio thread |
 | `Song` | Core/Recording | Song metadata (name, duration, instruments) |
+| `FlacEncoder` | Core/Export | FLAC audio encoder |
+| `SongsPage` | Views | Song list with rename/delete/export |
 | `RecAreaDrawable` | Controls | Recording controls (record/stop/play) |
 | `PaletteService` | Core/Theme | Runtime palette switching with computed colors |
 | `ColorHelper` | Core/Theme | Color manipulation (Lighter, Darker, Mix, WithAlpha) |
@@ -262,12 +271,29 @@ Instruments support two voicing modes, configurable per instrument:
 | **Original** | Uses recorded instruments and settings |
 | **Live** | Uses current UI instruments/effects, re-applies harmony and arpeggiator |
 
+**Songs Page** - Accessible from hamburger menu:
+- List of all recorded songs
+- Rename songs
+- Delete songs
+- Export songs in multiple formats
+
+**Export Formats:**
+| Format | Description |
+|--------|-------------|
+| **MIDI Naked** | Notes and timing only |
+| **MIDI Enhanced** | Notes + instrument changes + effects as metadata |
+| **MIDI Complete** | Harmony and arpeggio baked into output |
+| **WAV** | Rendered 16-bit stereo audio (offline synthesis) |
+| **FLAC** | Lossless compressed audio (offline synthesis) |
+
+**Offline Rendering:**
+- Uses `GenerateSamples()` for faster-than-realtime synthesis
+- Full effects chain applied (LPF, EQ, Chorus, Delay, Reverb)
+- 2 seconds added for release tails
+
 **Future:**
 - Overdubbing (layer recordings)
 - Looping
-- Songs list page
-- MIDI export
-- WAV export (rendered audio)
 
 ## Padrea System
 
@@ -277,7 +303,8 @@ Instruments support two voicing modes, configurable per instrument:
 |--------|-------------|
 | Full Range | All chromatic notes from instrument range |
 | Pentatonic | Major pentatonic scale (C, D, E, G, A) |
-| Scales | Heptatonic scales with selectable root/scale (default C Major) |
+| Scales 7x7 | Heptatonic scales with selectable root/scale (default C Major) |
+| Scales 8x8 | 8x8 chromatic grid with 3-color scale coding (root/in-scale/out-of-scale) |
 | Piano | Chromatic piano keyboard view (C3–C4 portrait, C2–C4 landscape) |
 | Pitch-Volume | Continuous surface: X=pitch (full range), Y=volume (0-1) |
 | Unpitched | Drum/percussion pads with sample labels (auto-selected for unpitched instruments) |
@@ -330,11 +357,14 @@ Features:
 | `HarmonyTests` | Harmony note processing |
 | `ArpeggiatorSettingsTests` | Arpeggiator settings model |
 | `ArpeggiatorTests` | Arpeggiator patterns |
+| `AudioPlaybackTests` | Sample-accurate recording playback |
 | `EffectSelectorTests` | Effect selection |
 | `WaveTableGeneratorTests` | Wavetable shape/amplitude |
 | `VoiceMixerTests` | Polyphony, release handling |
 | `ColorHelperTests` | Color manipulation (Lighter, Darker, Mix) |
 | `PaletteTests` | Palette definitions and computed colors |
+| `FlacEncoderTests` | FLAC encoding tests |
+| `OfflineRenderingTests` | Offline audio rendering, effects processing |
 
 ## Test Devices
 
@@ -375,15 +405,18 @@ Features:
 - [x] Mute button with quick release
 - [x] Recording functionality (basic record/playback)
 - [x] Directory-based song storage
-- [x] Unit tests passing
+- [x] Sample-accurate playback via AudioPlayback class
+- [x] Songs page with rename/delete/export
+- [x] MIDI export (Naked, Enhanced, Complete)
+- [x] WAV export (offline rendering)
+- [x] FLAC export (lossless audio)
+- [x] Scales 8x8 padrea with chromatic layout and 3-color coding
+- [x] Unit tests passing (642 tests)
 - [x] GitHub repository connected
 
 **Pending:**
 - [ ] Save/load custom padreas
 - [ ] Recording - overdubbing and looping
-- [ ] Songs list page
-- [ ] MIDI export
-- [ ] WAV export (rendered audio)
 
 ## Notes
 

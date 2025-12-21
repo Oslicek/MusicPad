@@ -202,5 +202,19 @@ public interface ISfzService
     /// These are dispatched from the audio thread and need UI thread handling.
     /// </summary>
     event EventHandler<RecordedEvent>? PlaybackUiEvent;
+    
+    // ========== Offline Rendering ==========
+    
+    /// <summary>
+    /// Generates audio samples directly (for offline rendering).
+    /// Includes all effects processing (LPF, EQ, Chorus, Delay, Reverb).
+    /// </summary>
+    /// <param name="buffer">Buffer to fill with samples (mono).</param>
+    void GenerateSamples(float[] buffer);
+    
+    /// <summary>
+    /// Resets the player and all effects state (for clean offline rendering).
+    /// </summary>
+    void ResetState();
 }
 

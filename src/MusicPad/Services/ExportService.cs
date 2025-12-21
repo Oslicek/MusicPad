@@ -259,24 +259,74 @@ public class ExportService
         const int channels = 2;
         const int bitsPerSample = 16;
         
-        // Calculate total samples needed
-        var durationMs = song.DurationMs + 1000; // Add 1 second for release tails
+        var audioBuffer = await RenderAudioAsync(song, events, sampleRate);
+        
+        await Task.Run(() =>
+        {
+            using var stream = File.Create(filePath);
+            WriteWavFile(stream, audioBuffer, sampleRate, channels, bitsPerSample);
+        });
+        
+        return (filePath, "audio/wav");
+    }
+    
+    /// <summary>
+    /// FLAC export - renders the song to lossless audio.
+    /// </summary>
+    private async Task<(string?, string?)> ExportFlacAsync(
+        Song song,
+        string name, 
+        IReadOnlyList<RecordedEvent> events, 
+        string exportDir)
+    {
+        var filePath = Path.Combine(exportDir, $"{name}.flac");
+        
+        const int sampleRate = 44100;
+        const int channels = 2;
+        const int bitsPerSample = 16;
+        
+        var audioBuffer = await RenderAudioAsync(song, events, sampleRate);
+        
+        await Task.Run(() =>
+        {
+            var encoder = new FlacEncoder(sampleRate, channels, bitsPerSample);
+            using var stream = File.Create(filePath);
+            encoder.Encode(audioBuffer, stream);
+        });
+        
+        return (filePath, "audio/flac");
+    }
+    
+    /// <summary>
+    /// Renders audio from recorded events using offline synthesis.
+    /// </summary>
+    private async Task<float[]> RenderAudioAsync(
+        Song song,
+        IReadOnlyList<RecordedEvent> events,
+        int sampleRate)
+    {
+        const int channels = 2;
+        const int bufferSize = 512;
+        
+        // Calculate total samples needed (add 2 seconds for release tails and reverb)
+        var durationMs = song.DurationMs + 2000;
         var totalSamples = (int)(durationMs * sampleRate / 1000);
         
-        await Task.Run(async () =>
+        // Load the initial instrument
+        if (!string.IsNullOrEmpty(song.InitialInstrumentId))
         {
-            // Load the initial instrument
-            if (!string.IsNullOrEmpty(song.InitialInstrumentId))
-            {
-                await _sfzService.LoadInstrumentAsync(song.InitialInstrumentId);
-            }
-            
-            // Generate audio
+            await _sfzService.LoadInstrumentAsync(song.InitialInstrumentId);
+        }
+        
+        // Reset state for clean rendering
+        _sfzService.ResetState();
+        
+        // Generate audio on a background thread
+        return await Task.Run(async () =>
+        {
             var audioBuffer = new float[totalSamples * channels];
-            var bufferSize = 512;
             var tempBuffer = new float[bufferSize];
             
-            // Create a simple playback simulation
             var eventIndex = 0;
             var samplesGenerated = 0L;
             
@@ -306,16 +356,16 @@ public class ExportService
                     eventIndex++;
                 }
                 
-                // Generate samples
-                // Note: This is a simplified version - real implementation would
-                // use the SfzPlayer directly for offline rendering
+                // Generate samples with full effects chain
                 var samplesToGenerate = Math.Min(bufferSize, (int)(totalSamples - samplesGenerated));
-                Array.Clear(tempBuffer, 0, tempBuffer.Length);
+                if (samplesToGenerate < bufferSize)
+                {
+                    Array.Clear(tempBuffer, 0, tempBuffer.Length);
+                }
                 
-                // TODO: Call into SfzPlayer for actual sample generation
-                // For now, we'll create a placeholder that works with the service
+                _sfzService.GenerateSamples(tempBuffer);
                 
-                // Copy to output buffer (mono to stereo)
+                // Copy mono to stereo output buffer
                 for (int i = 0; i < samplesToGenerate; i++)
                 {
                     var outIdx = (int)(samplesGenerated + i) * channels;
@@ -329,99 +379,8 @@ public class ExportService
                 samplesGenerated += samplesToGenerate;
             }
             
-            // Write WAV file
-            using var stream = File.Create(filePath);
-            WriteWavFile(stream, audioBuffer, sampleRate, channels, bitsPerSample);
+            return audioBuffer;
         });
-        
-        return (filePath, "audio/wav");
-    }
-    
-    /// <summary>
-    /// FLAC export - renders the song to lossless audio.
-    /// </summary>
-    private async Task<(string?, string?)> ExportFlacAsync(
-        Song song,
-        string name, 
-        IReadOnlyList<RecordedEvent> events, 
-        string exportDir)
-    {
-        var filePath = Path.Combine(exportDir, $"{name}.flac");
-        
-        const int sampleRate = 44100;
-        const int channels = 2;
-        const int bitsPerSample = 16;
-        
-        // Calculate total samples needed
-        var durationMs = song.DurationMs + 1000; // Add 1 second for release tails
-        var totalSamples = (int)(durationMs * sampleRate / 1000);
-        
-        await Task.Run(async () =>
-        {
-            // Load the initial instrument
-            if (!string.IsNullOrEmpty(song.InitialInstrumentId))
-            {
-                await _sfzService.LoadInstrumentAsync(song.InitialInstrumentId);
-            }
-            
-            // Generate audio (same as WAV)
-            var audioBuffer = new float[totalSamples * channels];
-            var bufferSize = 512;
-            var tempBuffer = new float[bufferSize];
-            
-            var eventIndex = 0;
-            var samplesGenerated = 0L;
-            
-            while (samplesGenerated < totalSamples)
-            {
-                var currentTimeMs = samplesGenerated * 1000 / sampleRate;
-                
-                while (eventIndex < events.Count && events[eventIndex].TimestampMs <= currentTimeMs)
-                {
-                    var evt = events[eventIndex];
-                    switch (evt.EventType)
-                    {
-                        case RecordedEventType.NoteOn:
-                            _sfzService.NoteOn(evt.MidiNote, evt.Velocity);
-                            break;
-                        case RecordedEventType.NoteOff:
-                            _sfzService.NoteOff(evt.MidiNote);
-                            break;
-                        case RecordedEventType.InstrumentChange:
-                            if (!string.IsNullOrEmpty(evt.InstrumentId))
-                            {
-                                await _sfzService.LoadInstrumentAsync(evt.InstrumentId);
-                            }
-                            break;
-                    }
-                    eventIndex++;
-                }
-                
-                var samplesToGenerate = Math.Min(bufferSize, (int)(totalSamples - samplesGenerated));
-                Array.Clear(tempBuffer, 0, tempBuffer.Length);
-                
-                // TODO: Call into SfzPlayer for actual sample generation
-                
-                for (int i = 0; i < samplesToGenerate; i++)
-                {
-                    var outIdx = (int)(samplesGenerated + i) * channels;
-                    if (outIdx + 1 < audioBuffer.Length)
-                    {
-                        audioBuffer[outIdx] = tempBuffer[i];
-                        audioBuffer[outIdx + 1] = tempBuffer[i];
-                    }
-                }
-                
-                samplesGenerated += samplesToGenerate;
-            }
-            
-            // Write FLAC file
-            var encoder = new FlacEncoder(sampleRate, channels, bitsPerSample);
-            using var stream = File.Create(filePath);
-            encoder.Encode(audioBuffer, stream);
-        });
-        
-        return (filePath, "audio/flac");
     }
     
     private static void WriteWavFile(Stream stream, float[] samples, int sampleRate, int channels, int bitsPerSample)
