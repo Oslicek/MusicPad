@@ -286,7 +286,8 @@ Instruments support two voicing modes, configurable per instrument:
 | **MIDI Enhanced** | Notes + instrument changes + effects as metadata |
 | **MIDI Complete** | Harmony and arpeggio baked into output |
 | **WAV** | Rendered 16-bit stereo audio (offline synthesis) |
-| **FLAC** | Lossless compressed audio (offline synthesis) |
+| **MP3** | Compressed audio (requires FFmpeg - coming soon) |
+| **FLAC** | Lossless compressed audio (custom encoder) |
 
 **Offline Rendering:**
 - Uses `GenerateSamples()` for faster-than-realtime synthesis
@@ -429,8 +430,7 @@ The main synthesizer interface is divided into named areas:
 - [x] GitHub repository connected
 
 **Pending:**
-- [ ] FFmpeg integration for FLAC/MP3 encoding (LGPL)
-- [ ] MP3 export format
+- [ ] FFmpeg integration for MP3 encoding (LGPL) - native bindings needed
 - [ ] Save/load custom padreas
 - [ ] Recording - overdubbing and looping
 

@@ -40,6 +40,7 @@ public class ExportService
                 ExportFormat.MidiEnhanced => await ExportMidiEnhancedAsync(safeName, events, exportDir),
                 ExportFormat.MidiComplete => await ExportMidiCompleteAsync(song, safeName, events, exportDir),
                 ExportFormat.Wav => await ExportWavAsync(song, safeName, events, exportDir),
+                ExportFormat.Mp3 => await ExportMp3Async(song, safeName, events, exportDir),
                 ExportFormat.Flac => await ExportFlacAsync(song, safeName, events, exportDir),
                 _ => (null, null)
             };
@@ -280,6 +281,37 @@ public class ExportService
     }
     
     /// <summary>
+    /// MP3 export - renders the song to compressed audio.
+    /// Note: Requires FFmpeg integration (coming soon).
+    /// </summary>
+    private async Task<(string?, string?)> ExportMp3Async(
+        Song song,
+        string name, 
+        IReadOnlyList<RecordedEvent> events, 
+        string exportDir)
+    {
+        var filePath = Path.Combine(exportDir, $"{name}.mp3");
+        
+        const int sampleRate = 44100;
+        const int channels = 2;
+        const int bitrate = 192; // kbps
+        
+        var audioBuffer = await RenderAudioAsync(song, events, sampleRate);
+        
+        // Try FFmpeg encoder (not yet implemented)
+        var encoder = new FallbackAudioEncoder(new StubAudioEncoder());
+        var success = await encoder.EncodeToMp3Async(audioBuffer, sampleRate, channels, bitrate, filePath);
+        
+        if (!success)
+        {
+            // MP3 encoding not available - return null to indicate failure
+            return (null, null);
+        }
+        
+        return (filePath, "audio/mpeg");
+    }
+    
+    /// <summary>
     /// FLAC export - renders the song to lossless audio.
     /// </summary>
     private async Task<(string?, string?)> ExportFlacAsync(
@@ -296,12 +328,14 @@ public class ExportService
         
         var audioBuffer = await RenderAudioAsync(song, events, sampleRate);
         
-        await Task.Run(() =>
+        // Use FallbackAudioEncoder which uses custom FlacEncoder
+        var encoder = new FallbackAudioEncoder(new StubAudioEncoder());
+        var success = await encoder.EncodeToFlacAsync(audioBuffer, sampleRate, channels, bitsPerSample, filePath);
+        
+        if (!success)
         {
-            var encoder = new FlacEncoder(sampleRate, channels, bitsPerSample);
-            using var stream = File.Create(filePath);
-            encoder.Encode(audioBuffer, stream);
-        });
+            return (null, null);
+        }
         
         return (filePath, "audio/flac");
     }

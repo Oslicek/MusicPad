@@ -228,6 +228,7 @@ public partial class SongsPage : ContentPage
             "MIDI (With effects)",
             "MIDI (Complete - baked)",
             "WAV (Audio)",
+            "MP3 (Compressed audio)",
             "FLAC (Lossless audio)");
         
         if (format == "Cancel" || string.IsNullOrEmpty(format))
@@ -239,6 +240,7 @@ public partial class SongsPage : ContentPage
             "MIDI (With effects)" => ExportFormat.MidiEnhanced,
             "MIDI (Complete - baked)" => ExportFormat.MidiComplete,
             "WAV (Audio)" => ExportFormat.Wav,
+            "MP3 (Compressed audio)" => ExportFormat.Mp3,
             "FLAC (Lossless audio)" => ExportFormat.Flac,
             _ => ExportFormat.MidiNaked
         };
@@ -373,6 +375,7 @@ public enum ExportFormat
     MidiEnhanced,   // Notes + instrument changes, effects as MIDI CCs
     MidiComplete,   // Harmony/arpeggio baked in + instruments + effects
     Wav,            // Rendered audio (WAV)
+    Mp3,            // Compressed audio (MP3) - requires FFmpeg
     Flac            // Lossless audio (FLAC)
 }
 

@@ -26,10 +26,15 @@
       "credits": [
         {
           "name": "FFmpeg",
-          "description": "Audio/video encoding and decoding",
+          "description": "Audio/video encoding and decoding (MP3 export - coming soon)",
           "license": "LGPL 2.1",
           "url": "https://ffmpeg.org",
-          "notice": "This application uses FFmpeg licensed under the LGPL 2.1. FFmpeg source code is available at https://ffmpeg.org"
+          "notice": "This application will use FFmpeg licensed under the LGPL 2.1 for MP3 encoding. FFmpeg source code is available at https://ffmpeg.org"
+        },
+        {
+          "name": "Custom FLAC Encoder",
+          "description": "Lossless audio encoding for FLAC export",
+          "license": "Proprietary (built-in)"
         }
       ]
     },
