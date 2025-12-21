@@ -118,6 +118,9 @@ public static class AppColors
     /// <summary>Dark text on light backgrounds</summary>
     public static string TextDark => Colors.TextDark;
     
+    /// <summary>Link text color - teal for clickable URLs</summary>
+    public static string LinkColor => Colors.LinkColor;
+    
     #endregion
     
     #region Pad Colors - Full Range (Chromatic)

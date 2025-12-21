@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui;
 using MusicPad.Services;
 using MusicPad.Views;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +13,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

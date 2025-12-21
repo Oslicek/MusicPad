@@ -35,8 +35,8 @@ public class FlacEncoder
     {
         using var writer = new BinaryWriter(output, System.Text.Encoding.UTF8, leaveOpen: true);
         
-        // Calculate total samples per channel
-        int totalSamplesPerChannel = samples.Length / Channels;
+        // Calculate total samples per channel (use long for proper 36-bit shift in STREAMINFO)
+        long totalSamplesPerChannel = samples.Length / Channels;
         
         // Write FLAC stream marker
         writer.Write((byte)'f');
@@ -53,11 +53,11 @@ public class FlacEncoder
         // Write audio frames
         if (intSamples.Length > 0)
         {
-            WriteAudioFrames(writer, intSamples, totalSamplesPerChannel);
+            WriteAudioFrames(writer, intSamples, (int)totalSamplesPerChannel);
         }
     }
     
-    private void WriteStreamInfoBlock(BinaryWriter writer, int totalSamplesPerChannel)
+    private void WriteStreamInfoBlock(BinaryWriter writer, long totalSamplesPerChannel)
     {
         // Metadata block header
         // Bit 0: Last metadata block flag (1 = last)
@@ -101,6 +101,7 @@ public class FlacEncoder
         writer.Write(byte2);
         
         // Byte 3: bps-1 bits 3-0, total samples bits 35-32
+        // NOTE: Must use long for the shift - shifting int by 32 in C# shifts by 0!
         byte byte3 = (byte)((((BitsPerSample - 1) & 0x0F) << 4) | ((totalSamplesPerChannel >> 32) & 0x0F));
         writer.Write(byte3);
         
@@ -382,5 +383,6 @@ public class FlacEncoder
         return crc;
     }
 }
+
 
 

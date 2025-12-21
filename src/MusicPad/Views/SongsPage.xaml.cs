@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Storage;
 using Microsoft.Maui.Controls.Shapes;
 using MusicPad.Core.Recording;
 using MusicPad.Core.Theme;
@@ -147,7 +148,8 @@ public partial class SongsPage : ContentPage
             null,
             "▶ Play",
             "✎ Rename",
-            "📤 Export",
+            "📤 Export & Share",
+            "💾 Export & Save",
             "🗑 Delete");
         
         switch (action)
@@ -158,8 +160,11 @@ public partial class SongsPage : ContentPage
             case "✎ Rename":
                 await RenameSongAsync(song);
                 break;
-            case "📤 Export":
-                await ShowExportOptionsAsync(song);
+            case "📤 Export & Share":
+                await ShowExportOptionsAsync(song, shareAfterExport: true);
+                break;
+            case "💾 Export & Save":
+                await ShowExportOptionsAsync(song, shareAfterExport: false);
                 break;
             case "🗑 Delete":
                 await DeleteSongAsync(song);
@@ -213,7 +218,7 @@ public partial class SongsPage : ContentPage
         }
     }
     
-    private async Task ShowExportOptionsAsync(Song song)
+    private async Task ShowExportOptionsAsync(Song song, bool shareAfterExport)
     {
         var format = await DisplayActionSheet(
             "Export Format",
@@ -238,10 +243,17 @@ public partial class SongsPage : ContentPage
             _ => ExportFormat.MidiNaked
         };
         
-        await ExportSongAsync(song, exportFormat);
+        if (shareAfterExport)
+        {
+            await ExportAndShareAsync(song, exportFormat);
+        }
+        else
+        {
+            await ExportAndSaveAsync(song, exportFormat);
+        }
     }
     
-    private async Task ExportSongAsync(Song song, ExportFormat format)
+    private async Task ExportAndShareAsync(Song song, ExportFormat format)
     {
         try
         {
@@ -273,6 +285,58 @@ public partial class SongsPage : ContentPage
         {
             await DisplayAlert("Error", $"Export failed: {ex.Message}", "OK");
         }
+    }
+    
+    private async Task ExportAndSaveAsync(Song song, ExportFormat format)
+    {
+        try
+        {
+            var events = await _recordingService.LoadSongAsync(song.Id);
+            if (events == null || events.Count == 0)
+            {
+                await DisplayAlert("Error", "Could not load song for export.", "OK");
+                return;
+            }
+            
+            var exportService = new ExportService(_sfzService);
+            var (filePath, mimeType) = await exportService.ExportAsync(song, events, format);
+            
+            if (filePath == null)
+            {
+                await DisplayAlert("Error", "Export failed.", "OK");
+                return;
+            }
+            
+            // Get file extension from the exported file
+            var extension = System.IO.Path.GetExtension(filePath);
+            var suggestedName = $"{SanitizeFileName(song.Name)}{extension}";
+            
+            // Use FileSaver to save to user-chosen location
+            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            using var stream = new MemoryStream(fileBytes);
+            
+            var result = await FileSaver.Default.SaveAsync(suggestedName, stream, CancellationToken.None);
+            
+            if (result.IsSuccessful)
+            {
+                await DisplayAlert("Success", $"Saved to:\n{result.FilePath}", "OK");
+            }
+            else if (!string.IsNullOrEmpty(result.Exception?.Message))
+            {
+                await DisplayAlert("Error", $"Could not save file: {result.Exception.Message}", "OK");
+            }
+            // If user cancelled, no message needed
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Export failed: {ex.Message}", "OK");
+        }
+    }
+    
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = System.IO.Path.GetInvalidFileNameChars();
+        return new string(name.Where(c => !invalid.Contains(c)).ToArray()).Replace(' ', '_');
     }
     
     private async Task DeleteSongAsync(Song song)

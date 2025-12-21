@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "appName": "MusicPad",
+  "appDescription": "A touch-based music synthesizer for Android",
+  "copyright": "© 2025",
+  "sections": [
+    {
+      "title": "Application Framework",
+      "credits": [
+        {
+          "name": ".NET MAUI",
+          "description": "Cross-platform app framework",
+          "license": "MIT",
+          "url": "https://github.com/dotnet/maui"
+        },
+        {
+          "name": "CommunityToolkit.Maui",
+          "description": "MAUI community extensions",
+          "license": "MIT",
+          "url": "https://github.com/CommunityToolkit/Maui"
+        }
+      ]
+    },
+    {
+      "title": "Audio Codecs",
+      "credits": [
+        {
+          "name": "FFmpeg",
+          "description": "Audio/video encoding and decoding",
+          "license": "LGPL 2.1",
+          "url": "https://ffmpeg.org",
+          "notice": "This application uses FFmpeg licensed under the LGPL 2.1. FFmpeg source code is available at https://ffmpeg.org"
+        }
+      ]
+    },
+    {
+      "title": "Fonts",
+      "credits": [
+        {
+          "name": "Montserrat",
+          "author": "Julieta Ulanovsky",
+          "license": "SIL Open Font License 1.1",
+          "url": "https://fonts.google.com/specimen/Montserrat"
+        },
+        {
+          "name": "Open Sans",
+          "author": "Steve Matteson",
+          "license": "SIL Open Font License 1.1",
+          "url": "https://fonts.google.com/specimen/Open+Sans"
+        }
+      ]
+    },
+    {
+      "title": "Sample Instruments",
+      "credits": [
+        {
+          "name": "See individual instrument credits",
+          "description": "Each bundled instrument has its own credits accessible from the Instrument Detail page",
+          "license": "Various"
+        }
+      ]
+    }
+  ]
+}
+

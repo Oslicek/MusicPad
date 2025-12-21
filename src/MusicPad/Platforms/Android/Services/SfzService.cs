@@ -62,6 +62,13 @@ public class SfzService : ISfzService, IDisposable
         get => _volume;
         set => _volume = Math.Clamp(value, 0f, 1f);
     }
+    
+    private volatile bool _isExporting;
+    public bool IsExporting
+    {
+        get => _isExporting;
+        set => _isExporting = value;
+    }
 
     public bool LpfEnabled
     {
@@ -637,8 +644,8 @@ public class SfzService : ISfzService, IDisposable
             _delay.Process(buffer);
             _reverb.Process(buffer);
 
-            // Apply volume and soft limiting
-            float vol = _volume;
+            // Apply volume and soft limiting (mute if exporting)
+            float vol = _isExporting ? 0f : _volume;
             for (int i = 0; i < buffer.Length; i++)
             {
                 float s = buffer[i] * vol;

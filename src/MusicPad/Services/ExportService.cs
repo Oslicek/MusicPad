@@ -30,15 +30,24 @@ public class ExportService
         
         var safeName = SanitizeFileName(song.Name);
         
-        return format switch
+        // Mute audio output during export
+        _sfzService.IsExporting = true;
+        try
         {
-            ExportFormat.MidiNaked => await ExportMidiNakedAsync(safeName, events, exportDir),
-            ExportFormat.MidiEnhanced => await ExportMidiEnhancedAsync(safeName, events, exportDir),
-            ExportFormat.MidiComplete => await ExportMidiCompleteAsync(song, safeName, events, exportDir),
-            ExportFormat.Wav => await ExportWavAsync(song, safeName, events, exportDir),
-            ExportFormat.Flac => await ExportFlacAsync(song, safeName, events, exportDir),
-            _ => (null, null)
-        };
+            return format switch
+            {
+                ExportFormat.MidiNaked => await ExportMidiNakedAsync(safeName, events, exportDir),
+                ExportFormat.MidiEnhanced => await ExportMidiEnhancedAsync(safeName, events, exportDir),
+                ExportFormat.MidiComplete => await ExportMidiCompleteAsync(song, safeName, events, exportDir),
+                ExportFormat.Wav => await ExportWavAsync(song, safeName, events, exportDir),
+                ExportFormat.Flac => await ExportFlacAsync(song, safeName, events, exportDir),
+                _ => (null, null)
+            };
+        }
+        finally
+        {
+            _sfzService.IsExporting = false;
+        }
     }
     
     /// <summary>
@@ -321,6 +330,11 @@ public class ExportService
         // Reset state for clean rendering
         _sfzService.ResetState();
         
+        // Mute real-time audio output during export
+        _sfzService.IsExporting = true;
+        
+        try
+        {
         // Generate audio on a background thread
         return await Task.Run(async () =>
         {
@@ -381,6 +395,12 @@ public class ExportService
             
             return audioBuffer;
         });
+        }
+        finally
+        {
+            // Always restore real-time audio output
+            _sfzService.IsExporting = false;
+        }
     }
     
     private static void WriteWavFile(Stream stream, float[] samples, int sampleRate, int channels, int bitsPerSample)

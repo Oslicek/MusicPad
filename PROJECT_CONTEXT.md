@@ -38,7 +38,8 @@ MusicPad/
 │   │   ├── Views/
 │   │   │   ├── InstrumentsPage.xaml # List of available instruments
 │   │   │   ├── InstrumentDetailPage.xaml # Instrument metadata/credits
-│   │   │   └── SongsPage.xaml       # Song list with export/manage
+│   │   │   ├── SongsPage.xaml       # Song list with export/manage
+│   │   │   └── CreditsPage.xaml     # Application credits and licenses
 │   │   ├── Platforms/
 │   │   │   └── Android/
 │   │   │       ├── Assets/instruments/ # Bundled SFZ instruments
@@ -179,6 +180,7 @@ MusicPad/
 | `Song` | Core/Recording | Song metadata (name, duration, instruments) |
 | `FlacEncoder` | Core/Export | FLAC audio encoder |
 | `SongsPage` | Views | Song list with rename/delete/export |
+| `CreditsPage` | Views | Application credits and open source licenses |
 | `RecAreaDrawable` | Controls | Recording controls (record/stop/play) |
 | `PaletteService` | Core/Theme | Runtime palette switching with computed colors |
 | `ColorHelper` | Core/Theme | Color manipulation (Lighter, Darker, Mix, WithAlpha) |
@@ -315,19 +317,31 @@ Features:
 - Viewpage navigation for large note ranges
 - Custom colors per padrea
 
+## UI Areas (Domain Names)
+
+The main synthesizer interface is divided into named areas:
+
+| Area | Domain Name | Description |
+|------|-------------|-------------|
+| **Pad Area** | `padrea` | Touch pad grid, piano keyboard, or pitch-volume surface |
+| **Effect Area** | `efarea` | Effect controls (ArpHarmony, LPF, EQ, Chorus, Delay, Reverb) |
+| **Recording Area** | `recarea` | Recording controls (record/stop/play buttons) |
+| **Navigation Area** | `navarea` | Navigation arrows for viewpage switching |
+
 ## UI Features
 
 - **Hamburger Menu**: Top-right menu button (☰) with dropdown actions
-- **Effect Area**: First button (ArpHarmony) with note processing, followed by EQ/Chorus/Delay/Reverb
-- **Pad Matrix**: Touch grid with multi-touch, envelope-following glow effect (pad and outline glow)
+- **Efarea (Effect Area)**: First tab (ArpHarmony) with note processing, followed by LPF/EQ/Chorus/Delay/Reverb tabs
+- **Padrea (Pad Area)**: Touch grid with multi-touch, envelope-following glow effect (pad and outline glow)
 - **Piano Keyboard**: Keys glow with envelope level (same visual feedback as pads)
 - **Pitch-Volume Surface**: Continuous control (X=pitch, Y=volume), circular touch glow
-- **Navigation Arrows**: Compact, amber arrows next to pads
+- **Navarea (Navigation)**: Compact, amber arrows next to pads for viewpage switching
 - **Volume Knob**: Rotary control with drag interaction
 - **Instrument Picker**: Dropdown for SFZ instrument selection
 - **Padrea Picker**: Dropdown for pad configuration (Full, Pentatonic, Scales, Piano, Unpitched)
 - **Scale Picker**: Shown when Scales padrea selected (roots + common scales)
 - **Piano Padrea**: Piano keyboard (one octave+1 portrait, two octaves+1 landscape), strip with 88-key highlight, arrows/drag to shift range
+- **Recarea (Recording Area)**: Record/Stop/Play controls above navigation bar
 - **Instruments Page**: Unified list of bundled and user instruments with color legend
   - User instruments: Amber background with dark text
   - Bundled instruments: Teal background with light text
@@ -415,6 +429,8 @@ Features:
 - [x] GitHub repository connected
 
 **Pending:**
+- [ ] FFmpeg integration for FLAC/MP3 encoding (LGPL)
+- [ ] MP3 export format
 - [ ] Save/load custom padreas
 - [ ] Recording - overdubbing and looping
 

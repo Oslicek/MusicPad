@@ -1535,7 +1535,7 @@ public partial class MainPage : ContentPage
     private async void OnHamburgerMenuClicked(object? sender, EventArgs e)
     {
         // Show action sheet with menu options
-        var action = await DisplayActionSheet("Menu", "Cancel", null, "Songs", "Instruments", "Import Instrument", "Settings");
+        var action = await DisplayActionSheet("Menu", "Cancel", null, "Songs", "Instruments", "Import Instrument", "Settings", "Credits");
         
         switch (action)
         {
@@ -1550,6 +1550,9 @@ public partial class MainPage : ContentPage
                 break;
             case "Settings":
                 await Shell.Current.GoToAsync(nameof(Views.SettingsPage));
+                break;
+            case "Credits":
+                await Shell.Current.GoToAsync(nameof(Views.CreditsPage));
                 break;
         }
     }

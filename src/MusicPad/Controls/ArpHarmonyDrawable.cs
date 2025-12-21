@@ -6,8 +6,8 @@ namespace MusicPad.Controls;
 
 /// <summary>
 /// Drawable for Arpeggiator and Harmony controls in two rows.
-/// Row 1: HARM [⏻] [O|5|M|m]
-/// Row 2: ARP  [⏻] (○)RATE [▲|▼|↕|?]
+/// Row 1: HARM [⏻] [MAJ|MIN|OCT|5TH]
+/// Row 2: ARP  [⏻] [UP|DOWN|U+D|RAND] (○)RATE
 /// </summary>
 public class ArpHarmonyDrawable
 {
@@ -143,7 +143,8 @@ public class ArpHarmonyDrawable
         float knobSize = 49f;  // Small knob size - same as LPF (+15% bigger)
         _rateKnobRadius = knobSize * 0.42f;
         
-        // Calculate layout - toggle + knob + 4 circular buttons, left-aligned like other effects
+        // Calculate layout - toggle + 4 circular buttons + knob, left-aligned like other effects
+        // Order: [⏻] [UP|DOWN|U+D|RAND] (○)RATE
         float startX = rowRect.X + padding;
         float x = startX;
         
@@ -151,13 +152,6 @@ public class ArpHarmonyDrawable
         _arpOnOffRect = new RectF(x, centerY - buttonSize / 2, buttonSize, buttonSize);
         DrawOnOffButton(canvas, _arpOnOffRect, isEnabled);
         x += buttonSize + padding * 3;
-        
-        // Rate knob
-        float knobCenterX = x + _rateKnobRadius + 5;
-        _arpRateKnobRect = new RectF(knobCenterX - _rateKnobRadius - 5, centerY - _rateKnobRadius - 5,
-                                      _rateKnobRadius * 2 + 10, _rateKnobRadius * 2 + 10);
-        DrawKnob(canvas, knobCenterX, centerY, _rateKnobRadius, _arpSettings.Rate, "RATE", isEnabled);
-        x += knobSize + padding * 4;
         
         // Pattern buttons (circular with labels below) - UP, DOWN, U+D, RAND
         for (int i = 0; i < 4; i++)
@@ -168,6 +162,13 @@ public class ArpHarmonyDrawable
             bool isSelected = (int)_arpSettings.Pattern == i;
             DrawCircleButtonWithLabel(canvas, _arpPatternRects[i], PatternLabels[i], isSelected, isEnabled);
         }
+        x += 4 * (circleButtonSize + padding + 8) + padding;
+        
+        // Rate knob (last)
+        float knobCenterX = x + _rateKnobRadius + 5;
+        _arpRateKnobRect = new RectF(knobCenterX - _rateKnobRadius - 5, centerY - _rateKnobRadius - 5,
+                                      _rateKnobRadius * 2 + 10, _rateKnobRadius * 2 + 10);
+        DrawKnob(canvas, knobCenterX, centerY, _rateKnobRadius, _arpSettings.Rate, "RATE", isEnabled);
     }
     
     private void DrawCircleButtonWithLabel(ICanvas canvas, RectF rect, string label, bool isSelected, bool isEnabled)

@@ -46,6 +46,7 @@ public class ComputedPalette
         TextCommit = ToHex(_palette.Orange);
         TextWhite = ToHex(_palette.White);
         TextDark = ToHex(_palette.Navy);
+        LinkColor = ToHex(_palette.Teal);
         
         // Pad Colors - Chromatic
         PadChromaticNormal = ToHex(_palette.Teal);
@@ -169,6 +170,7 @@ public class ComputedPalette
     public string TextCommit { get; private set; } = "";
     public string TextWhite { get; private set; } = "";
     public string TextDark { get; private set; } = "";
+    public string LinkColor { get; private set; } = "";
     
     #endregion
     

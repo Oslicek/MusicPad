@@ -206,6 +206,12 @@ public interface ISfzService
     // ========== Offline Rendering ==========
     
     /// <summary>
+    /// Gets or sets whether the service is in export mode.
+    /// When true, audio output is muted (silent) but rendering continues.
+    /// </summary>
+    bool IsExporting { get; set; }
+    
+    /// <summary>
     /// Generates audio samples directly (for offline rendering).
     /// Includes all effects processing (LPF, EQ, Chorus, Delay, Reverb).
     /// </summary>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MusicPad.Views.SongsPage"
+             x:Class="MusicPad.Views.CreditsPage"
              Shell.NavBarIsVisible="False"
              x:Name="ThisPage">
     
@@ -21,7 +21,7 @@
                 </Label.GestureRecognizers>
             </Label>
             <Label x:Name="HeaderLabel"
-                   Text="Songs"
+                   Text="Credits"
                    FontSize="22"
                    FontAttributes="Bold"
                    VerticalOptions="Center"
@@ -29,21 +29,27 @@
                    Grid.Column="1" />
         </Grid>
         
-        <!-- Songs List -->
+        <!-- Credits Content -->
         <ScrollView Grid.Row="1" Padding="16,0,16,16">
-            <VerticalStackLayout x:Name="SongsList" Spacing="8">
-                <!-- Empty state -->
-                <Label x:Name="EmptyLabel"
-                       Text="No recordings yet. Record a song from the main screen to see it here."
-                       TextColor="{StaticResource TextMuted}"
+            <VerticalStackLayout x:Name="CreditsContent" Spacing="16">
+                <!-- App info will be added dynamically -->
+                <Label x:Name="AppNameLabel"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+                <Label x:Name="AppDescriptionLabel"
                        FontSize="14"
                        HorizontalTextAlignment="Center"
-                       IsVisible="False"
-                       Margin="0,40,0,0"/>
+                       Margin="0,0,0,8" />
+                <Label x:Name="CopyrightLabel"
+                       FontSize="12"
+                       HorizontalTextAlignment="Center"
+                       Margin="0,0,0,16" />
+                
+                <!-- Credit sections will be added dynamically -->
+                <VerticalStackLayout x:Name="SectionsContainer" Spacing="20" />
             </VerticalStackLayout>
         </ScrollView>
     </Grid>
 </ContentPage>
-
-
 
