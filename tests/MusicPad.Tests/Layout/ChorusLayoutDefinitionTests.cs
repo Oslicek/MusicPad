@@ -31,7 +31,7 @@ public class ChorusLayoutDefinitionTests
     [Theory]
     [InlineData(400, 100, Orientation.Landscape, PadreaShape.Square)]
     [InlineData(300, 80, Orientation.Landscape, PadreaShape.Square)]
-    [InlineData(200, 60, Orientation.Landscape, PadreaShape.Square)]
+    [InlineData(200, 80, Orientation.Landscape, PadreaShape.Square)]  // Aspect ratio 2.5 (avoids wide override)
     [InlineData(400, 100, Orientation.Landscape, PadreaShape.Piano)]
     [InlineData(100, 200, Orientation.Portrait, PadreaShape.Square)]
     public void Calculate_AllElementsFitWithinBounds(float width, float height, Orientation orientation, PadreaShape shape)

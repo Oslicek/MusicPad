@@ -1,4 +1,5 @@
 ﻿{
+  Source: Calculator,
   Bounds: {
     X: 50.0,
     Y: 100.0,
@@ -12,11 +13,11 @@
   },
   Elements: {
     DepthKnob: {
-      X: 105.0,
-      Y: 109.4,
-      Width: 61.2,
-      Height: 61.2,
-      CenterX: 135.6,
+      X: 102.0,
+      Y: 109.0,
+      Width: 62.0,
+      Height: 62.0,
+      CenterX: 133.0,
       CenterY: 140.0
     },
     OnOffButton: {
@@ -28,11 +29,11 @@
       CenterY: 140.0
     },
     RateKnob: {
-      X: 180.2,
-      Y: 109.4,
-      Width: 61.2,
-      Height: 61.2,
-      CenterX: 210.8,
+      X: 188.0,
+      Y: 109.0,
+      Width: 62.0,
+      Height: 62.0,
+      CenterX: 219.0,
       CenterY: 140.0
     }
   },

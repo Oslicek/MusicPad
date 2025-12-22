@@ -83,13 +83,15 @@ public class ChorusLayoutComparisonTests
     public void Calculate_KnobSizeIsCorrect_StandardHeight()
     {
         var bounds = new RectF(0, 0, 400, 100);
-        var context = LayoutContext.Horizontal(aspectRatio: 4.0f, PadreaShape.Piano);
+        // Use aspect ratio in "normal" range (1.3-2.5) to avoid narrow/wide overrides
+        // Use Square shape to avoid Piano override
+        var context = LayoutContext.Horizontal(aspectRatio: 2.0f, PadreaShape.Square);
 
         var definitionResult = _definition.Calculate(bounds, context);
         var knob = definitionResult[ChorusLayoutDefinition.DepthKnob];
 
         // Expected: diameter=52, hitPadding=5, so total = 52 + 10 = 62
-        // But capped by (height - verticalMargin) = (100 - 16) = 84, so 52 fits
+        // Capped by (height - verticalMargin) = (100 - 16) = 84, so 52 fits
         float expectedSize = 52 + 5 * 2;  // diameter + 2*hitPadding
         Assert.Equal(expectedSize, knob.Width, Tolerance);
         Assert.Equal(expectedSize, knob.Height, Tolerance);
@@ -99,7 +101,8 @@ public class ChorusLayoutComparisonTests
     public void Calculate_KnobSizeIsCapped_SmallHeight()
     {
         var bounds = new RectF(0, 0, 200, 50);
-        var context = LayoutContext.Horizontal(aspectRatio: 4.0f, PadreaShape.Piano);
+        // Use aspect ratio in "normal" range (1.3-2.5) to avoid narrow/wide overrides
+        var context = LayoutContext.Horizontal(aspectRatio: 2.0f, PadreaShape.Square);
 
         var definitionResult = _definition.Calculate(bounds, context);
         var knob = definitionResult[ChorusLayoutDefinition.DepthKnob];

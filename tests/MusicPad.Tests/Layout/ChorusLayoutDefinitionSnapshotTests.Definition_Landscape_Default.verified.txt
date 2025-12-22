@@ -1,1 +1,44 @@
-﻿
+﻿{
+  Variant: Default,
+  Bounds: {
+    Width: 400.0,
+    Height: 100.0
+  },
+  Context: {
+    Orientation: Landscape,
+    AspectRatio: 2.0,
+    PadreaShape: Piano,
+    IsLandscape: true,
+    IsPortrait: false
+  },
+  Elements: {
+    DepthKnob: {
+      X: 52.0,
+      Y: 17.0,
+      Width: 66.0,
+      Height: 66.0,
+      CenterX: 85.0,
+      CenterY: 50.0
+    },
+    OnOffButton: {
+      X: 8.0,
+      Y: 36.0,
+      Width: 28.0,
+      Height: 28.0,
+      CenterX: 22.0,
+      CenterY: 50.0
+    },
+    RateKnob: {
+      X: 146.0,
+      Y: 17.0,
+      Width: 66.0,
+      Height: 66.0,
+      CenterX: 179.0,
+      CenterY: 50.0
+    }
+  },
+  Validation: {
+    AllFitWithinBounds: true,
+    HasOverlaps: false
+  }
+}
