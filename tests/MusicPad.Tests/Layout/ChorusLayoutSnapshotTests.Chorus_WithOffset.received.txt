@@ -1,0 +1,44 @@
+﻿{
+  Source: Calculator,
+  Bounds: {
+    X: 50.0,
+    Y: 100.0,
+    Width: 300.0,
+    Height: 80.0
+  },
+  Context: {
+    IsHorizontal: true,
+    AspectRatio: 3.75,
+    IsLandscapeSquare: false
+  },
+  Elements: {
+    DepthKnob: {
+      X: 102.0,
+      Y: 109.0,
+      Width: 62.0,
+      Height: 62.0,
+      CenterX: 133.0,
+      CenterY: 140.0
+    },
+    OnOffButton: {
+      X: 58.0,
+      Y: 126.0,
+      Width: 28.0,
+      Height: 28.0,
+      CenterX: 72.0,
+      CenterY: 140.0
+    },
+    RateKnob: {
+      X: 188.0,
+      Y: 109.0,
+      Width: 62.0,
+      Height: 62.0,
+      CenterX: 219.0,
+      CenterY: 140.0
+    }
+  },
+  Validation: {
+    AllFitWithinBounds: true,
+    HasOverlaps: false
+  }
+}

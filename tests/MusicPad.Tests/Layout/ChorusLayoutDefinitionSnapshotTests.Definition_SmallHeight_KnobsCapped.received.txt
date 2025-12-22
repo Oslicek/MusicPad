@@ -1,0 +1,43 @@
+﻿{
+  Variant: SmallHeight,
+  Bounds: {
+    Width: 300.0,
+    Height: 50.0
+  },
+  Context: {
+    Orientation: Landscape,
+    AspectRatio: 6.0,
+    IsLandscape: true,
+    IsPortrait: false
+  },
+  Elements: {
+    DepthKnob: {
+      X: 64.0,
+      Y: 3.0,
+      Width: 44.0,
+      Height: 44.0,
+      CenterX: 86.0,
+      CenterY: 25.0
+    },
+    OnOffButton: {
+      X: 12.0,
+      Y: 11.0,
+      Width: 28.0,
+      Height: 28.0,
+      CenterX: 26.0,
+      CenterY: 25.0
+    },
+    RateKnob: {
+      X: 140.0,
+      Y: 3.0,
+      Width: 44.0,
+      Height: 44.0,
+      CenterX: 162.0,
+      CenterY: 25.0
+    }
+  },
+  Validation: {
+    AllFitWithinBounds: true,
+    HasOverlaps: false
+  }
+}

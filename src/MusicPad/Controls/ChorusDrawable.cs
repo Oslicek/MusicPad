@@ -1,15 +1,28 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using LayoutRectF = MusicPad.Core.Layout.RectF;
 
 namespace MusicPad.Controls;
 
 /// <summary>
 /// Drawable for Chorus controls with on/off button, Depth and Rate knobs.
+/// Uses fluent Layout DSL for responsive positioning.
 /// </summary>
 public class ChorusDrawable
 {
+    // Drawing constants
+    private const float KnobHitPadding = 5f;      // Must match layout constant
+    private const float KnobMinAngle = 225f;      // Start angle for knob rotation
+    private const float KnobMaxAngle = -45f;      // End angle for knob rotation
+    private const float ToggleWidthRatio = 0.85f; // Toggle width relative to button
+    private const float ToggleHeightRatio = 0.5f; // Toggle height relative to button
+    private const float ToggleKnobRatio = 0.4f;   // Toggle knob size relative to height
+    
     private readonly ChorusSettings _settings;
+    private readonly ChorusLayoutDefinition _layoutDefinition = ChorusLayoutDefinition.Instance;
     
     // Knob colors (dynamic for palette switching)
     private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
@@ -24,13 +37,16 @@ public class ChorusDrawable
     private static Color ButtonOnColor => Color.FromArgb(AppColors.ButtonOn);
     private static Color ButtonOffColor => Color.FromArgb(AppColors.ButtonOff);
 
-    private RectF _onOffButtonRect;
-    private RectF _depthKnobRect;
-    private RectF _rateKnobRect;
+    private MauiRectF _onOffButtonRect;
+    private MauiRectF _depthKnobRect;
+    private MauiRectF _rateKnobRect;
     private float _knobRadius;
     private bool _isDraggingDepth;
     private bool _isDraggingRate;
     private float _lastAngle;
+    
+    // Layout context (can be set externally for padrea shape awareness)
+    private PadreaShape _padreaShape = PadreaShape.Square;
 
     public event EventHandler? InvalidateRequested;
 
@@ -43,49 +59,55 @@ public class ChorusDrawable
     }
 
     public ChorusSettings Settings => _settings;
-
+    
     /// <summary>
-    /// Draws the Chorus controls.
+    /// Sets the padrea shape for layout calculations.
     /// </summary>
-    public void Draw(ICanvas canvas, RectF dirtyRect)
+    public void SetPadreaShape(PadreaShape shape)
     {
-        float padding = 8f;  // Uniform spacing
-        float buttonSize = 28f;
-        // Large knob size (+30% bigger)
-        float knobSize = Math.Min(dirtyRect.Height - 16, 65f);
-        _knobRadius = knobSize * 0.4f;
-        bool isEnabled = _settings.IsEnabled;
-        
-        // On/Off button on the left
-        float buttonX = dirtyRect.X + padding;
-        float buttonY = dirtyRect.Y + (dirtyRect.Height - buttonSize) / 2;
-        _onOffButtonRect = new RectF(buttonX, buttonY, buttonSize, buttonSize);
-        DrawOnOffButton(canvas, _onOffButtonRect);
-        
-        // Two knobs side by side after the button
-        float knobsStartX = buttonX + buttonSize + padding * 2;
-        float knobY = dirtyRect.Y + dirtyRect.Height / 2;
-        
-        float depthX = knobsStartX + _knobRadius + padding;
-        float rateX = depthX + _knobRadius * 2 + padding * 3;
-        
-        _depthKnobRect = new RectF(depthX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                    _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-        _rateKnobRect = new RectF(rateX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                   _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-
-        DrawKnob(canvas, depthX, knobY, _knobRadius, _settings.Depth, "DEPTH", isEnabled);
-        DrawKnob(canvas, rateX, knobY, _knobRadius, _settings.Rate, "RATE", isEnabled);
+        _padreaShape = shape;
     }
 
-    private void DrawOnOffButton(ICanvas canvas, RectF rect)
+    /// <summary>
+    /// Draws the Chorus controls using the Layout DSL.
+    /// </summary>
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect)
+    {
+        // Create layout context from bounds and padrea shape
+        var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        var context = LayoutContext.FromBounds(bounds, _padreaShape);
+        
+        // Calculate layout using the fluent DSL
+        var layout = _layoutDefinition.Calculate(bounds, context);
+        
+        // Convert layout results to MAUI RectF for hit testing
+        var onOffRect = layout[ChorusLayoutDefinition.OnOffButton];
+        var depthRect = layout[ChorusLayoutDefinition.DepthKnob];
+        var rateRect = layout[ChorusLayoutDefinition.RateKnob];
+        
+        _onOffButtonRect = new MauiRectF(onOffRect.X, onOffRect.Y, onOffRect.Width, onOffRect.Height);
+        _depthKnobRect = new MauiRectF(depthRect.X, depthRect.Y, depthRect.Width, depthRect.Height);
+        _rateKnobRect = new MauiRectF(rateRect.X, rateRect.Y, rateRect.Width, rateRect.Height);
+        
+        // Calculate knob radius from hit rect (hit rect = diameter + 2*padding)
+        _knobRadius = (depthRect.Width - KnobHitPadding * 2) / 2;
+        
+        bool isEnabled = _settings.IsEnabled;
+        
+        // Draw controls at calculated positions
+        DrawOnOffButton(canvas, _onOffButtonRect);
+        DrawKnob(canvas, depthRect.CenterX, depthRect.CenterY, _knobRadius, _settings.Depth, "DEPTH", isEnabled);
+        DrawKnob(canvas, rateRect.CenterX, rateRect.CenterY, _knobRadius, _settings.Rate, "RATE", isEnabled);
+    }
+
+    private void DrawOnOffButton(ICanvas canvas, MauiRectF rect)
     {
         bool isOn = _settings.IsEnabled;
         float cx = rect.Center.X;
         float cy = rect.Center.Y;
-        float toggleWidth = rect.Width * 0.85f;
-        float toggleHeight = rect.Height * 0.5f;
-        float knobRadius = toggleHeight * 0.4f;
+        float toggleWidth = rect.Width * ToggleWidthRatio;
+        float toggleHeight = rect.Height * ToggleHeightRatio;
+        float knobRadius = toggleHeight * ToggleKnobRatio;
         
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
         canvas.FillRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
@@ -110,62 +132,85 @@ public class ChorusDrawable
         Color highlightColor = isEnabled ? KnobHighlightColor : DisabledColor.WithAlpha(0.6f);
         Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledDark);
         
-        float minAngle = 225f;
-        float maxAngle = -45f;
-        float totalAngle = maxAngle - minAngle;
-        if (totalAngle > 0) totalAngle -= 360;
+        float totalAngle = GetTotalKnobAngle();
         
-        // Draw radial markers - use accent color when enabled
-        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
-        canvas.StrokeSize = 1.5f;
-        canvas.StrokeLineCap = LineCap.Round;
-        float outerRadius = radius + 5;
-        float innerRadius = radius + 2;
-        for (int i = 0; i <= 6; i++)
-        {
-            float t = i / 6f;
-            float angle = minAngle + totalAngle * t;
-            float rads = angle * MathF.PI / 180f;
-            canvas.DrawLine(centerX + innerRadius * MathF.Cos(rads), centerY - innerRadius * MathF.Sin(rads),
-                           centerX + outerRadius * MathF.Cos(rads), centerY - outerRadius * MathF.Sin(rads));
-        }
+        // Draw radial markers
+        DrawKnobMarkers(canvas, centerX, centerY, radius, isEnabled, totalAngle);
         
+        // Draw knob body
         canvas.FillColor = shadowColor;
         canvas.FillCircle(centerX + 1, centerY + 1, radius);
         
         canvas.FillColor = baseColor;
         canvas.FillCircle(centerX, centerY, radius);
         
+        // Draw highlight
         canvas.FillColor = highlightColor.WithAlpha(0.4f);
         canvas.FillCircle(centerX - radius * 0.15f, centerY - radius * 0.15f, radius * 0.6f);
         
         canvas.FillColor = baseColor;
         canvas.FillCircle(centerX, centerY, radius * 0.85f);
         
+        // Draw outline
         canvas.StrokeColor = shadowColor.WithAlpha(0.5f);
         canvas.StrokeSize = 1;
         canvas.DrawCircle(centerX, centerY, radius);
 
-        float currentAngle = minAngle + totalAngle * value;
+        // Draw indicator notch
+        float currentAngle = KnobMinAngle + totalAngle * value;
         float radians = currentAngle * MathF.PI / 180f;
-        
         float notchDistance = radius * 0.7f;
         float notchX = centerX + notchDistance * MathF.Cos(radians);
         float notchY = centerY - notchDistance * MathF.Sin(radians);
-        
         float notchRadius = radius * 0.12f;
+        
         canvas.FillColor = isEnabled ? IndicatorColor : Color.FromArgb(AppColors.DisabledDarker);
         canvas.FillCircle(notchX, notchY, notchRadius);
 
+        // Draw label
         canvas.FontSize = 9;
         canvas.FontColor = isEnabled ? LabelColor : DisabledColor;
         canvas.DrawString(label, centerX - radius, centerY + radius + 4, radius * 2, 12,
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
+    private void DrawKnobMarkers(ICanvas canvas, float centerX, float centerY, float radius, bool isEnabled, float totalAngle)
+    {
+        const int markerCount = 6;
+        const float markerStrokeWidth = 1.5f;
+        const float outerOffset = 5f;
+        const float innerOffset = 2f;
+        
+        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
+        canvas.StrokeSize = markerStrokeWidth;
+        canvas.StrokeLineCap = LineCap.Round;
+        
+        float outerRadius = radius + outerOffset;
+        float innerRadius = radius + innerOffset;
+        
+        for (int i = 0; i <= markerCount; i++)
+        {
+            float t = i / (float)markerCount;
+            float angle = KnobMinAngle + totalAngle * t;
+            float rads = angle * MathF.PI / 180f;
+            canvas.DrawLine(
+                centerX + innerRadius * MathF.Cos(rads), 
+                centerY - innerRadius * MathF.Sin(rads),
+                centerX + outerRadius * MathF.Cos(rads), 
+                centerY - outerRadius * MathF.Sin(rads));
+        }
+    }
+
+    private static float GetTotalKnobAngle()
+    {
+        float totalAngle = KnobMaxAngle - KnobMinAngle;
+        if (totalAngle > 0) totalAngle -= 360;
+        return totalAngle;
+    }
+
     public bool OnTouch(float x, float y, bool isStart)
     {
-        var point = new PointF(x, y);
+        var point = new Microsoft.Maui.Graphics.PointF(x, y);
 
         if (isStart)
         {
@@ -195,12 +240,12 @@ public class ChorusDrawable
         {
             if (_isDraggingDepth)
             {
-                UpdateDepthKnob(x, y);
+                UpdateKnobValue(_depthKnobRect, x, y, v => _settings.Depth = v, _settings.Depth);
                 return true;
             }
             else if (_isDraggingRate)
             {
-                UpdateRateKnob(x, y);
+                UpdateKnobValue(_rateKnobRect, x, y, v => _settings.Rate = v, _settings.Rate);
                 return true;
             }
         }
@@ -208,41 +253,23 @@ public class ChorusDrawable
         return false;
     }
 
-    private void UpdateDepthKnob(float x, float y)
+    private void UpdateKnobValue(MauiRectF knobRect, float x, float y, Action<float> setValue, float currentValue)
     {
-        float currentAngle = GetAngleFromKnobCenter(_depthKnobRect, x, y);
+        float currentAngle = GetAngleFromKnobCenter(knobRect, x, y);
         float angleDelta = currentAngle - _lastAngle;
         
+        // Normalize angle delta to handle wrap-around
         if (angleDelta > 180) angleDelta -= 360;
         if (angleDelta < -180) angleDelta += 360;
         
-        float totalAngle = -45f - 225f;
-        if (totalAngle > 0) totalAngle -= 360;
-        
+        float totalAngle = GetTotalKnobAngle();
         float valueDelta = angleDelta / totalAngle;
-        _settings.Depth = Math.Clamp(_settings.Depth + valueDelta, 0f, 1f);
+        setValue(Math.Clamp(currentValue + valueDelta, 0f, 1f));
         
         _lastAngle = currentAngle;
     }
 
-    private void UpdateRateKnob(float x, float y)
-    {
-        float currentAngle = GetAngleFromKnobCenter(_rateKnobRect, x, y);
-        float angleDelta = currentAngle - _lastAngle;
-        
-        if (angleDelta > 180) angleDelta -= 360;
-        if (angleDelta < -180) angleDelta += 360;
-        
-        float totalAngle = -45f - 225f;
-        if (totalAngle > 0) totalAngle -= 360;
-        
-        float valueDelta = angleDelta / totalAngle;
-        _settings.Rate = Math.Clamp(_settings.Rate + valueDelta, 0f, 1f);
-        
-        _lastAngle = currentAngle;
-    }
-
-    private float GetAngleFromKnobCenter(RectF knobRect, float x, float y)
+    private float GetAngleFromKnobCenter(MauiRectF knobRect, float x, float y)
     {
         float centerX = knobRect.Center.X;
         float centerY = knobRect.Center.Y;
@@ -257,4 +284,3 @@ public class ChorusDrawable
         _isDraggingRate = false;
     }
 }
-

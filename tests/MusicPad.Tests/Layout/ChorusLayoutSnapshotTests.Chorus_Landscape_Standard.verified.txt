@@ -1,0 +1,41 @@
+﻿{
+  Bounds: {
+    Width: 300.0,
+    Height: 80.0
+  },
+  Context: {
+    IsHorizontal: true,
+    AspectRatio: 3.75,
+    IsLandscapeSquare: false
+  },
+  Elements: {
+    DepthKnob: {
+      X: 55.0,
+      Y: 9.4,
+      Width: 61.2,
+      Height: 61.2,
+      CenterX: 85.6,
+      CenterY: 40.0
+    },
+    OnOffButton: {
+      X: 8.0,
+      Y: 26.0,
+      Width: 28.0,
+      Height: 28.0,
+      CenterX: 22.0,
+      CenterY: 40.0
+    },
+    RateKnob: {
+      X: 130.2,
+      Y: 9.4,
+      Width: 61.2,
+      Height: 61.2,
+      CenterX: 160.8,
+      CenterY: 40.0
+    }
+  },
+  Validation: {
+    AllFitWithinBounds: true,
+    HasOverlaps: false
+  }
+}

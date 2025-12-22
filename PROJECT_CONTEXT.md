@@ -91,6 +91,14 @@ MusicPad/
 │       │   ├── FallbackAudioEncoder.cs # Fallback using custom encoders
 │       │   ├── FlacEncoder.cs        # FLAC audio encoder
 │       │   └── ShineEncoder.cs       # MP3 audio encoder (pure C#)
+│       ├── Layout/
+│       │   ├── LayoutDefinition.cs   # Fluent DSL base class
+│       │   ├── LayoutBuilder.cs      # Fluent builder API
+│       │   ├── LayoutCondition.cs    # Condition matching system
+│       │   ├── LayoutResult.cs       # Layout result model
+│       │   ├── ILayoutCalculator.cs  # Layout calculator interface
+│       │   ├── ChorusLayoutCalculator.cs # Legacy Chorus layout calculator
+│       │   └── ChorusLayoutDefinition.cs # Fluent Chorus layout definition
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -118,6 +126,10 @@ MusicPad/
 │       ├── Recording/
 │       │   ├── RecordingSessionTests.cs  # Recording session tests
 │       │   └── SongTests.cs              # Song metadata tests
+│       ├── Layout/
+│       │   ├── ChorusLayoutCalculatorTests.cs  # Calculator unit tests
+│       │   ├── ChorusLayoutDefinitionTests.cs  # Fluent DSL tests
+│       │   └── ChorusLayoutSnapshotTests.cs    # Verify snapshot tests
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │
@@ -262,6 +274,62 @@ Instruments support two voicing modes, configurable per instrument:
 | **Delay** | Time, Feedback, Level | Echo effect |
 | **Reverb** | Level, Type (Room/Hall/Plate/Church) | Space/ambience |
 
+## Layout DSL
+
+**Fluent C# DSL** for declarative UI layout definitions with cascading condition-based overrides.
+
+**Key Concepts:**
+- **LayoutDefinition** - Base class for defining layouts using fluent API
+- **LayoutContext** - Context with Orientation, AspectRatio, PadreaShape
+- **Cascading Overrides** - Define defaults, override only what changes for specific conditions
+
+**Condition Types:**
+
+| Condition | Description |
+|-----------|-------------|
+| `Orientation.Portrait` | Portrait mode (height > width) |
+| `Orientation.Landscape` | Landscape mode (width > height) |
+| `PadreaShape.Square` | Square padrea (pads, scales) |
+| `PadreaShape.Piano` | Piano keyboard padrea |
+| `AspectRatio.LessThan(x)` | Narrow screens (near-square) |
+| `AspectRatio.GreaterThan(x)` | Wide screens (ultrawide) |
+
+**Example (ChorusLayoutDefinition):**
+```csharp
+public class ChorusLayoutDefinition : LayoutDefinition
+{
+    public ChorusLayoutDefinition()
+    {
+        // Default layout (applies to all cases)
+        Default()
+            .Constants(c => c.Set("Padding", 8f).Set("MaxKnobSize", 65f))
+            .Element("OnOffButton").Left("Padding").VCenter().Size(28)
+            .Element("DepthKnob").After("OnOffButton", 16).VCenter().KnobSize("MaxKnobSize")
+            .Element("RateKnob").After("DepthKnob", 24).VCenter().KnobSize("MaxKnobSize");
+
+        // Override for wide screens - only define what changes
+        When(AspectRatio.GreaterThan(2.5f), Orientation.Landscape)
+            .Constants(c => c.Set("Padding", 12f).Set("MaxKnobSize", 75f));
+
+        // Override for portrait - different element positions
+        When(Orientation.Portrait)
+            .Element("OnOffButton").Top("Padding").HCenter()
+            .Element("DepthKnob").Below("OnOffButton", 16).HCenter()
+            .Element("RateKnob").Below("DepthKnob", 24).HCenter();
+    }
+}
+```
+
+**Resolution Order:**
+1. Default layout applies first
+2. Single-condition overrides (e.g., `Orientation.Landscape`)
+3. Dual-condition overrides (e.g., `Orientation.Landscape + PadreaShape.Square`)
+4. More specific conditions override less specific ones
+
+**Testing:**
+- Unit tests verify element positions for various conditions
+- Snapshot tests (Verify) capture exact layout coordinates as JSON
+
 ## Recording
 
 **Recording captures raw pad touches** (before harmony/arpeggiator processing), allowing playback with different effect settings.
@@ -388,6 +456,9 @@ The main synthesizer interface is divided into named areas:
 | `Mp3EncoderTests` | MP3 encoding tests (ShineEncoder) |
 | `AudioEncoderTests` | Audio encoder interface tests |
 | `OfflineRenderingTests` | Offline audio rendering, effects processing |
+| `ChorusLayoutCalculatorTests` | Layout calculator unit tests |
+| `ChorusLayoutDefinitionTests` | Fluent DSL layout tests |
+| `ChorusLayoutSnapshotTests` | Layout snapshot tests (Verify) |
 
 ## Test Devices
 
@@ -434,8 +505,9 @@ The main synthesizer interface is divided into named areas:
 - [x] WAV export (offline rendering)
 - [x] FLAC export (lossless audio)
 - [x] Scales 8x8 padrea with chromatic layout and 3-color coding
-- [x] Unit tests passing (642 tests)
+- [x] Unit tests passing (701 tests)
 - [x] GitHub repository connected
+- [x] Fluent C# Layout DSL for responsive UI layouts (Chorus)
 
 **Pending:**
 - [ ] FFmpeg integration for MP3 encoding (LGPL) - native bindings needed
