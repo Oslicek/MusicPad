@@ -1,6 +1,12 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
+
+// Type aliases to resolve ambiguity with MusicPad.Core.Layout types
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using MauiPointF = Microsoft.Maui.Graphics.PointF;
+using LayoutRectF = MusicPad.Core.Layout.RectF;
 
 namespace MusicPad.Controls;
 
@@ -13,6 +19,7 @@ public class ArpHarmonyDrawable
 {
     private readonly HarmonySettings _harmonySettings;
     private readonly ArpeggiatorSettings _arpSettings;
+    private readonly ArpHarmonyLayoutDefinition _layoutDefinition = ArpHarmonyLayoutDefinition.Instance;
     
     // Knob colors (dynamic for palette switching)
     private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
@@ -33,12 +40,16 @@ public class ArpHarmonyDrawable
     private static Color TypeButtonTextColor => Color.FromArgb(AppColors.TextSecondary);
     private static Color TypeButtonTextSelectedColor => Color.FromArgb(AppColors.TextWhite);
 
+    // Layout constants
+    private const float TitleHeight = 16f;
+    private const float Padding = 8f;
+
     // Hit test rects
-    private RectF _harmonyOnOffRect;
-    private readonly RectF[] _harmonyTypeRects = new RectF[4];
-    private RectF _arpOnOffRect;
-    private RectF _arpRateKnobRect;
-    private readonly RectF[] _arpPatternRects = new RectF[4];
+    private MauiRectF _harmonyOnOffRect;
+    private readonly MauiRectF[] _harmonyTypeRects = new MauiRectF[4];
+    private MauiRectF _arpOnOffRect;
+    private MauiRectF _arpRateKnobRect;
+    private readonly MauiRectF[] _arpPatternRects = new MauiRectF[4];
     
     private float _rateKnobRadius;
     private bool _isDraggingRate;
@@ -67,37 +78,55 @@ public class ArpHarmonyDrawable
     public HarmonySettings HarmonySettings => _harmonySettings;
     public ArpeggiatorSettings ArpSettings => _arpSettings;
 
-    public void Draw(ICanvas canvas, RectF dirtyRect)
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect)
     {
-        float padding = 8f;  // Uniform spacing
-        float buttonSize = 28f;
-        float titleHeight = 16f;
-        float controlsHeight = (dirtyRect.Height - titleHeight * 2 - padding * 2) / 2;
-        
-        // 4-row layout:
-        // Row 1: "HARMONY" title
-        // Row 2: Harmony controls
-        // Row 3: "ARPEGGIO" title
-        // Row 4: Arpeggio controls
-        
-        float y = dirtyRect.Y;
+        // Calculate layout using the definition
+        var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        var context = LayoutContext.FromBounds(bounds);
+        var layout = _layoutDefinition.Calculate(bounds, context);
+
+        // Get knob radius for drawing
+        _rateKnobRadius = ArpHarmonyLayoutDefinition.GetKnobRadius();
+
+        // Store hit test rects from layout
+        StoreHitRects(layout);
+
+        // Calculate row positions for titles
+        float controlsHeight = (dirtyRect.Height - TitleHeight * 2 - Padding * 2) / 2;
+        float harmonyRowY = dirtyRect.Y + TitleHeight;
+        float arpTitleY = harmonyRowY + controlsHeight + Padding;
         
         // Row 1: HARMONY title
-        DrawSectionTitle(canvas, "HARMONY", dirtyRect.X, y, dirtyRect.Width, titleHeight);
-        y += titleHeight;
+        DrawSectionTitle(canvas, "HARMONY", dirtyRect.X, dirtyRect.Y, dirtyRect.Width, TitleHeight);
         
         // Row 2: Harmony controls
-        DrawHarmonyRow(canvas, new RectF(dirtyRect.X, y, dirtyRect.Width, controlsHeight), padding, buttonSize);
-        y += controlsHeight + padding;
+        DrawHarmonyControls(canvas, layout);
         
         // Row 3: ARPEGGIO title
-        DrawSectionTitle(canvas, "ARPEGGIO", dirtyRect.X, y, dirtyRect.Width, titleHeight);
-        y += titleHeight;
+        DrawSectionTitle(canvas, "ARPEGGIO", dirtyRect.X, arpTitleY, dirtyRect.Width, TitleHeight);
         
         // Row 4: Arpeggio controls
-        DrawArpRow(canvas, new RectF(dirtyRect.X, y, dirtyRect.Width, controlsHeight), padding, buttonSize);
+        DrawArpControls(canvas, layout);
     }
-    
+
+    private void StoreHitRects(LayoutResult layout)
+    {
+        _harmonyOnOffRect = ToMauiRect(layout[ArpHarmonyLayoutDefinition.HarmonyOnOff]);
+        _harmonyTypeRects[0] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.HarmonyType0]);
+        _harmonyTypeRects[1] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.HarmonyType1]);
+        _harmonyTypeRects[2] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.HarmonyType2]);
+        _harmonyTypeRects[3] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.HarmonyType3]);
+        
+        _arpOnOffRect = ToMauiRect(layout[ArpHarmonyLayoutDefinition.ArpOnOff]);
+        _arpPatternRects[0] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.ArpPattern0]);
+        _arpPatternRects[1] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.ArpPattern1]);
+        _arpPatternRects[2] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.ArpPattern2]);
+        _arpPatternRects[3] = ToMauiRect(layout[ArpHarmonyLayoutDefinition.ArpPattern3]);
+        _arpRateKnobRect = ToMauiRect(layout[ArpHarmonyLayoutDefinition.ArpRateKnob]);
+    }
+
+    private static MauiRectF ToMauiRect(LayoutRectF r) => new(r.X, r.Y, r.Width, r.Height);
+
     private void DrawSectionTitle(ICanvas canvas, string title, float x, float y, float width, float height)
     {
         canvas.FontSize = 10;
@@ -105,73 +134,45 @@ public class ArpHarmonyDrawable
         canvas.DrawString(title, x, y, width, height, HorizontalAlignment.Center, VerticalAlignment.Center);
     }
 
-    private void DrawHarmonyRow(ICanvas canvas, RectF rowRect, float padding, float buttonSize)
+    private void DrawHarmonyControls(ICanvas canvas, LayoutResult layout)
     {
         bool isEnabled = _harmonySettings.IsEnabled;
         bool isAllowed = _harmonySettings.IsAllowed;
         bool effectiveEnabled = isEnabled && isAllowed;
-        
-        float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up to make room for labels
-        
-        // Calculate layout - toggle + 4 circular buttons, left-aligned like other effects
-        float circleButtonSize = 24f;
-        float startX = rowRect.X + padding;
-        float x = startX;
-        
+
         // On/Off toggle
-        _harmonyOnOffRect = new RectF(x, centerY - buttonSize / 2, buttonSize, buttonSize);
         DrawOnOffButton(canvas, _harmonyOnOffRect, isEnabled, isAllowed);
-        x += buttonSize + padding * 3;
-        
-        // Type buttons (circular with labels below) - MAJ, MIN, OCT, 5TH
+
+        // Type buttons
         for (int i = 0; i < 4; i++)
         {
-            float bx = x + i * (circleButtonSize + padding + 8);
-            _harmonyTypeRects[i] = new RectF(bx, centerY - circleButtonSize / 2, circleButtonSize, circleButtonSize);
-            
             bool isSelected = HarmonyTypeMap[i] == (int)_harmonySettings.Type;
             DrawCircleButtonWithLabel(canvas, _harmonyTypeRects[i], HarmonyLabels[i], isSelected, effectiveEnabled);
         }
     }
 
-    private void DrawArpRow(ICanvas canvas, RectF rowRect, float padding, float buttonSize)
+    private void DrawArpControls(ICanvas canvas, LayoutResult layout)
     {
         bool isEnabled = _arpSettings.IsEnabled;
-        float centerY = rowRect.Y + rowRect.Height / 2 - 5; // Shift up for labels
-        
-        float circleButtonSize = 24f;
-        float knobSize = 49f;  // Small knob size - same as LPF (+15% bigger)
-        _rateKnobRadius = knobSize * 0.42f;
-        
-        // Calculate layout - toggle + 4 circular buttons + knob, left-aligned like other effects
-        // Order: [⏻] [UP|DOWN|U+D|RAND] (○)RATE
-        float startX = rowRect.X + padding;
-        float x = startX;
-        
+
         // On/Off toggle
-        _arpOnOffRect = new RectF(x, centerY - buttonSize / 2, buttonSize, buttonSize);
         DrawOnOffButton(canvas, _arpOnOffRect, isEnabled);
-        x += buttonSize + padding * 3;
-        
-        // Pattern buttons (circular with labels below) - UP, DOWN, U+D, RAND
+
+        // Pattern buttons
         for (int i = 0; i < 4; i++)
         {
-            float bx = x + i * (circleButtonSize + padding + 8);
-            _arpPatternRects[i] = new RectF(bx, centerY - circleButtonSize / 2, circleButtonSize, circleButtonSize);
-            
             bool isSelected = (int)_arpSettings.Pattern == i;
             DrawCircleButtonWithLabel(canvas, _arpPatternRects[i], PatternLabels[i], isSelected, isEnabled);
         }
-        x += 4 * (circleButtonSize + padding + 8) + padding;
-        
-        // Rate knob (last)
-        float knobCenterX = x + _rateKnobRadius + 5;
-        _arpRateKnobRect = new RectF(knobCenterX - _rateKnobRadius - 5, centerY - _rateKnobRadius - 5,
-                                      _rateKnobRadius * 2 + 10, _rateKnobRadius * 2 + 10);
-        DrawKnob(canvas, knobCenterX, centerY, _rateKnobRadius, _arpSettings.Rate, "RATE", isEnabled);
+
+        // Rate knob
+        var knobRect = _arpRateKnobRect;
+        float knobCenterX = knobRect.Center.X;
+        float knobCenterY = knobRect.Center.Y;
+        DrawKnob(canvas, knobCenterX, knobCenterY, _rateKnobRadius, _arpSettings.Rate, "RATE", isEnabled);
     }
     
-    private void DrawCircleButtonWithLabel(ICanvas canvas, RectF rect, string label, bool isSelected, bool isEnabled)
+    private void DrawCircleButtonWithLabel(ICanvas canvas, MauiRectF rect, string label, bool isSelected, bool isEnabled)
     {
         float centerX = rect.Center.X;
         float centerY = rect.Center.Y;
@@ -200,7 +201,7 @@ public class ArpHarmonyDrawable
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
-    private void DrawOnOffButton(ICanvas canvas, RectF rect, bool isOn, bool isAllowed = true)
+    private void DrawOnOffButton(ICanvas canvas, MauiRectF rect, bool isOn, bool isAllowed = true)
     {
         float cx = rect.Center.X;
         float cy = rect.Center.Y;
@@ -245,40 +246,6 @@ public class ArpHarmonyDrawable
         // Knob
         canvas.FillColor = Colors.White;
         canvas.FillCircle(knobX2, cy, knobRadius);
-    }
-
-    private void DrawTypeButton(ICanvas canvas, RectF rect, string label, bool isSelected, bool isEnabled, bool isFirst, bool isLast)
-    {
-        float leftRadius = isFirst ? 6 : 0;
-        float rightRadius = isLast ? 6 : 0;
-        
-        if (isSelected && isEnabled)
-        {
-            canvas.FillColor = KnobShadowColor;
-            canvas.FillRoundedRectangle(new RectF(rect.X + 1, rect.Y + 1, rect.Width, rect.Height),
-                leftRadius, rightRadius, rightRadius, leftRadius);
-            
-            canvas.FillColor = TypeButtonSelectedColor;
-            canvas.FillRoundedRectangle(rect, leftRadius, rightRadius, rightRadius, leftRadius);
-            
-            canvas.FillColor = KnobHighlightColor.WithAlpha(0.3f);
-            var highlightRect = new RectF(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height * 0.4f);
-            canvas.FillRoundedRectangle(highlightRect, Math.Max(0, leftRadius - 2), Math.Max(0, rightRadius - 2), 0, 0);
-        }
-        else
-        {
-            canvas.FillColor = isEnabled ? TypeButtonBaseColor : DisabledColor.WithAlpha(0.5f);
-            canvas.FillRoundedRectangle(rect, leftRadius, rightRadius, rightRadius, leftRadius);
-        }
-        
-        canvas.StrokeColor = isSelected && isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledBorder);
-        canvas.StrokeSize = 1;
-        canvas.DrawRoundedRectangle(rect, leftRadius, rightRadius, rightRadius, leftRadius);
-        
-        canvas.FontSize = 11;
-        canvas.FontColor = isSelected && isEnabled ? TypeButtonTextSelectedColor :
-                          (isEnabled ? TypeButtonTextColor : DisabledColor);
-        canvas.DrawString(label, rect, HorizontalAlignment.Center, VerticalAlignment.Center);
     }
 
     private void DrawKnob(ICanvas canvas, float centerX, float centerY, float radius, float value, string label, bool isEnabled)
@@ -351,7 +318,7 @@ public class ArpHarmonyDrawable
 
     public bool OnTouch(float x, float y, bool isStart)
     {
-        var point = new PointF(x, y);
+        var point = new MauiPointF(x, y);
 
         if (isStart)
         {
@@ -426,7 +393,7 @@ public class ArpHarmonyDrawable
         _lastAngle = currentAngle;
     }
 
-    private float GetAngleFromKnobCenter(RectF knobRect, float x, float y)
+    private float GetAngleFromKnobCenter(MauiRectF knobRect, float x, float y)
     {
         float centerX = knobRect.Center.X;
         float centerY = knobRect.Center.Y;
@@ -440,4 +407,3 @@ public class ArpHarmonyDrawable
         _isDraggingRate = false;
     }
 }
-
