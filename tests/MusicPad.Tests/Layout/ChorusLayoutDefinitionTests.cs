@@ -195,17 +195,17 @@ public class ChorusLayoutDefinitionTests
     }
 
     [Theory]
-    [InlineData(3.0f)]  // Wide
-    [InlineData(4.0f)]  // Very wide
+    [InlineData(7.0f)]  // Wide - threshold is > 6.0
+    [InlineData(8.0f)]  // Very wide
     public void Calculate_WideAspectRatio_UsesLargerPadding(float aspectRatio)
     {
         var layout = new ChorusLayoutDefinition();
-        var bounds = new RectF(0, 0, 400, 100);
+        var bounds = new RectF(0, 0, 700, 100);  // Larger width for realistic ultra-wide
         var context = LayoutContext.Horizontal(aspectRatio);
 
         var result = layout.Calculate(bounds, context);
 
-        // Wide variant has larger padding (12)
+        // Wide variant has larger padding (12) - only triggers for aspect ratio > 6.0
         Assert.Equal(12, result[OnOffButton].X, precision: 1);
     }
 

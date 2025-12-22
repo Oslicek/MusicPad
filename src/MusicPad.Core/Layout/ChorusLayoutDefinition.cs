@@ -18,16 +18,16 @@ public class ChorusLayoutDefinition : LayoutDefinition
     public ChorusLayoutDefinition()
     {
         // === DEFAULT LAYOUT ===
-        // All values are explicit - no magic numbers or derived calculations
+        // Values traced from original ChorusDrawable to ensure identical layout
         Default()
             .Constants(c => c
                 .Set("Padding", 8f)
                 .Set("ButtonSize", 28f)
-                .Set("KnobDiameter", 52f)         // Actual visual knob diameter (was: 65 * 0.4 * 2 = 52)
+                .Set("KnobDiameter", 52f)         // Actual visual diameter (65 * 0.4 * 2)
                 .Set("KnobHitPadding", 5f)        // Extra padding around knob for touch
                 .Set("KnobVerticalMargin", 16f)   // Space reserved above/below knobs
-                .Set("ButtonToKnobSpacing", 16f)  // Padding * 2
-                .Set("KnobToKnobSpacing", 24f))   // Padding * 3
+                .Set("ButtonToKnobSpacing", 19f)  // Gap between button and first knob hit rect
+                .Set("KnobToKnobSpacing", 14f))   // Gap between knob hit rects
             .Element(OnOffButton)
                 .Left("Padding")
                 .VCenter()
@@ -42,12 +42,9 @@ public class ChorusLayoutDefinition : LayoutDefinition
                 .KnobSize("KnobDiameter", "KnobHitPadding", "KnobVerticalMargin")
             .Done();
 
-        // === PIANO PADREA: More horizontal space available ===
-        When(Orientation.Landscape, PadreaShape.Piano)
-            .Constants(c => c
-                .Set("KnobDiameter", 56f)         // Slightly larger
-                .Set("KnobToKnobSpacing", 28f))   // More spacing
-            .Done();
+        // === PIANO PADREA: Reserved for future customization ===
+        // Currently matches default layout to ensure consistency with Calculator.
+        // Can be customized later for piano-specific layouts.
 
         // === NARROW ASPECT RATIO (near-square screens) ===
         When(AspectRatio.LessThan(1.3f), Orientation.Landscape)
@@ -59,7 +56,9 @@ public class ChorusLayoutDefinition : LayoutDefinition
             .Done();
 
         // === WIDE ASPECT RATIO (ultrawide screens) ===
-        When(AspectRatio.GreaterThan(2.5f), Orientation.Landscape)
+        // Note: Effect areas typically have aspect ratios of 3-5, so threshold must be higher
+        // to avoid triggering on normal layouts. Only truly extreme widths should use this.
+        When(AspectRatio.GreaterThan(6.0f), Orientation.Landscape)
             .Constants(c => c
                 .Set("Padding", 12f)
                 .Set("KnobDiameter", 60f)         // Larger

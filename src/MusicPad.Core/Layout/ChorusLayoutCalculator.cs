@@ -14,13 +14,14 @@ public class ChorusLayoutCalculator : ILayoutCalculator
     public const string RateKnob = "RateKnob";
 
     // Layout constants - all explicitly named, no derived values
+    // Values traced from original ChorusDrawable to ensure identical layout
     public const float Padding = 8f;
     public const float ButtonSize = 28f;
-    public const float KnobDiameter = 52f;           // Actual visual diameter (was: 65 * 0.4 * 2)
+    public const float KnobDiameter = 52f;           // Actual visual diameter (65 * 0.4 * 2)
     public const float KnobHitPadding = 5f;          // Extra padding for touch
     public const float KnobVerticalMargin = 16f;     // Space reserved above/below
-    public const float ButtonToKnobSpacing = 16f;    // Padding * 2
-    public const float KnobToKnobSpacing = 24f;      // Padding * 3
+    public const float ButtonToKnobSpacing = 19f;    // Original: padding*2 + radius + padding - radius - hitPad
+    public const float KnobToKnobSpacing = 14f;      // Original: center-to-center(76) - hitSize(62)
 
     public LayoutResult Calculate(RectF bounds, LayoutContext context)
     {

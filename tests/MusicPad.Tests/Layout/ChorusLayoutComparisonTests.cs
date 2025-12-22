@@ -79,6 +79,30 @@ public class ChorusLayoutComparisonTests
             definitionResult.ElementNames.OrderBy(n => n));
     }
 
+    /// <summary>
+    /// Tests that Definition matches Calculator for REALISTIC effect area aspect ratios.
+    /// Effect areas are typically very wide (e.g., 400x100 = 4.0, 300x80 = 3.75).
+    /// The DSL must produce identical results to the Calculator for these real-world scenarios.
+    /// </summary>
+    [Theory]
+    [InlineData(400, 100, PadreaShape.Square)]   // Aspect ratio 4.0
+    [InlineData(300, 80, PadreaShape.Square)]    // Aspect ratio 3.75
+    [InlineData(500, 120, PadreaShape.Square)]   // Aspect ratio 4.17
+    [InlineData(400, 100, PadreaShape.Piano)]    // Piano shape
+    [InlineData(350, 90, PadreaShape.Piano)]     // Piano shape, different size
+    public void Calculate_DefinitionMatchesCalculator_RealisticAspectRatios(
+        float width, float height, PadreaShape shape)
+    {
+        var bounds = new RectF(0, 0, width, height);
+        // Use the ACTUAL aspect ratio from bounds - this is what happens in production
+        var context = LayoutContext.FromBounds(bounds, shape);
+
+        var calculatorResult = _calculator.Calculate(bounds, context);
+        var definitionResult = _definition.Calculate(bounds, context);
+
+        AssertLayoutsMatch(calculatorResult, definitionResult, bounds);
+    }
+
     [Fact]
     public void Calculate_KnobSizeIsCorrect_StandardHeight()
     {

@@ -12,11 +12,11 @@
   Elements: {
     DepthKnob: {
       X: 19.0,
-      Y: 52.0,
+      Y: 55.0,
       Width: 62.0,
       Height: 62.0,
       CenterX: 50.0,
-      CenterY: 83.0
+      CenterY: 86.0
     },
     OnOffButton: {
       X: 36.0,
@@ -28,11 +28,11 @@
     },
     RateKnob: {
       X: 19.0,
-      Y: 138.0,
+      Y: 131.0,
       Width: 62.0,
       Height: 62.0,
       CenterX: 50.0,
-      CenterY: 169.0
+      CenterY: 162.0
     }
   },
   Validation: {
