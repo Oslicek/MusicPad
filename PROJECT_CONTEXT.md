@@ -97,8 +97,18 @@ MusicPad/
 │       │   ├── LayoutCondition.cs    # Condition matching system
 │       │   ├── LayoutResult.cs       # Layout result model
 │       │   ├── ILayoutCalculator.cs  # Layout calculator interface
-│       │   ├── ChorusLayoutCalculator.cs # Legacy Chorus layout calculator
-│       │   └── ChorusLayoutDefinition.cs # Fluent Chorus layout definition
+│       │   ├── ChorusLayoutCalculator.cs   # Chorus layout calculator
+│       │   ├── ChorusLayoutDefinition.cs   # Chorus layout definition
+│       │   ├── DelayLayoutCalculator.cs    # Delay layout calculator
+│       │   ├── DelayLayoutDefinition.cs    # Delay layout definition
+│       │   ├── LpfLayoutCalculator.cs      # LPF layout calculator
+│       │   ├── LpfLayoutDefinition.cs      # LPF layout definition
+│       │   ├── ReverbLayoutCalculator.cs   # Reverb layout calculator
+│       │   ├── ReverbLayoutDefinition.cs   # Reverb layout definition
+│       │   ├── EqLayoutCalculator.cs       # EQ sliders layout calculator
+│       │   ├── EqLayoutDefinition.cs       # EQ sliders layout definition
+│       │   ├── ArpHarmonyLayoutCalculator.cs # ArpHarmony layout calculator
+│       │   └── ArpHarmonyLayoutDefinition.cs # ArpHarmony layout definition
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -127,9 +137,14 @@ MusicPad/
 │       │   ├── RecordingSessionTests.cs  # Recording session tests
 │       │   └── SongTests.cs              # Song metadata tests
 │       ├── Layout/
-│       │   ├── ChorusLayoutCalculatorTests.cs  # Calculator unit tests
-│       │   ├── ChorusLayoutDefinitionTests.cs  # Fluent DSL tests
-│       │   └── ChorusLayoutSnapshotTests.cs    # Verify snapshot tests
+│       │   ├── ChorusLayoutCalculatorTests.cs  # Chorus calculator tests
+│       │   ├── ChorusLayoutDefinitionTests.cs  # Chorus DSL tests
+│       │   ├── ChorusLayoutSnapshotTests.cs    # Chorus snapshot tests
+│       │   ├── DelayLayoutTests.cs             # Delay layout tests
+│       │   ├── LpfLayoutTests.cs               # LPF layout tests
+│       │   ├── ReverbLayoutTests.cs            # Reverb layout tests
+│       │   ├── EqLayoutTests.cs                # EQ layout tests
+│       │   └── ArpHarmonyLayoutTests.cs        # ArpHarmony layout tests
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │
@@ -456,9 +471,14 @@ The main synthesizer interface is divided into named areas:
 | `Mp3EncoderTests` | MP3 encoding tests (ShineEncoder) |
 | `AudioEncoderTests` | Audio encoder interface tests |
 | `OfflineRenderingTests` | Offline audio rendering, effects processing |
-| `ChorusLayoutCalculatorTests` | Layout calculator unit tests |
-| `ChorusLayoutDefinitionTests` | Fluent DSL layout tests |
-| `ChorusLayoutSnapshotTests` | Layout snapshot tests (Verify) |
+| `ChorusLayoutCalculatorTests` | Chorus layout calculator tests |
+| `ChorusLayoutDefinitionTests` | Chorus layout DSL tests |
+| `ChorusLayoutSnapshotTests` | Chorus layout snapshot tests (Verify) |
+| `DelayLayoutTests` | Delay layout calculator and DSL tests |
+| `LpfLayoutTests` | LPF layout calculator and DSL tests |
+| `ReverbLayoutTests` | Reverb layout calculator and DSL tests |
+| `EqLayoutTests` | EQ sliders layout tests |
+| `ArpHarmonyLayoutTests` | ArpHarmony layout tests |
 
 ## Test Devices
 
@@ -505,9 +525,9 @@ The main synthesizer interface is divided into named areas:
 - [x] WAV export (offline rendering)
 - [x] FLAC export (lossless audio)
 - [x] Scales 8x8 padrea with chromatic layout and 3-color coding
-- [x] Unit tests passing (701 tests)
+- [x] Unit tests passing (790 tests)
 - [x] GitHub repository connected
-- [x] Fluent C# Layout DSL for responsive UI layouts (Chorus)
+- [x] Fluent C# Layout DSL for responsive UI layouts (all effects + EQ + ArpHarmony)
 
 **Pending:**
 - [ ] FFmpeg integration for MP3 encoding (LGPL) - native bindings needed
