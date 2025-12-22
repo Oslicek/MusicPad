@@ -1,9 +1,9 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Drawing;
 using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
 
-// Type aliases to resolve ambiguity with MusicPad.Core.Layout types
 using MauiRectF = Microsoft.Maui.Graphics.RectF;
 using MauiPointF = Microsoft.Maui.Graphics.PointF;
 using LayoutRectF = MusicPad.Core.Layout.RectF;
@@ -26,9 +26,9 @@ public class EqDrawable
     private static Color CenterLineColor => Color.FromArgb(AppColors.SliderCenterLine);
     private static Color GrooveColor => Color.FromArgb(AppColors.KnobShadow);
 
-    // Drawing constants
+    // EQ-specific drawing constants
     private const float TrackWidth = 5f;
-    private const float LabelHeight = 14f;
+    private const float EqLabelHeight = 14f;
     private const float ThumbHeight = 12f;
 
     private readonly MauiRectF[] _sliderRects = new MauiRectF[4];
@@ -148,9 +148,9 @@ public class EqDrawable
 
             // Draw label
             string label = GetShortLabel(i);
-            canvas.FontSize = 8;
+            canvas.FontSize = DrawableConstants.FontSizeMedium;
             canvas.FontColor = LabelColor;
-            canvas.DrawString(label, x, trackBottom + 6, sliderWidth, LabelHeight,
+            canvas.DrawString(label, x, trackBottom + 6, sliderWidth, EqLabelHeight,
                 HorizontalAlignment.Center, VerticalAlignment.Top);
         }
     }

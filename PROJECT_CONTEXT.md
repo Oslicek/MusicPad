@@ -34,7 +34,9 @@ MusicPad/
 │   │   │   ├── ChorusDrawable.cs    # Chorus effect controls
 │   │   │   ├── DelayDrawable.cs     # Delay effect controls
 │   │   │   ├── ReverbDrawable.cs    # Reverb effect controls
-│   │   │   └── RecAreaDrawable.cs   # Recording controls (rec/stop/play)
+│   │   │   ├── RecAreaDrawable.cs   # Recording controls (rec/stop/play)
+│   │   │   ├── KnobRenderer.cs      # Shared rotary knob rendering
+│   │   │   └── ToggleRenderer.cs    # Shared toggle button rendering
 │   │   ├── Views/
 │   │   │   ├── InstrumentsPage.xaml # List of available instruments
 │   │   │   ├── InstrumentDetailPage.xaml # Instrument metadata/credits
@@ -91,6 +93,8 @@ MusicPad/
 │       │   ├── FallbackAudioEncoder.cs # Fallback using custom encoders
 │       │   ├── FlacEncoder.cs        # FLAC audio encoder
 │       │   └── ShineEncoder.cs       # MP3 audio encoder (pure C#)
+│       ├── Drawing/
+│       │   └── DrawableConstants.cs  # Shared drawing constants
 │       ├── Layout/
 │       │   ├── LayoutDefinition.cs   # Fluent DSL base class
 │       │   ├── LayoutBuilder.cs      # Fluent builder API
@@ -145,6 +149,8 @@ MusicPad/
 │       │   ├── ReverbLayoutTests.cs            # Reverb layout tests
 │       │   ├── EqLayoutTests.cs                # EQ layout tests
 │       │   └── ArpHarmonyLayoutTests.cs        # ArpHarmony layout tests
+│       ├── Controls/
+│       │   └── DrawableConstantsTests.cs       # Shared constants tests
 │       ├── WaveTableGeneratorTests.cs
 │       └── VoiceMixerTests.cs
 │
@@ -525,7 +531,7 @@ The main synthesizer interface is divided into named areas:
 - [x] WAV export (offline rendering)
 - [x] FLAC export (lossless audio)
 - [x] Scales 8x8 padrea with chromatic layout and 3-color coding
-- [x] Unit tests passing (790 tests)
+- [x] Unit tests passing (801 tests)
 - [x] GitHub repository connected
 - [x] Fluent C# Layout DSL for responsive UI layouts (all effects + EQ + ArpHarmony)
 

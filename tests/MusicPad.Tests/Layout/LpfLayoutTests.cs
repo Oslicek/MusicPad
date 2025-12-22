@@ -132,6 +132,67 @@ public class LpfLayoutTests
 
     #endregion
 
+    #region Vertical Mode Tests
+
+    [Fact]
+    public void Calculator_VerticalMode_ButtonAboveKnobs()
+    {
+        var bounds = new RectF(0, 0, 80, 200);
+        var context = LayoutContext.Vertical(0.4f, PadreaShape.Square);
+
+        var result = _calculator.Calculate(bounds, context);
+
+        var button = result[LpfLayoutCalculator.OnOffButton];
+        var cutoff = result[LpfLayoutCalculator.CutoffKnob];
+
+        Assert.True(button.Bottom < cutoff.Y, 
+            $"Button.Bottom={button.Bottom} should be < Cutoff.Y={cutoff.Y} in vertical mode");
+    }
+
+    [Fact]
+    public void Calculator_VerticalMode_KnobsVerticallyStacked()
+    {
+        var bounds = new RectF(0, 0, 80, 200);
+        var context = LayoutContext.Vertical(0.4f, PadreaShape.Square);
+
+        var result = _calculator.Calculate(bounds, context);
+
+        var cutoff = result[LpfLayoutCalculator.CutoffKnob];
+        var resonance = result[LpfLayoutCalculator.ResonanceKnob];
+
+        Assert.True(cutoff.Bottom < resonance.Y, 
+            $"Cutoff.Bottom={cutoff.Bottom} should be < Resonance.Y={resonance.Y} in vertical mode");
+    }
+
+    [Fact]
+    public void Calculator_VerticalMode_KnobsHorizontallyCentered()
+    {
+        var bounds = new RectF(0, 0, 80, 200);
+        var context = LayoutContext.Vertical(0.4f, PadreaShape.Square);
+
+        var result = _calculator.Calculate(bounds, context);
+
+        var cutoff = result[LpfLayoutCalculator.CutoffKnob];
+        var resonance = result[LpfLayoutCalculator.ResonanceKnob];
+
+        // Both knobs should be horizontally centered (same X position)
+        Assert.Equal(cutoff.X, resonance.X, Tolerance);
+    }
+
+    [Fact]
+    public void Definition_MatchesCalculator_VerticalMode()
+    {
+        var bounds = new RectF(0, 0, 80, 200);
+        var context = LayoutContext.Vertical(0.4f, PadreaShape.Square);
+
+        var calculatorResult = _calculator.Calculate(bounds, context);
+        var definitionResult = _definition.Calculate(bounds, context);
+
+        AssertLayoutsMatch(calculatorResult, definitionResult);
+    }
+
+    #endregion
+
     private void AssertLayoutsMatch(LayoutResult calculator, LayoutResult definition)
     {
         AssertRectMatch(

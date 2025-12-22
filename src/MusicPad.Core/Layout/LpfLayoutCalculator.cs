@@ -27,6 +27,13 @@ public class LpfLayoutCalculator : ILayoutCalculator
 
     public LayoutResult Calculate(RectF bounds, LayoutContext context)
     {
+        return context.Orientation == Orientation.Portrait
+            ? CalculateVertical(bounds)
+            : CalculateHorizontal(bounds);
+    }
+
+    private LayoutResult CalculateHorizontal(RectF bounds)
+    {
         var result = new LayoutResult();
 
         // Calculate actual knob diameter (capped by available height)
@@ -46,6 +53,31 @@ public class LpfLayoutCalculator : ILayoutCalculator
         // Resonance knob after Cutoff
         float resonanceKnobX = cutoffKnobX + knobHitSize + KnobToKnobSpacing;
         result[ResonanceKnob] = new RectF(resonanceKnobX, knobY, knobHitSize, knobHitSize);
+
+        return result;
+    }
+
+    private LayoutResult CalculateVertical(RectF bounds)
+    {
+        var result = new LayoutResult();
+
+        // Calculate actual knob diameter (capped by available width)
+        float actualDiameter = Math.Min(bounds.Width - KnobVerticalMargin, KnobDiameter);
+        float knobHitSize = actualDiameter + KnobHitPadding * 2;
+
+        // On/Off button at top, horizontally centered
+        float buttonX = bounds.X + (bounds.Width - ButtonSize) / 2;
+        float buttonY = bounds.Y + Padding;
+        result[OnOffButton] = new RectF(buttonX, buttonY, ButtonSize, ButtonSize);
+
+        // Cutoff knob below button, horizontally centered
+        float knobX = bounds.X + (bounds.Width - knobHitSize) / 2;
+        float cutoffKnobY = buttonY + ButtonSize + ButtonToKnobSpacing;
+        result[CutoffKnob] = new RectF(knobX, cutoffKnobY, knobHitSize, knobHitSize);
+
+        // Resonance knob below Cutoff
+        float resonanceKnobY = cutoffKnobY + knobHitSize + KnobToKnobSpacing;
+        result[ResonanceKnob] = new RectF(knobX, resonanceKnobY, knobHitSize, knobHitSize);
 
         return result;
     }
