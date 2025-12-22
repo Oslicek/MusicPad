@@ -4,6 +4,7 @@ using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
 using LayoutRectF = MusicPad.Core.Layout.RectF;
 using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using MauiPointF = Microsoft.Maui.Graphics.PointF;
 
 namespace MusicPad.Controls;
 
@@ -125,7 +126,7 @@ public class EffectAreaDrawable : IDrawable
         { EffectType.Reverb, "REVERB" }
     };
     
-    private void DrawEffectTitle(ICanvas canvas, RectF controlsRect, EffectType effect)
+    private void DrawEffectTitle(ICanvas canvas, MauiRectF controlsRect, EffectType effect)
     {
         string title = EffectTitles.GetValueOrDefault(effect, "");
         if (string.IsNullOrEmpty(title)) return;
@@ -297,7 +298,7 @@ public class EffectAreaDrawable : IDrawable
     /// </summary>
     public bool OnTouchStart(float x, float y)
     {
-        var point = new PointF(x, y);
+        var point = new MauiPointF(x, y);
         var effects = EffectSelector.AllEffects;
 
         // Check effect selection buttons
