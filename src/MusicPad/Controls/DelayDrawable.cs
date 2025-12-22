@@ -1,15 +1,29 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using MauiPointF = Microsoft.Maui.Graphics.PointF;
+using LayoutRectF = MusicPad.Core.Layout.RectF;
 
 namespace MusicPad.Controls;
 
 /// <summary>
 /// Drawable for Delay controls with on/off button, Time, Feedback, and Level knobs.
+/// Uses fluent Layout DSL for responsive positioning.
 /// </summary>
 public class DelayDrawable
 {
+    // Drawing constants
+    private const float KnobHitPadding = 5f;      // Must match layout constant
+    private const float KnobMinAngle = 225f;      // Start angle for knob rotation
+    private const float KnobMaxAngle = -45f;      // End angle for knob rotation
+    private const float ToggleWidthRatio = 0.85f; // Toggle width relative to button
+    private const float ToggleHeightRatio = 0.5f; // Toggle height relative to button
+    private const float ToggleKnobRatio = 0.4f;   // Toggle knob size relative to height
+    
     private readonly DelaySettings _settings;
+    private readonly DelayLayoutDefinition _layoutDefinition = DelayLayoutDefinition.Instance;
     
     // Knob colors (dynamic for palette switching)
     private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
@@ -24,13 +38,15 @@ public class DelayDrawable
     private static Color ButtonOnColor => Color.FromArgb(AppColors.ButtonOn);
     private static Color ButtonOffColor => Color.FromArgb(AppColors.ButtonOff);
 
-    private RectF _onOffButtonRect;
-    private RectF _timeKnobRect;
-    private RectF _feedbackKnobRect;
-    private RectF _levelKnobRect;
+    private MauiRectF _onOffButtonRect;
+    private MauiRectF _timeKnobRect;
+    private MauiRectF _feedbackKnobRect;
+    private MauiRectF _levelKnobRect;
     private float _knobRadius;
     private int _draggingKnob = -1; // 0=time, 1=feedback, 2=level
     private float _lastAngle;
+    
+    private PadreaShape _padreaShape = PadreaShape.Square;
 
     public event EventHandler? InvalidateRequested;
 
@@ -44,56 +60,55 @@ public class DelayDrawable
     }
 
     public DelaySettings Settings => _settings;
+    
+    public void SetPadreaShape(PadreaShape shape)
+    {
+        _padreaShape = shape;
+    }
 
     /// <summary>
-    /// Draws the Delay controls.
+    /// Draws the Delay controls using the Layout DSL.
     /// </summary>
-    public void Draw(ICanvas canvas, RectF dirtyRect)
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect)
     {
-        float padding = 8f;  // Uniform spacing
-        float buttonSize = 28f;
+        // Create layout context from bounds and padrea shape
+        var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        var context = LayoutContext.FromBounds(bounds, _padreaShape);
         
-        // Large knob size - consistent with Chorus and Reverb (+30% bigger)
-        float knobSize = Math.Min(dirtyRect.Height - 16, 65f);
-        _knobRadius = knobSize * 0.4f;
+        // Calculate layout using the fluent DSL
+        var layout = _layoutDefinition.Calculate(bounds, context);
+        
+        // Convert layout results to MAUI RectF for hit testing
+        var onOffRect = layout[DelayLayoutDefinition.OnOffButton];
+        var timeRect = layout[DelayLayoutDefinition.TimeKnob];
+        var feedbackRect = layout[DelayLayoutDefinition.FeedbackKnob];
+        var levelRect = layout[DelayLayoutDefinition.LevelKnob];
+        
+        _onOffButtonRect = new MauiRectF(onOffRect.X, onOffRect.Y, onOffRect.Width, onOffRect.Height);
+        _timeKnobRect = new MauiRectF(timeRect.X, timeRect.Y, timeRect.Width, timeRect.Height);
+        _feedbackKnobRect = new MauiRectF(feedbackRect.X, feedbackRect.Y, feedbackRect.Width, feedbackRect.Height);
+        _levelKnobRect = new MauiRectF(levelRect.X, levelRect.Y, levelRect.Width, levelRect.Height);
+        
+        // Calculate knob radius from hit rect (hit rect = diameter + 2*padding)
+        _knobRadius = (timeRect.Width - KnobHitPadding * 2) / 2;
         
         bool isEnabled = _settings.IsEnabled;
         
-        // On/Off button on the left
-        float buttonX = dirtyRect.X + padding;
-        float buttonY = dirtyRect.Y + (dirtyRect.Height - buttonSize) / 2;
-        _onOffButtonRect = new RectF(buttonX, buttonY, buttonSize, buttonSize);
+        // Draw controls at calculated positions
         DrawOnOffButton(canvas, _onOffButtonRect);
-        
-        // Three knobs side by side after the button
-        float knobsStartX = buttonX + buttonSize + padding * 2;
-        float knobY = dirtyRect.Y + dirtyRect.Height / 2;
-        float knobSpacing = _knobRadius * 2 + padding * 3;  // More spacing between knobs
-        
-        float timeX = knobsStartX + _knobRadius + padding;
-        float feedbackX = timeX + knobSpacing;
-        float levelX = feedbackX + knobSpacing;
-        
-        _timeKnobRect = new RectF(timeX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                   _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-        _feedbackKnobRect = new RectF(feedbackX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                       _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-        _levelKnobRect = new RectF(levelX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                    _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-
-        DrawKnob(canvas, timeX, knobY, _knobRadius, _settings.Time, "TIME", isEnabled);
-        DrawKnob(canvas, feedbackX, knobY, _knobRadius, _settings.Feedback, "FDBK", isEnabled);
-        DrawKnob(canvas, levelX, knobY, _knobRadius, _settings.Level, "LVL", isEnabled);
+        DrawKnob(canvas, timeRect.CenterX, timeRect.CenterY, _knobRadius, _settings.Time, "TIME", isEnabled);
+        DrawKnob(canvas, feedbackRect.CenterX, feedbackRect.CenterY, _knobRadius, _settings.Feedback, "FDBK", isEnabled);
+        DrawKnob(canvas, levelRect.CenterX, levelRect.CenterY, _knobRadius, _settings.Level, "LVL", isEnabled);
     }
 
-    private void DrawOnOffButton(ICanvas canvas, RectF rect)
+    private void DrawOnOffButton(ICanvas canvas, MauiRectF rect)
     {
         bool isOn = _settings.IsEnabled;
         float cx = rect.Center.X;
         float cy = rect.Center.Y;
-        float toggleWidth = rect.Width * 0.85f;
-        float toggleHeight = rect.Height * 0.5f;
-        float knobRadius = toggleHeight * 0.4f;
+        float toggleWidth = rect.Width * ToggleWidthRatio;
+        float toggleHeight = rect.Height * ToggleHeightRatio;
+        float knobRadius = toggleHeight * ToggleKnobRatio;
         
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
         canvas.FillRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
@@ -118,25 +133,10 @@ public class DelayDrawable
         Color highlightColor = isEnabled ? KnobHighlightColor : DisabledColor.WithAlpha(0.6f);
         Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledDark);
         
-        float minAngle = 225f;
-        float maxAngle = -45f;
-        float totalAngle = maxAngle - minAngle;
-        if (totalAngle > 0) totalAngle -= 360;
+        float totalAngle = GetTotalKnobAngle();
         
-        // Draw radial markers - use accent color when enabled
-        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
-        canvas.StrokeSize = 1.5f;
-        canvas.StrokeLineCap = LineCap.Round;
-        float outerRadius = radius + 5;
-        float innerRadius = radius + 2;
-        for (int i = 0; i <= 6; i++)
-        {
-            float t = i / 6f;
-            float angle = minAngle + totalAngle * t;
-            float rads = angle * MathF.PI / 180f;
-            canvas.DrawLine(centerX + innerRadius * MathF.Cos(rads), centerY - innerRadius * MathF.Sin(rads),
-                           centerX + outerRadius * MathF.Cos(rads), centerY - outerRadius * MathF.Sin(rads));
-        }
+        // Draw radial markers
+        DrawKnobMarkers(canvas, centerX, centerY, radius, isEnabled, totalAngle);
         
         canvas.FillColor = shadowColor;
         canvas.FillCircle(centerX + 1, centerY + 1, radius);
@@ -154,7 +154,7 @@ public class DelayDrawable
         canvas.StrokeSize = 1;
         canvas.DrawCircle(centerX, centerY, radius);
 
-        float currentAngle = minAngle + totalAngle * value;
+        float currentAngle = KnobMinAngle + totalAngle * value;
         float radians = currentAngle * MathF.PI / 180f;
         
         float notchDistance = radius * 0.7f;
@@ -171,9 +171,33 @@ public class DelayDrawable
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
+    private void DrawKnobMarkers(ICanvas canvas, float centerX, float centerY, float radius, bool isEnabled, float totalAngle)
+    {
+        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
+        canvas.StrokeSize = 1.5f;
+        canvas.StrokeLineCap = LineCap.Round;
+        float outerRadius = radius + 5;
+        float innerRadius = radius + 2;
+        for (int i = 0; i <= 6; i++)
+        {
+            float t = i / 6f;
+            float angle = KnobMinAngle + totalAngle * t;
+            float rads = angle * MathF.PI / 180f;
+            canvas.DrawLine(centerX + innerRadius * MathF.Cos(rads), centerY - innerRadius * MathF.Sin(rads),
+                           centerX + outerRadius * MathF.Cos(rads), centerY - outerRadius * MathF.Sin(rads));
+        }
+    }
+
+    private static float GetTotalKnobAngle()
+    {
+        float totalAngle = KnobMaxAngle - KnobMinAngle;
+        if (totalAngle > 0) totalAngle -= 360;
+        return totalAngle;
+    }
+
     public bool OnTouch(float x, float y, bool isStart)
     {
-        var point = new PointF(x, y);
+        var point = new MauiPointF(x, y);
 
         if (isStart)
         {
@@ -209,7 +233,7 @@ public class DelayDrawable
         {
             if (_draggingKnob >= 0)
             {
-                UpdateKnob(x, y);
+                UpdateKnobValue();
                 return true;
             }
         }
@@ -217,9 +241,30 @@ public class DelayDrawable
         return false;
     }
 
-    private void UpdateKnob(float x, float y)
+    private void UpdateKnobValue()
     {
-        RectF knobRect = _draggingKnob switch
+        // Knob update is handled in the drag continuation
+    }
+
+    private float GetAngleFromKnobCenter(MauiRectF knobRect, float x, float y)
+    {
+        float centerX = knobRect.Center.X;
+        float centerY = knobRect.Center.Y;
+        float dx = x - centerX;
+        float dy = centerY - y;
+        return MathF.Atan2(dy, dx) * 180f / MathF.PI;
+    }
+
+    public void OnTouchEnd()
+    {
+        _draggingKnob = -1;
+    }
+    
+    public void OnTouchMove(float x, float y)
+    {
+        if (_draggingKnob < 0) return;
+        
+        MauiRectF knobRect = _draggingKnob switch
         {
             0 => _timeKnobRect,
             1 => _feedbackKnobRect,
@@ -235,9 +280,7 @@ public class DelayDrawable
         if (angleDelta > 180) angleDelta -= 360;
         if (angleDelta < -180) angleDelta += 360;
         
-        float totalAngle = -45f - 225f;
-        if (totalAngle > 0) totalAngle -= 360;
-        
+        float totalAngle = GetTotalKnobAngle();
         float valueDelta = angleDelta / totalAngle;
         
         switch (_draggingKnob)
@@ -255,19 +298,4 @@ public class DelayDrawable
         
         _lastAngle = currentAngle;
     }
-
-    private float GetAngleFromKnobCenter(RectF knobRect, float x, float y)
-    {
-        float centerX = knobRect.Center.X;
-        float centerY = knobRect.Center.Y;
-        float dx = x - centerX;
-        float dy = centerY - y;
-        return MathF.Atan2(dy, dx) * 180f / MathF.PI;
-    }
-
-    public void OnTouchEnd()
-    {
-        _draggingKnob = -1;
-    }
 }
-
