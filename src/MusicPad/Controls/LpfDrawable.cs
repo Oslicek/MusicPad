@@ -67,16 +67,16 @@ public class LpfDrawable
 
     /// <summary>
     /// Draws the LPF controls using the Layout DSL.
-    /// Note: isVertical parameter is preserved for backward compatibility but DSL handles orientation.
     /// </summary>
+    /// <param name="isVertical">Explicitly sets orientation - overrides bounds-based detection.</param>
     public void Draw(ICanvas canvas, MauiRectF dirtyRect, bool isVertical = false)
     {
         // Create layout context from bounds and padrea shape
         var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
-        // Override orientation if isVertical is true
+        // Explicitly set orientation - don't derive from bounds (bounds may be tall even in landscape mode)
         var context = isVertical 
             ? LayoutContext.Vertical(bounds.Height / bounds.Width, _padreaShape)
-            : LayoutContext.FromBounds(bounds, _padreaShape);
+            : LayoutContext.Horizontal(bounds.Width / bounds.Height, _padreaShape);
         
         // Calculate layout using the fluent DSL
         var layout = _layoutDefinition.Calculate(bounds, context);
