@@ -1,15 +1,29 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using MauiPointF = Microsoft.Maui.Graphics.PointF;
+using LayoutRectF = MusicPad.Core.Layout.RectF;
 
 namespace MusicPad.Controls;
 
 /// <summary>
 /// Drawable for Reverb controls with on/off button, level knob, and 4-button type selector.
+/// Uses fluent Layout DSL for responsive positioning.
 /// </summary>
 public class ReverbDrawable
 {
+    // Drawing constants
+    private const float KnobHitPadding = 5f;
+    private const float KnobMinAngle = 225f;
+    private const float KnobMaxAngle = -45f;
+    private const float ToggleWidthRatio = 0.85f;
+    private const float ToggleHeightRatio = 0.5f;
+    private const float ToggleKnobRatio = 0.4f;
+    
     private readonly ReverbSettings _settings;
+    private readonly ReverbLayoutDefinition _layoutDefinition = ReverbLayoutDefinition.Instance;
     
     // Knob colors (dynamic for palette switching)
     private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
@@ -27,16 +41,16 @@ public class ReverbDrawable
     // Type selector colors (dynamic for palette switching)
     private static Color TypeButtonBaseColor => Color.FromArgb(AppColors.TypeButtonBase);
     private static Color TypeButtonSelectedColor => Color.FromArgb(AppColors.TypeButtonSelected);
-    private static Color TypeButtonHighlightColor => Color.FromArgb(AppColors.TypeButtonHighlight);
     private static Color TypeButtonTextColor => Color.FromArgb(AppColors.TextSecondary);
-    private static Color TypeButtonTextSelectedColor => Color.FromArgb(AppColors.TextWhite);
 
-    private RectF _onOffButtonRect;
-    private RectF _levelKnobRect;
-    private readonly RectF[] _typeButtonRects = new RectF[4];
+    private MauiRectF _onOffButtonRect;
+    private MauiRectF _levelKnobRect;
+    private readonly MauiRectF[] _typeButtonRects = new MauiRectF[4];
     private float _knobRadius;
     private bool _isDraggingLevel;
     private float _lastAngle;
+    
+    private PadreaShape _padreaShape = PadreaShape.Square;
 
     private static readonly string[] TypeLabels = { "ROOM", "HALL", "PLATE", "CATH" };
 
@@ -51,54 +65,60 @@ public class ReverbDrawable
     }
 
     public ReverbSettings Settings => _settings;
+    
+    public void SetPadreaShape(PadreaShape shape)
+    {
+        _padreaShape = shape;
+    }
 
     /// <summary>
-    /// Draws the Reverb controls.
+    /// Draws the Reverb controls using the Layout DSL.
     /// </summary>
-    public void Draw(ICanvas canvas, RectF dirtyRect)
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect)
     {
-        float padding = 8f;  // Uniform spacing
-        float buttonSize = 28f;
-        // Large knob size (+30% bigger)
-        float knobSize = Math.Min(dirtyRect.Height - 16, 65f);
-        _knobRadius = knobSize * 0.4f;
-        bool isEnabled = _settings.IsEnabled;
+        // Create layout context from bounds and padrea shape
+        var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        var context = LayoutContext.FromBounds(bounds, _padreaShape);
         
-        // On/Off button on the left
-        float buttonX = dirtyRect.X + padding;
-        float buttonY = dirtyRect.Y + (dirtyRect.Height - buttonSize) / 2;
-        _onOffButtonRect = new RectF(buttonX, buttonY, buttonSize, buttonSize);
-        DrawOnOffButton(canvas, _onOffButtonRect);
+        // Calculate layout using the fluent DSL
+        var layout = _layoutDefinition.Calculate(bounds, context);
         
-        // Level knob after the button
-        float knobX = buttonX + buttonSize + padding * 2 + _knobRadius + padding;
-        float knobY = dirtyRect.Y + dirtyRect.Height / 2;
+        // Convert layout results to MAUI RectF for hit testing
+        var onOffRect = layout[ReverbLayoutDefinition.OnOffButton];
+        var levelRect = layout[ReverbLayoutDefinition.LevelKnob];
         
-        _levelKnobRect = new RectF(knobX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                    _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-        DrawKnob(canvas, knobX, knobY, _knobRadius, _settings.Level, "LVL", isEnabled);
-        
-        // Type selector buttons (circular with labels below) after the knob
-        float selectorStartX = knobX + _knobRadius + padding * 4;
-        float circleButtonSize = 24f;
-        float centerY = dirtyRect.Y + dirtyRect.Height / 2 - 5; // Shift up for labels
+        _onOffButtonRect = new MauiRectF(onOffRect.X, onOffRect.Y, onOffRect.Width, onOffRect.Height);
+        _levelKnobRect = new MauiRectF(levelRect.X, levelRect.Y, levelRect.Width, levelRect.Height);
         
         for (int i = 0; i < 4; i++)
         {
-            float x = selectorStartX + i * (circleButtonSize + padding + 10);
-            _typeButtonRects[i] = new RectF(x, centerY - circleButtonSize / 2, circleButtonSize, circleButtonSize);
+            var typeRect = layout[$"TypeButton{i}"];
+            _typeButtonRects[i] = new MauiRectF(typeRect.X, typeRect.Y, typeRect.Width, typeRect.Height);
+        }
+        
+        // Calculate knob radius from hit rect
+        _knobRadius = (levelRect.Width - KnobHitPadding * 2) / 2;
+        
+        bool isEnabled = _settings.IsEnabled;
+        
+        // Draw controls at calculated positions
+        DrawOnOffButton(canvas, _onOffButtonRect);
+        DrawKnob(canvas, levelRect.CenterX, levelRect.CenterY, _knobRadius, _settings.Level, "LVL", isEnabled);
+        
+        for (int i = 0; i < 4; i++)
+        {
             DrawCircleTypeButton(canvas, _typeButtonRects[i], TypeLabels[i], (int)_settings.Type == i, isEnabled);
         }
     }
 
-    private void DrawOnOffButton(ICanvas canvas, RectF rect)
+    private void DrawOnOffButton(ICanvas canvas, MauiRectF rect)
     {
         bool isOn = _settings.IsEnabled;
         float cx = rect.Center.X;
         float cy = rect.Center.Y;
-        float toggleWidth = rect.Width * 0.85f;
-        float toggleHeight = rect.Height * 0.5f;
-        float knobRadius = toggleHeight * 0.4f;
+        float toggleWidth = rect.Width * ToggleWidthRatio;
+        float toggleHeight = rect.Height * ToggleHeightRatio;
+        float knobRadius = toggleHeight * ToggleKnobRatio;
         
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
         canvas.FillRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
@@ -123,25 +143,10 @@ public class ReverbDrawable
         Color highlightColor = isEnabled ? KnobHighlightColor : DisabledColor.WithAlpha(0.6f);
         Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledDark);
         
-        float minAngle = 225f;
-        float maxAngle = -45f;
-        float totalAngle = maxAngle - minAngle;
-        if (totalAngle > 0) totalAngle -= 360;
+        float totalAngle = GetTotalKnobAngle();
         
-        // Draw radial markers - use accent color when enabled
-        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
-        canvas.StrokeSize = 1.5f;
-        canvas.StrokeLineCap = LineCap.Round;
-        float outerRadius = radius + 5;
-        float innerRadius = radius + 2;
-        for (int i = 0; i <= 6; i++)
-        {
-            float t = i / 6f;
-            float angle = minAngle + totalAngle * t;
-            float rads = angle * MathF.PI / 180f;
-            canvas.DrawLine(centerX + innerRadius * MathF.Cos(rads), centerY - innerRadius * MathF.Sin(rads),
-                           centerX + outerRadius * MathF.Cos(rads), centerY - outerRadius * MathF.Sin(rads));
-        }
+        // Draw radial markers
+        DrawKnobMarkers(canvas, centerX, centerY, radius, isEnabled, totalAngle);
         
         canvas.FillColor = shadowColor;
         canvas.FillCircle(centerX + 1, centerY + 1, radius);
@@ -159,7 +164,7 @@ public class ReverbDrawable
         canvas.StrokeSize = 1;
         canvas.DrawCircle(centerX, centerY, radius);
 
-        float currentAngle = minAngle + totalAngle * value;
+        float currentAngle = KnobMinAngle + totalAngle * value;
         float radians = currentAngle * MathF.PI / 180f;
         
         float notchDistance = radius * 0.7f;
@@ -176,58 +181,36 @@ public class ReverbDrawable
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
-    private void DrawTypeButton(ICanvas canvas, RectF rect, ReverbType type, bool isEnabled)
+    private void DrawKnobMarkers(ICanvas canvas, float centerX, float centerY, float radius, bool isEnabled, float totalAngle)
     {
-        bool isSelected = _settings.Type == type;
-        int index = (int)type;
-        
-        // Determine corner radii for seamless appearance
-        float leftRadius = index == 0 ? 6 : 0;
-        float rightRadius = index == 3 ? 6 : 0;
-        
-        // Background with knob-style aesthetic for selected button
-        if (isSelected && isEnabled)
+        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
+        canvas.StrokeSize = 1.5f;
+        canvas.StrokeLineCap = LineCap.Round;
+        float outerRadius = radius + 5;
+        float innerRadius = radius + 2;
+        for (int i = 0; i <= 6; i++)
         {
-            // Draw shadow for depth
-            canvas.FillColor = KnobShadowColor;
-            canvas.FillRoundedRectangle(new RectF(rect.X + 1, rect.Y + 1, rect.Width, rect.Height), 
-                leftRadius, rightRadius, rightRadius, leftRadius);
-            
-            // Main button with copper color
-            canvas.FillColor = TypeButtonSelectedColor;
-            canvas.FillRoundedRectangle(rect, leftRadius, rightRadius, rightRadius, leftRadius);
-            
-            // Subtle highlight
-            canvas.FillColor = TypeButtonHighlightColor.WithAlpha(0.3f);
-            var highlightRect = new RectF(rect.X + 2, rect.Y + 2, rect.Width - 4, rect.Height * 0.4f);
-            canvas.FillRoundedRectangle(highlightRect, Math.Max(0, leftRadius - 2), Math.Max(0, rightRadius - 2), 0, 0);
+            float t = i / 6f;
+            float angle = KnobMinAngle + totalAngle * t;
+            float rads = angle * MathF.PI / 180f;
+            canvas.DrawLine(centerX + innerRadius * MathF.Cos(rads), centerY - innerRadius * MathF.Sin(rads),
+                           centerX + outerRadius * MathF.Cos(rads), centerY - outerRadius * MathF.Sin(rads));
         }
-        else
-        {
-            // Unselected or disabled
-            canvas.FillColor = isEnabled ? TypeButtonBaseColor : DisabledColor.WithAlpha(0.5f);
-            canvas.FillRoundedRectangle(rect, leftRadius, rightRadius, rightRadius, leftRadius);
-        }
-        
-        // Border
-        canvas.StrokeColor = isSelected && isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledBorder);
-        canvas.StrokeSize = 1;
-        canvas.DrawRoundedRectangle(rect, leftRadius, rightRadius, rightRadius, leftRadius);
-        
-        // Label
-        canvas.FontSize = 10;
-        canvas.FontColor = isSelected && isEnabled ? TypeButtonTextSelectedColor : 
-                          (isEnabled ? TypeButtonTextColor : DisabledColor);
-        canvas.DrawString(TypeLabels[index], rect, HorizontalAlignment.Center, VerticalAlignment.Center);
     }
-    
-    private void DrawCircleTypeButton(ICanvas canvas, RectF rect, string label, bool isSelected, bool isEnabled)
+
+    private static float GetTotalKnobAngle()
+    {
+        float totalAngle = KnobMaxAngle - KnobMinAngle;
+        if (totalAngle > 0) totalAngle -= 360;
+        return totalAngle;
+    }
+
+    private void DrawCircleTypeButton(ICanvas canvas, MauiRectF rect, string label, bool isSelected, bool isEnabled)
     {
         float centerX = rect.Center.X;
         float centerY = rect.Center.Y;
         float radius = Math.Min(rect.Width, rect.Height) / 2f;
         
-        // Circle background
         if (isSelected && isEnabled)
         {
             canvas.FillColor = TypeButtonSelectedColor;
@@ -238,12 +221,10 @@ public class ReverbDrawable
         }
         canvas.FillCircle(centerX, centerY, radius);
         
-        // Circle border
         canvas.StrokeColor = isSelected && isEnabled ? AccentColor : (isEnabled ? Color.FromArgb(AppColors.ButtonBorder) : DisabledColor);
         canvas.StrokeSize = isSelected ? 2 : 1;
         canvas.DrawCircle(centerX, centerY, radius);
         
-        // Label below the button
         canvas.FontSize = 7;
         canvas.FontColor = isEnabled ? LabelColor : DisabledColor;
         canvas.DrawString(label, centerX - 20, centerY + radius + 2, 40, 12,
@@ -252,11 +233,10 @@ public class ReverbDrawable
 
     public bool OnTouch(float x, float y, bool isStart)
     {
-        var point = new PointF(x, y);
+        var point = new MauiPointF(x, y);
 
         if (isStart)
         {
-            // Check power button
             if (_onOffButtonRect.Contains(point))
             {
                 _settings.IsEnabled = !_settings.IsEnabled;
@@ -266,7 +246,6 @@ public class ReverbDrawable
             if (!_settings.IsEnabled)
                 return false;
             
-            // Check type selector buttons
             for (int i = 0; i < 4; i++)
             {
                 if (_typeButtonRects[i].Contains(point))
@@ -276,7 +255,6 @@ public class ReverbDrawable
                 }
             }
             
-            // Check level knob
             if (_levelKnobRect.Contains(point))
             {
                 _isDraggingLevel = true;
@@ -288,7 +266,7 @@ public class ReverbDrawable
         {
             if (_isDraggingLevel)
             {
-                UpdateLevelKnob(x, y);
+                UpdateKnobValue(_levelKnobRect, x, y, v => _settings.Level = v, _settings.Level);
                 return true;
             }
         }
@@ -296,24 +274,22 @@ public class ReverbDrawable
         return false;
     }
 
-    private void UpdateLevelKnob(float x, float y)
+    private void UpdateKnobValue(MauiRectF knobRect, float x, float y, Action<float> setValue, float currentValue)
     {
-        float currentAngle = GetAngleFromKnobCenter(_levelKnobRect, x, y);
+        float currentAngle = GetAngleFromKnobCenter(knobRect, x, y);
         float angleDelta = currentAngle - _lastAngle;
         
         if (angleDelta > 180) angleDelta -= 360;
         if (angleDelta < -180) angleDelta += 360;
         
-        float totalAngle = -45f - 225f;
-        if (totalAngle > 0) totalAngle -= 360;
-        
+        float totalAngle = GetTotalKnobAngle();
         float valueDelta = angleDelta / totalAngle;
-        _settings.Level = Math.Clamp(_settings.Level + valueDelta, 0f, 1f);
+        setValue(Math.Clamp(currentValue + valueDelta, 0f, 1f));
         
         _lastAngle = currentAngle;
     }
 
-    private float GetAngleFromKnobCenter(RectF knobRect, float x, float y)
+    private float GetAngleFromKnobCenter(MauiRectF knobRect, float x, float y)
     {
         float centerX = knobRect.Center.X;
         float centerY = knobRect.Center.Y;
@@ -327,4 +303,3 @@ public class ReverbDrawable
         _isDraggingLevel = false;
     }
 }
-

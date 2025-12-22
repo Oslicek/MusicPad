@@ -213,11 +213,19 @@ public abstract class LayoutDefinition : ILayoutCalculator
         {
             PositionType.Top => bounds.Y + ResolveValue(spec.YPosition.Value, spec.YPosition.ConstantName, constants),
             PositionType.Bottom => bounds.Bottom - height - ResolveValue(spec.YPosition.Value, spec.YPosition.ConstantName, constants),
-            PositionType.Center => bounds.Y + (bounds.Height - height) / 2,
+            PositionType.Center => bounds.Y + (bounds.Height - height) / 2 + spec.YPosition.Value,  // Value = offset
             PositionType.After => ResolveAfter(spec.YPosition, resolved, constants, isX: false),
             PositionType.Before => ResolveBefore(spec.YPosition, resolved, constants, height, isX: false),
+            PositionType.AlignTop => ResolveAlignTop(spec.YPosition, resolved),
             _ => bounds.Y
         };
+    }
+
+    private float ResolveAlignTop(PositionSpec pos, Dictionary<string, RectF> resolved)
+    {
+        if (pos.RelativeTo == null || !resolved.TryGetValue(pos.RelativeTo, out var ref_rect))
+            return 0;
+        return ref_rect.Y;
     }
 
     private float ResolveAfter(PositionSpec pos, Dictionary<string, RectF> resolved,
@@ -315,7 +323,8 @@ internal enum PositionType
     Bottom,
     Center,
     After,
-    Before
+    Before,
+    AlignTop
 }
 
 /// <summary>

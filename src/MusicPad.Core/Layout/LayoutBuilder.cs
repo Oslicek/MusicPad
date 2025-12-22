@@ -193,6 +193,28 @@ public class ElementBuilder
     }
 
     /// <summary>
+    /// Centers element vertically with an offset (positive = down, negative = up).
+    /// </summary>
+    public ElementBuilder VCenter(float offset)
+    {
+        _spec.YPosition = new PositionSpec { Type = PositionType.Center, Value = offset };
+        return this;
+    }
+
+    /// <summary>
+    /// Aligns element's top edge with another element's top edge.
+    /// </summary>
+    public ElementBuilder AlignTop(string elementName)
+    {
+        _spec.YPosition = new PositionSpec
+        {
+            Type = PositionType.AlignTop,
+            RelativeTo = elementName
+        };
+        return this;
+    }
+
+    /// <summary>
     /// Positions element below another element.
     /// </summary>
     public ElementBuilder Below(string elementName, float spacing = 0)
