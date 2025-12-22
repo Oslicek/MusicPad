@@ -1,6 +1,12 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
+
+// Type aliases to resolve ambiguity with MusicPad.Core.Layout types
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using MauiPointF = Microsoft.Maui.Graphics.PointF;
+using LayoutRectF = MusicPad.Core.Layout.RectF;
 
 namespace MusicPad.Controls;
 
@@ -10,6 +16,7 @@ namespace MusicPad.Controls;
 public class EqDrawable
 {
     private readonly EqualizerSettings _settings;
+    private readonly EqLayoutDefinition _layoutDefinition = EqLayoutDefinition.Instance;
     
     // Colors (dynamic for palette switching)
     private static Color SliderTrackColor => Color.FromArgb(AppColors.SliderTrack);
@@ -19,7 +26,12 @@ public class EqDrawable
     private static Color CenterLineColor => Color.FromArgb(AppColors.SliderCenterLine);
     private static Color GrooveColor => Color.FromArgb(AppColors.KnobShadow);
 
-    private readonly RectF[] _sliderRects = new RectF[4];
+    // Drawing constants
+    private const float TrackWidth = 5f;
+    private const float LabelHeight = 14f;
+    private const float ThumbHeight = 12f;
+
+    private readonly MauiRectF[] _sliderRects = new MauiRectF[4];
     private readonly float[] _sliderTrackTops = new float[4];
     private readonly float[] _sliderTrackBottoms = new float[4];
     private int _draggingSlider = -1;
@@ -37,44 +49,42 @@ public class EqDrawable
     /// <summary>
     /// Draws the EQ sliders in a compact layout.
     /// </summary>
-    public void Draw(ICanvas canvas, RectF dirtyRect)
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect)
     {
-        float padding = 4;
-        float labelHeight = 14;
-        float sliderWidth = Math.Min((dirtyRect.Width - padding * 5) / 4, 28f);
-        float totalWidth = sliderWidth * 4 + padding * 3;
-        float startX = dirtyRect.X + (dirtyRect.Width - totalWidth) / 2;
-        
-        // Reduce track height and center vertically
-        float trackHeight = dirtyRect.Height * 0.65f;
-        trackHeight = Math.Clamp(trackHeight, 30f, 80f);
-        float trackWidth = 5f;  // Slightly wider track for hardware look
-        
-        // Center the sliders vertically (track + labels)
-        float totalSliderHeight = trackHeight + labelHeight;
-        float verticalOffset = (dirtyRect.Height - totalSliderHeight) / 2;
+        // Use layout definition for positioning
+        var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        var context = LayoutContext.FromBounds(bounds);
+        var layout = _layoutDefinition.Calculate(bounds, context);
+
+        // Get track bounds for drawing
+        var (trackTop, trackBottom) = EqLayoutDefinition.GetTrackBounds(bounds);
+        float trackHeight = trackBottom - trackTop;
+        float trackCenterY = (trackTop + trackBottom) / 2;
+
+        // Get slider element names
+        string[] sliderNames = { EqLayoutDefinition.Slider0, EqLayoutDefinition.Slider1, 
+                                  EqLayoutDefinition.Slider2, EqLayoutDefinition.Slider3 };
 
         for (int i = 0; i < 4; i++)
         {
-            float x = startX + i * (sliderWidth + padding);
+            var sliderRect = layout[sliderNames[i]];
+            float sliderWidth = sliderRect.Width;
+            float x = sliderRect.X;
             float centerX = x + sliderWidth / 2;
-            float trackTop = dirtyRect.Y + verticalOffset;
-            float trackBottom = trackTop + trackHeight;
-            float trackCenterY = (trackTop + trackBottom) / 2;
 
             // Store for hit testing
-            _sliderRects[i] = new RectF(x, trackTop - 5, sliderWidth, trackHeight + 10);
+            _sliderRects[i] = new MauiRectF(sliderRect.X, sliderRect.Y, sliderRect.Width, sliderRect.Height);
             _sliderTrackTops[i] = trackTop;
             _sliderTrackBottoms[i] = trackBottom;
 
             // Draw track groove (inset look for skeuomorphic style)
             canvas.FillColor = GrooveColor.WithAlpha(0.4f);
-            canvas.FillRoundedRectangle(new RectF(centerX - trackWidth / 2 - 1, trackTop - 1, trackWidth + 2, trackHeight + 2), trackWidth / 2 + 1);
+            canvas.FillRoundedRectangle(new MauiRectF(centerX - TrackWidth / 2 - 1, trackTop - 1, TrackWidth + 2, trackHeight + 2), TrackWidth / 2 + 1);
             
             // Draw track background
             canvas.FillColor = SliderTrackColor;
-            var trackRect = new RectF(centerX - trackWidth / 2, trackTop, trackWidth, trackHeight);
-            canvas.FillRoundedRectangle(trackRect, trackWidth / 2);
+            var trackRect = new MauiRectF(centerX - TrackWidth / 2, trackTop, TrackWidth, trackHeight);
+            canvas.FillRoundedRectangle(trackRect, TrackWidth / 2);
 
             // Draw tick marks along the track (hardware EQ style)
             canvas.StrokeColor = CenterLineColor.WithAlpha(0.4f);
@@ -104,25 +114,24 @@ public class EqDrawable
                 if (gain > 0)
                 {
                     canvas.FillRoundedRectangle(
-                        new RectF(centerX - trackWidth / 2, thumbY, trackWidth, trackCenterY - thumbY),
-                        trackWidth / 2);
+                        new MauiRectF(centerX - TrackWidth / 2, thumbY, TrackWidth, trackCenterY - thumbY),
+                        TrackWidth / 2);
                 }
                 else
                 {
                     canvas.FillRoundedRectangle(
-                        new RectF(centerX - trackWidth / 2, trackCenterY, trackWidth, thumbY - trackCenterY),
-                        trackWidth / 2);
+                        new MauiRectF(centerX - TrackWidth / 2, trackCenterY, TrackWidth, thumbY - trackCenterY),
+                        TrackWidth / 2);
                 }
             }
 
             // Draw thumb - bigger, more skeuomorphic with orange accent
-            float thumbWidth = sliderWidth * 0.85f;  // Bigger width
-            float thumbHeight = 12f;  // Taller
-            var thumbRect = new RectF(centerX - thumbWidth / 2, thumbY - thumbHeight / 2, thumbWidth, thumbHeight);
+            float thumbWidth = sliderWidth * 0.85f;
+            var thumbRect = new MauiRectF(centerX - thumbWidth / 2, thumbY - ThumbHeight / 2, thumbWidth, ThumbHeight);
             
             // Shadow for depth
             canvas.FillColor = GrooveColor.WithAlpha(0.6f);
-            canvas.FillRoundedRectangle(new RectF(thumbRect.X + 1, thumbRect.Y + 2, thumbRect.Width, thumbRect.Height), 3);
+            canvas.FillRoundedRectangle(new MauiRectF(thumbRect.X + 1, thumbRect.Y + 2, thumbRect.Width, thumbRect.Height), 3);
             
             // Thumb body - orange accent color
             canvas.FillColor = AccentColor;
@@ -130,7 +139,7 @@ public class EqDrawable
             
             // Top highlight for 3D effect
             canvas.FillColor = Colors.White.WithAlpha(0.3f);
-            canvas.FillRoundedRectangle(new RectF(thumbRect.X + 1, thumbRect.Y + 1, thumbRect.Width - 2, 3), 2);
+            canvas.FillRoundedRectangle(new MauiRectF(thumbRect.X + 1, thumbRect.Y + 1, thumbRect.Width - 2, 3), 2);
             
             // Center groove line on thumb (hardware EQ style)
             canvas.StrokeColor = GrooveColor.WithAlpha(0.5f);
@@ -141,7 +150,7 @@ public class EqDrawable
             string label = GetShortLabel(i);
             canvas.FontSize = 8;
             canvas.FontColor = LabelColor;
-            canvas.DrawString(label, x, trackBottom + 1, sliderWidth, labelHeight,
+            canvas.DrawString(label, x, trackBottom + 1, sliderWidth, LabelHeight,
                 HorizontalAlignment.Center, VerticalAlignment.Top);
         }
     }
@@ -160,7 +169,7 @@ public class EqDrawable
 
     public bool OnTouch(float x, float y, bool isStart)
     {
-        var point = new PointF(x, y);
+        var point = new MauiPointF(x, y);
 
         if (isStart)
         {
