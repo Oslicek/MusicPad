@@ -74,3 +74,4 @@ public class EqLayoutDefinition : ILayoutCalculator
         EqLayoutCalculator.GetTrackBounds(bounds);
 }
 
+

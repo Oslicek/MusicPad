@@ -150,7 +150,7 @@ public class EqDrawable
             string label = GetShortLabel(i);
             canvas.FontSize = 8;
             canvas.FontColor = LabelColor;
-            canvas.DrawString(label, x, trackBottom + 1, sliderWidth, LabelHeight,
+            canvas.DrawString(label, x, trackBottom + 6, sliderWidth, LabelHeight,
                 HorizontalAlignment.Center, VerticalAlignment.Top);
         }
     }
