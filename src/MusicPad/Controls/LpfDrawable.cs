@@ -1,15 +1,29 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using MauiPointF = Microsoft.Maui.Graphics.PointF;
+using LayoutRectF = MusicPad.Core.Layout.RectF;
 
 namespace MusicPad.Controls;
 
 /// <summary>
 /// Drawable for Low Pass Filter controls with on/off button, Cutoff and Resonance knobs.
+/// Uses fluent Layout DSL for responsive positioning.
 /// </summary>
 public class LpfDrawable
 {
+    // Drawing constants
+    private const float KnobHitPadding = 5f;      // Must match layout constant
+    private const float KnobMinAngle = 225f;      // Start angle for knob rotation
+    private const float KnobMaxAngle = -45f;      // End angle for knob rotation
+    private const float ToggleWidthRatio = 0.85f;
+    private const float ToggleHeightRatio = 0.5f;
+    private const float ToggleKnobRatio = 0.4f;
+    
     private readonly LowPassFilterSettings _settings;
+    private readonly LpfLayoutDefinition _layoutDefinition = LpfLayoutDefinition.Instance;
     
     // Knob colors (dynamic for palette switching)
     private static Color KnobBaseColor => Color.FromArgb(AppColors.KnobBase);
@@ -24,13 +38,15 @@ public class LpfDrawable
     private static Color ButtonOnColor => Color.FromArgb(AppColors.ButtonOn);
     private static Color ButtonOffColor => Color.FromArgb(AppColors.ButtonOff);
 
-    private RectF _onOffButtonRect;
-    private RectF _cutoffKnobRect;
-    private RectF _resonanceKnobRect;
+    private MauiRectF _onOffButtonRect;
+    private MauiRectF _cutoffKnobRect;
+    private MauiRectF _resonanceKnobRect;
     private float _knobRadius;
     private bool _isDraggingCutoff;
     private bool _isDraggingResonance;
     private float _lastAngle;
+    
+    private PadreaShape _padreaShape = PadreaShape.Square;
 
     public event EventHandler? InvalidateRequested;
 
@@ -43,84 +59,57 @@ public class LpfDrawable
     }
 
     public LowPassFilterSettings Settings => _settings;
-
-    /// <summary>
-    /// Draws the LPF controls. Layout depends on isVertical flag.
-    /// </summary>
-    public void Draw(ICanvas canvas, RectF dirtyRect, bool isVertical = false)
+    
+    public void SetPadreaShape(PadreaShape shape)
     {
-        float padding = 8f;  // Uniform spacing
-        float buttonSize = 28f;
-        bool isEnabled = _settings.IsEnabled;
-        
-        if (isVertical)
-        {
-            // Vertical layout: button at top-left, CUT below, RES below CUT
-            float availableHeight = dirtyRect.Height - buttonSize - padding * 3;
-            float knobSize = Math.Min(dirtyRect.Width - padding * 2, availableHeight / 2 - 12);
-            knobSize = Math.Max(knobSize, 25f);
-            _knobRadius = knobSize * 0.4f;
-            
-            // On/Off button at top-left
-            float buttonX = dirtyRect.X + padding;
-            float buttonY = dirtyRect.Y + padding;
-            _onOffButtonRect = new RectF(buttonX, buttonY, buttonSize, buttonSize);
-            DrawOnOffButton(canvas, _onOffButtonRect);
-            
-            // CUT knob below button
-            float knobX = dirtyRect.X + dirtyRect.Width / 2;
-            float cutoffY = dirtyRect.Y + buttonSize + padding * 2 + _knobRadius + 4;
-            
-            _cutoffKnobRect = new RectF(knobX - _knobRadius - 5, cutoffY - _knobRadius - 5,
-                                         _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-            DrawKnob(canvas, knobX, cutoffY, _knobRadius, _settings.Cutoff, "CUT", isEnabled);
-            
-            // RES knob below CUT
-            float resonanceY = cutoffY + _knobRadius * 2 + 20;
-            _resonanceKnobRect = new RectF(knobX - _knobRadius - 5, resonanceY - _knobRadius - 5,
-                                            _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-            DrawKnob(canvas, knobX, resonanceY, _knobRadius, _settings.Resonance, "RES", isEnabled);
-        }
-        else
-        {
-            // Horizontal layout: button on left, knobs side by side - small knob size (+15% bigger)
-            float knobSize = Math.Min(dirtyRect.Height - 12, 49f);
-            _knobRadius = knobSize * 0.42f;
-            
-            // On/Off button on the left
-            float buttonX = dirtyRect.X + padding;
-            float buttonY = dirtyRect.Y + (dirtyRect.Height - buttonSize) / 2;
-            _onOffButtonRect = new RectF(buttonX, buttonY, buttonSize, buttonSize);
-            DrawOnOffButton(canvas, _onOffButtonRect);
-            
-            // Two knobs with even spacing after the button
-            float knobsStartX = buttonX + buttonSize + padding * 3;
-            float knobY = dirtyRect.Y + dirtyRect.Height / 2;
-            float knobSpacing = _knobRadius * 2 + padding * 2; // Closer together
-            
-            float cutoffX = knobsStartX + _knobRadius + padding;
-            float resonanceX = cutoffX + knobSpacing;
-            
-            _cutoffKnobRect = new RectF(cutoffX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                         _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-            _resonanceKnobRect = new RectF(resonanceX - _knobRadius - 5, knobY - _knobRadius - 5,
-                                            _knobRadius * 2 + 10, _knobRadius * 2 + 10);
-
-            DrawKnob(canvas, cutoffX, knobY, _knobRadius, _settings.Cutoff, "CUT", isEnabled);
-            DrawKnob(canvas, resonanceX, knobY, _knobRadius, _settings.Resonance, "RES", isEnabled);
-        }
+        _padreaShape = shape;
     }
 
-    private void DrawOnOffButton(ICanvas canvas, RectF rect)
+    /// <summary>
+    /// Draws the LPF controls using the Layout DSL.
+    /// Note: isVertical parameter is preserved for backward compatibility but DSL handles orientation.
+    /// </summary>
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect, bool isVertical = false)
+    {
+        // Create layout context from bounds and padrea shape
+        var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        // Override orientation if isVertical is true
+        var context = isVertical 
+            ? LayoutContext.Vertical(bounds.Height / bounds.Width, _padreaShape)
+            : LayoutContext.FromBounds(bounds, _padreaShape);
+        
+        // Calculate layout using the fluent DSL
+        var layout = _layoutDefinition.Calculate(bounds, context);
+        
+        // Convert layout results to MAUI RectF for hit testing
+        var onOffRect = layout[LpfLayoutDefinition.OnOffButton];
+        var cutoffRect = layout[LpfLayoutDefinition.CutoffKnob];
+        var resonanceRect = layout[LpfLayoutDefinition.ResonanceKnob];
+        
+        _onOffButtonRect = new MauiRectF(onOffRect.X, onOffRect.Y, onOffRect.Width, onOffRect.Height);
+        _cutoffKnobRect = new MauiRectF(cutoffRect.X, cutoffRect.Y, cutoffRect.Width, cutoffRect.Height);
+        _resonanceKnobRect = new MauiRectF(resonanceRect.X, resonanceRect.Y, resonanceRect.Width, resonanceRect.Height);
+        
+        // Calculate knob radius from hit rect (hit rect = diameter + 2*padding)
+        _knobRadius = (cutoffRect.Width - KnobHitPadding * 2) / 2;
+        
+        bool isEnabled = _settings.IsEnabled;
+        
+        // Draw controls at calculated positions
+        DrawOnOffButton(canvas, _onOffButtonRect);
+        DrawKnob(canvas, cutoffRect.CenterX, cutoffRect.CenterY, _knobRadius, _settings.Cutoff, "CUT", isEnabled);
+        DrawKnob(canvas, resonanceRect.CenterX, resonanceRect.CenterY, _knobRadius, _settings.Resonance, "RES", isEnabled);
+    }
+
+    private void DrawOnOffButton(ICanvas canvas, MauiRectF rect)
     {
         bool isOn = _settings.IsEnabled;
         float cx = rect.Center.X;
         float cy = rect.Center.Y;
-        float toggleWidth = rect.Width * 0.85f;
-        float toggleHeight = rect.Height * 0.5f;
-        float knobRadius = toggleHeight * 0.4f;
+        float toggleWidth = rect.Width * ToggleWidthRatio;
+        float toggleHeight = rect.Height * ToggleHeightRatio;
+        float knobRadius = toggleHeight * ToggleKnobRatio;
         
-        // Toggle track
         canvas.FillColor = isOn ? ButtonOnColor : ButtonOffColor;
         canvas.FillRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
         
@@ -128,7 +117,6 @@ public class LpfDrawable
         canvas.StrokeSize = 1;
         canvas.DrawRoundedRectangle(cx - toggleWidth / 2, cy - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
         
-        // Toggle knob position
         float knobOffset = toggleWidth / 2 - toggleHeight / 2;
         float knobX = isOn ? cx + knobOffset : cx - knobOffset;
         
@@ -145,34 +133,10 @@ public class LpfDrawable
         Color highlightColor = isEnabled ? KnobHighlightColor : DisabledColor.WithAlpha(0.6f);
         Color shadowColor = isEnabled ? KnobShadowColor : Color.FromArgb(AppColors.DisabledDark);
         
-        // Draw radial marker lines
-        float minAngle = 225f;
-        float maxAngle = -45f;
-        float totalAngle = maxAngle - minAngle;
-        if (totalAngle > 0) totalAngle -= 360;
+        float totalAngle = GetTotalKnobAngle();
         
-        // Draw radial markers - use accent color when enabled
-        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
-        canvas.StrokeSize = 1.5f;
-        canvas.StrokeLineCap = LineCap.Round;
-        
-        float outerRadius = radius + 5;
-        float innerRadius = radius + 2;
-        
-        int markerCount = 6;
-        for (int i = 0; i <= markerCount; i++)
-        {
-            float t = i / (float)markerCount;
-            float angle = minAngle + totalAngle * t;
-            float rads = angle * MathF.PI / 180f;
-            
-            float innerX = centerX + innerRadius * MathF.Cos(rads);
-            float innerY = centerY - innerRadius * MathF.Sin(rads);
-            float outerX = centerX + outerRadius * MathF.Cos(rads);
-            float outerY = centerY - outerRadius * MathF.Sin(rads);
-            
-            canvas.DrawLine(innerX, innerY, outerX, outerY);
-        }
+        // Draw radial markers
+        DrawKnobMarkers(canvas, centerX, centerY, radius, isEnabled, totalAngle);
         
         // Shadow/depth effect
         canvas.FillColor = shadowColor;
@@ -196,7 +160,7 @@ public class LpfDrawable
         canvas.DrawCircle(centerX, centerY, radius);
 
         // Draw indicator
-        float currentAngle = minAngle + totalAngle * value;
+        float currentAngle = KnobMinAngle + totalAngle * value;
         float radians = currentAngle * MathF.PI / 180f;
         
         float notchDistance = radius * 0.7f;
@@ -214,20 +178,46 @@ public class LpfDrawable
             HorizontalAlignment.Center, VerticalAlignment.Top);
     }
 
+    private void DrawKnobMarkers(ICanvas canvas, float centerX, float centerY, float radius, bool isEnabled, float totalAngle)
+    {
+        canvas.StrokeColor = isEnabled ? AccentColor : DisabledColor;
+        canvas.StrokeSize = 1.5f;
+        canvas.StrokeLineCap = LineCap.Round;
+        
+        float outerRadius = radius + 5;
+        float innerRadius = radius + 2;
+        
+        for (int i = 0; i <= 6; i++)
+        {
+            float t = i / 6f;
+            float angle = KnobMinAngle + totalAngle * t;
+            float rads = angle * MathF.PI / 180f;
+            
+            canvas.DrawLine(
+                centerX + innerRadius * MathF.Cos(rads), centerY - innerRadius * MathF.Sin(rads),
+                centerX + outerRadius * MathF.Cos(rads), centerY - outerRadius * MathF.Sin(rads));
+        }
+    }
+
+    private static float GetTotalKnobAngle()
+    {
+        float totalAngle = KnobMaxAngle - KnobMinAngle;
+        if (totalAngle > 0) totalAngle -= 360;
+        return totalAngle;
+    }
+
     public bool OnTouch(float x, float y, bool isStart)
     {
-        var point = new PointF(x, y);
+        var point = new MauiPointF(x, y);
 
         if (isStart)
         {
-            // Check on/off button
             if (_onOffButtonRect.Contains(point))
             {
                 _settings.IsEnabled = !_settings.IsEnabled;
                 return true;
             }
             
-            // Only allow knob interaction if enabled
             if (!_settings.IsEnabled)
                 return false;
             
@@ -248,12 +238,12 @@ public class LpfDrawable
         {
             if (_isDraggingCutoff)
             {
-                UpdateCutoffKnob(x, y);
+                UpdateKnobValue(_cutoffKnobRect, x, y, v => _settings.Cutoff = v, _settings.Cutoff);
                 return true;
             }
             else if (_isDraggingResonance)
             {
-                UpdateResonanceKnob(x, y);
+                UpdateKnobValue(_resonanceKnobRect, x, y, v => _settings.Resonance = v, _settings.Resonance);
                 return true;
             }
         }
@@ -261,41 +251,22 @@ public class LpfDrawable
         return false;
     }
 
-    private void UpdateCutoffKnob(float x, float y)
+    private void UpdateKnobValue(MauiRectF knobRect, float x, float y, Action<float> setValue, float currentValue)
     {
-        float currentAngle = GetAngleFromKnobCenter(_cutoffKnobRect, x, y);
+        float currentAngle = GetAngleFromKnobCenter(knobRect, x, y);
         float angleDelta = currentAngle - _lastAngle;
         
         if (angleDelta > 180) angleDelta -= 360;
         if (angleDelta < -180) angleDelta += 360;
         
-        float totalAngle = -45f - 225f;
-        if (totalAngle > 0) totalAngle -= 360;
-        
+        float totalAngle = GetTotalKnobAngle();
         float valueDelta = angleDelta / totalAngle;
-        _settings.Cutoff = Math.Clamp(_settings.Cutoff + valueDelta, 0f, 1f);
+        setValue(Math.Clamp(currentValue + valueDelta, 0f, 1f));
         
         _lastAngle = currentAngle;
     }
 
-    private void UpdateResonanceKnob(float x, float y)
-    {
-        float currentAngle = GetAngleFromKnobCenter(_resonanceKnobRect, x, y);
-        float angleDelta = currentAngle - _lastAngle;
-        
-        if (angleDelta > 180) angleDelta -= 360;
-        if (angleDelta < -180) angleDelta += 360;
-        
-        float totalAngle = -45f - 225f;
-        if (totalAngle > 0) totalAngle -= 360;
-        
-        float valueDelta = angleDelta / totalAngle;
-        _settings.Resonance = Math.Clamp(_settings.Resonance + valueDelta, 0f, 1f);
-        
-        _lastAngle = currentAngle;
-    }
-
-    private float GetAngleFromKnobCenter(RectF knobRect, float x, float y)
+    private float GetAngleFromKnobCenter(MauiRectF knobRect, float x, float y)
     {
         float centerX = knobRect.Center.X;
         float centerY = knobRect.Center.Y;
