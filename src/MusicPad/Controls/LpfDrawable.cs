@@ -73,10 +73,11 @@ public class LpfDrawable
     {
         // Create layout context from bounds and padrea shape
         var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
-        // Explicitly set orientation - don't derive from bounds (bounds may be tall even in landscape mode)
+        // Explicitly set orientation with standard aspect ratio to avoid narrow/wide overrides
+        // (bounds may be tall even in landscape mode, which would trigger narrow override incorrectly)
         var context = isVertical 
-            ? LayoutContext.Vertical(bounds.Height / bounds.Width, _padreaShape)
-            : LayoutContext.Horizontal(bounds.Width / bounds.Height, _padreaShape);
+            ? LayoutContext.Vertical(2.0f, _padreaShape)   // Standard aspect ratio
+            : LayoutContext.Horizontal(2.0f, _padreaShape); // Standard aspect ratio
         
         // Calculate layout using the fluent DSL
         var layout = _layoutDefinition.Calculate(bounds, context);
