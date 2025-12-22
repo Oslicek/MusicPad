@@ -36,7 +36,8 @@ MusicPad/
 │   │   │   ├── ReverbDrawable.cs    # Reverb effect controls
 │   │   │   ├── RecAreaDrawable.cs   # Recording controls (rec/stop/play)
 │   │   │   ├── KnobRenderer.cs      # Shared rotary knob rendering
-│   │   │   └── ToggleRenderer.cs    # Shared toggle button rendering
+│   │   │   ├── ToggleRenderer.cs    # Shared toggle button rendering
+│   │   │   └── EffectIconRenderer.cs # Effect selector icon rendering
 │   │   ├── Views/
 │   │   │   ├── InstrumentsPage.xaml # List of available instruments
 │   │   │   ├── InstrumentDetailPage.xaml # Instrument metadata/credits
@@ -112,7 +113,9 @@ MusicPad/
 │       │   ├── EqLayoutCalculator.cs       # EQ sliders layout calculator
 │       │   ├── EqLayoutDefinition.cs       # EQ sliders layout definition
 │       │   ├── ArpHarmonyLayoutCalculator.cs # ArpHarmony layout calculator
-│       │   └── ArpHarmonyLayoutDefinition.cs # ArpHarmony layout definition
+│       │   ├── ArpHarmonyLayoutDefinition.cs # ArpHarmony layout definition
+│       │   ├── EffectSelectorLayoutCalculator.cs # Effect selector buttons layout
+│       │   └── EffectSelectorLayoutDefinition.cs # Effect selector layout definition
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -148,7 +151,8 @@ MusicPad/
 │       │   ├── LpfLayoutTests.cs               # LPF layout tests
 │       │   ├── ReverbLayoutTests.cs            # Reverb layout tests
 │       │   ├── EqLayoutTests.cs                # EQ layout tests
-│       │   └── ArpHarmonyLayoutTests.cs        # ArpHarmony layout tests
+│       │   ├── ArpHarmonyLayoutTests.cs        # ArpHarmony layout tests
+│       │   └── EffectSelectorLayoutTests.cs    # Effect selector layout tests
 │       ├── Controls/
 │       │   └── DrawableConstantsTests.cs       # Shared constants tests
 │       ├── WaveTableGeneratorTests.cs
@@ -531,7 +535,7 @@ The main synthesizer interface is divided into named areas:
 - [x] WAV export (offline rendering)
 - [x] FLAC export (lossless audio)
 - [x] Scales 8x8 padrea with chromatic layout and 3-color coding
-- [x] Unit tests passing (801 tests)
+- [x] Unit tests passing (817 tests)
 - [x] GitHub repository connected
 - [x] Fluent C# Layout DSL for responsive UI layouts (all effects + EQ + ArpHarmony)
 

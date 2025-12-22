@@ -1,6 +1,9 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Models;
 using MusicPad.Core.Theme;
+using LayoutRectF = MusicPad.Core.Layout.RectF;
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
 
 namespace MusicPad.Controls;
 
@@ -10,7 +13,8 @@ namespace MusicPad.Controls;
 public class EffectAreaDrawable : IDrawable
 {
     private readonly EffectSelector _selector = new();
-    private readonly List<RectF> _buttonRects = new();
+    private readonly List<MauiRectF> _buttonRects = new();
+    private readonly EffectSelectorLayoutDefinition _layoutDefinition = EffectSelectorLayoutDefinition.Instance;
     private bool _isHorizontal;
     private bool _isLandscapeSquare; // Special layout for landscape with square padrea
 
@@ -21,12 +25,13 @@ public class EffectAreaDrawable : IDrawable
     private readonly ChorusDrawable _chorusDrawable;
     private readonly DelayDrawable _delayDrawable;
     private readonly ReverbDrawable _reverbDrawable;
-    private RectF _arpHarmonyRect;
-    private RectF _lpfRect;
-    private RectF _eqRect;
-    private RectF _chorusRect;
-    private RectF _delayRect;
-    private RectF _reverbRect;
+    private MauiRectF _arpHarmonyRect;
+    private MauiRectF _lpfRect;
+    private MauiRectF _eqRect;
+    private MauiRectF _chorusRect;
+    private MauiRectF _delayRect;
+    private MauiRectF _reverbRect;
+    private MauiRectF _controlsRect;
 
     // Colors (dynamic for palette switching)
     private static Color ButtonBackgroundColor => Color.FromArgb(AppColors.EffectButtonBackground);
@@ -134,8 +139,10 @@ public class EffectAreaDrawable : IDrawable
     }
 
     private const float CornerRadius = 8f;  // Match pad corner radius
+    private const float ButtonCornerRadius = 6f;  // Uniform corner radius for pad-like buttons
+    private const float IconPadding = 5f;  // Icon padding within buttons
     
-    public void Draw(ICanvas canvas, RectF dirtyRect)
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect)
     {
         _buttonRects.Clear();
 
@@ -148,201 +155,92 @@ public class EffectAreaDrawable : IDrawable
         canvas.StrokeSize = 2f;
         canvas.DrawRoundedRectangle(dirtyRect, CornerRadius);
 
-        // Calculate button layout - square buttons with rounded corners
-        float buttonSize = 30f;
-        float buttonSpacing = 2f;
-        float buttonMargin = 4f;  // Margin to align with rounded corners
+        // Calculate layout using the DSL
+        var bounds = new LayoutRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        var context = _isHorizontal ? LayoutContext.Horizontal() : LayoutContext.Vertical();
+        var layout = _layoutDefinition.Calculate(bounds, context);
 
+        // Draw effect buttons
         var effects = EffectSelector.AllEffects;
-
-        if (_isHorizontal)
+        for (int i = 0; i < EffectSelectorLayoutDefinition.ButtonCount && i < effects.Count; i++)
         {
-            // Horizontal layout - buttons at top
-            float startX = dirtyRect.X + buttonMargin;
-            float startY = dirtyRect.Y + buttonMargin;
-
-            for (int i = 0; i < effects.Count; i++)
-            {
-                var effect = effects[i];
-                var rect = new RectF(startX + i * (buttonSize + buttonSpacing), startY, buttonSize, buttonSize);
-                _buttonRects.Add(rect);
-                DrawEffectButton(canvas, rect, effect, i, effects.Count, isHorizontal: true);
-            }
+            var layoutRect = layout[$"Button{i}"];
+            var rect = new MauiRectF(layoutRect.X, layoutRect.Y, layoutRect.Width, layoutRect.Height);
+            _buttonRects.Add(rect);
+            DrawEffectButton(canvas, rect, effects[i]);
         }
-        else
-        {
-            // Vertical layout - buttons on left
-            float startX = dirtyRect.X + buttonMargin;
-            float startY = dirtyRect.Y + buttonMargin;
 
-            for (int i = 0; i < effects.Count; i++)
-            {
-                var effect = effects[i];
-                var rect = new RectF(startX, startY + i * (buttonSize + buttonSpacing), buttonSize, buttonSize);
-                _buttonRects.Add(rect);
-                DrawEffectButton(canvas, rect, effect, i, effects.Count, isHorizontal: false);
-            }
-        }
+        // Get controls area from layout
+        var controlsLayoutRect = layout[EffectSelectorLayoutDefinition.ControlsArea];
+        _controlsRect = new MauiRectF(controlsLayoutRect.X, controlsLayoutRect.Y, 
+                                       controlsLayoutRect.Width, controlsLayoutRect.Height);
 
         // Draw controls based on selected effect
         switch (_selector.SelectedEffect)
         {
             case EffectType.ArpHarmony:
-                DrawArpHarmonyControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                DrawArpHarmonyControls(canvas);
                 break;
             case EffectType.EQ:
-                DrawEQControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                DrawEQControls(canvas);
                 break;
             case EffectType.Chorus:
-                DrawChorusControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                DrawChorusControls(canvas);
                 break;
             case EffectType.Delay:
-                DrawDelayControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                DrawDelayControls(canvas);
                 break;
             case EffectType.Reverb:
-                DrawReverbControls(canvas, dirtyRect, buttonSize, buttonSpacing, buttonMargin);
+                DrawReverbControls(canvas);
                 break;
             default:
                 // Draw placeholder text for unimplemented effects
                 canvas.FontSize = 12;
                 canvas.FontColor = Color.FromArgb(AppColors.TextDim);
                 string selectedName = _selector.SelectedEffect.ToString();
-                
-                if (_isHorizontal)
-                {
-                    float controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
-                    var controlsRect = new RectF(dirtyRect.X, controlsY, dirtyRect.Width, dirtyRect.Height - controlsY);
-                    canvas.DrawString($"{selectedName} controls", controlsRect, HorizontalAlignment.Center, VerticalAlignment.Center);
-                }
-                else
-                {
-                    float controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
-                    var controlsRect = new RectF(controlsX, dirtyRect.Y, dirtyRect.Width - controlsX, dirtyRect.Height);
-                    canvas.DrawString($"{selectedName} controls", controlsRect, HorizontalAlignment.Center, VerticalAlignment.Center);
-                }
+                canvas.DrawString($"{selectedName} controls", _controlsRect, 
+                    HorizontalAlignment.Center, VerticalAlignment.Center);
                 break;
         }
     }
 
-    private void DrawArpHarmonyControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    private void DrawArpHarmonyControls(ICanvas canvas)
     {
-        float controlsX, controlsY, controlsWidth, controlsHeight;
-        
-        if (_isHorizontal)
-        {
-            controlsX = dirtyRect.X;
-            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
-            controlsWidth = dirtyRect.Width;
-            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
-        }
-        else
-        {
-            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
-            controlsY = dirtyRect.Y;
-            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
-            controlsHeight = dirtyRect.Height;
-        }
-
-        _arpHarmonyRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _arpHarmonyRect = _controlsRect;
         _arpHarmonyDrawable.Draw(canvas, _arpHarmonyRect);
     }
 
-    private void DrawChorusControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    private void DrawChorusControls(ICanvas canvas)
     {
-        float controlsX, controlsY, controlsWidth, controlsHeight;
-        
-        if (_isHorizontal)
-        {
-            controlsX = dirtyRect.X;
-            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
-            controlsWidth = dirtyRect.Width;
-            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
-        }
-        else
-        {
-            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
-            controlsY = dirtyRect.Y;
-            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
-            controlsHeight = dirtyRect.Height;
-        }
-
-        _chorusRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _chorusRect = _controlsRect;
         DrawEffectTitle(canvas, _chorusRect, EffectType.Chorus);
         _chorusDrawable.Draw(canvas, _chorusRect);
     }
 
-    private void DrawDelayControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    private void DrawDelayControls(ICanvas canvas)
     {
-        float controlsX, controlsY, controlsWidth, controlsHeight;
-        
-        if (_isHorizontal)
-        {
-            controlsX = dirtyRect.X;
-            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
-            controlsWidth = dirtyRect.Width;
-            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
-        }
-        else
-        {
-            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
-            controlsY = dirtyRect.Y;
-            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
-            controlsHeight = dirtyRect.Height;
-        }
-
-        _delayRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _delayRect = _controlsRect;
         DrawEffectTitle(canvas, _delayRect, EffectType.Delay);
         _delayDrawable.Draw(canvas, _delayRect);
     }
 
-    private void DrawReverbControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    private void DrawReverbControls(ICanvas canvas)
     {
-        float controlsX, controlsY, controlsWidth, controlsHeight;
-        
-        if (_isHorizontal)
-        {
-            controlsX = dirtyRect.X;
-            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
-            controlsWidth = dirtyRect.Width;
-            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
-        }
-        else
-        {
-            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
-            controlsY = dirtyRect.Y;
-            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
-            controlsHeight = dirtyRect.Height;
-        }
-
-        _reverbRect = new RectF(controlsX, controlsY, controlsWidth, controlsHeight);
+        _reverbRect = _controlsRect;
         DrawEffectTitle(canvas, _reverbRect, EffectType.Reverb);
         _reverbDrawable.Draw(canvas, _reverbRect);
     }
 
-    private void DrawEQControls(ICanvas canvas, RectF dirtyRect, float buttonSize, float buttonSpacing, float buttonMargin)
+    private void DrawEQControls(ICanvas canvas)
     {
-        // Controls area starts after buttons
-        float controlsX, controlsY, controlsWidth, controlsHeight;
-        
-        if (_isHorizontal)
-        {
-            // Horizontal layout - controls below buttons
-            controlsX = dirtyRect.X;
-            controlsY = dirtyRect.Y + buttonMargin + buttonSize + buttonSpacing;
-            controlsWidth = dirtyRect.Width;
-            controlsHeight = dirtyRect.Height - (controlsY - dirtyRect.Y);
-        }
-        else
-        {
-            // Vertical layout - controls to the right of buttons
-            controlsX = dirtyRect.X + buttonMargin + buttonSize + buttonSpacing;
-            controlsY = dirtyRect.Y;
-            controlsWidth = dirtyRect.Width - (controlsX - dirtyRect.X);
-            controlsHeight = dirtyRect.Height;
-        }
+        float controlsX = _controlsRect.X;
+        float controlsY = _controlsRect.Y;
+        float controlsWidth = _controlsRect.Width;
+        float controlsHeight = _controlsRect.Height;
+        float buttonSpacing = EffectSelectorLayoutDefinition.ButtonSpacing;
 
         // Draw title at top
-        DrawEffectTitle(canvas, new RectF(controlsX, controlsY, controlsWidth, controlsHeight), EffectType.EQ);
+        DrawEffectTitle(canvas, _controlsRect, EffectType.EQ);
 
         if (_isLandscapeSquare)
         {
@@ -350,10 +248,10 @@ public class EffectAreaDrawable : IDrawable
             float lpfHeight = controlsHeight * 0.55f;
             float eqHeight = controlsHeight - lpfHeight - buttonSpacing;
             
-            _lpfRect = new RectF(controlsX, controlsY, controlsWidth, lpfHeight);
+            _lpfRect = new MauiRectF(controlsX, controlsY, controlsWidth, lpfHeight);
             _lpfDrawable.Draw(canvas, _lpfRect, true); // Vertical layout for knobs
             
-            _eqRect = new RectF(controlsX, controlsY + lpfHeight + buttonSpacing, controlsWidth, eqHeight);
+            _eqRect = new MauiRectF(controlsX, controlsY + lpfHeight + buttonSpacing, controlsWidth, eqHeight);
             _eqDrawable.Draw(canvas, _eqRect);
         }
         else
@@ -362,201 +260,36 @@ public class EffectAreaDrawable : IDrawable
             float lpfWidth = Math.Min(controlsWidth * 0.45f, 150f);
             float eqWidth = controlsWidth - lpfWidth - buttonSpacing;
             
-            _lpfRect = new RectF(controlsX, controlsY, lpfWidth, controlsHeight);
+            _lpfRect = new MauiRectF(controlsX, controlsY, lpfWidth, controlsHeight);
             _lpfDrawable.Draw(canvas, _lpfRect, false); // Horizontal layout for knobs
             
-            _eqRect = new RectF(controlsX + lpfWidth + buttonSpacing, controlsY, eqWidth, controlsHeight);
+            _eqRect = new MauiRectF(controlsX + lpfWidth + buttonSpacing, controlsY, eqWidth, controlsHeight);
             _eqDrawable.Draw(canvas, _eqRect);
         }
     }
 
-    private void DrawEffectButton(ICanvas canvas, RectF rect, EffectType effect, int index, int totalCount, bool isHorizontal)
+    private void DrawEffectButton(ICanvas canvas, MauiRectF rect, EffectType effect)
     {
         bool isSelected = _selector.IsSelected(effect);
-        
-        // All buttons have the same uniform shape - like smaller pads
-        float cornerRadius = 6f;  // Uniform corner radius for pad-like appearance
 
         // Button background - uniform rounded square
         canvas.FillColor = isSelected ? ButtonSelectedColor : ButtonBackgroundColor;
-        canvas.FillRoundedRectangle(rect, cornerRadius);
+        canvas.FillRoundedRectangle(rect, ButtonCornerRadius);
 
         // Button border - thin outline
         canvas.StrokeColor = isSelected ? ButtonIconSelectedColor : Color.FromArgb(AppColors.ButtonOff);
         canvas.StrokeSize = 1;
-        canvas.DrawRoundedRectangle(rect, cornerRadius);
+        canvas.DrawRoundedRectangle(rect, ButtonCornerRadius);
 
-        // Draw icon - minimal padding for small buttons
+        // Draw icon using shared renderer
         Color iconColor = isSelected ? ButtonIconSelectedColor : ButtonIconColor;
-        float iconPadding = 5f;
-        var iconRect = new RectF(
-            rect.X + iconPadding,
-            rect.Y + iconPadding,
-            rect.Width - iconPadding * 2,
-            rect.Height - iconPadding * 2);
+        var iconRect = new MauiRectF(
+            rect.X + IconPadding,
+            rect.Y + IconPadding,
+            rect.Width - IconPadding * 2,
+            rect.Height - IconPadding * 2);
 
-        switch (effect)
-        {
-            case EffectType.ArpHarmony:
-                DrawArpHarmonyIcon(canvas, iconRect, iconColor);
-                break;
-            case EffectType.EQ:
-                DrawEQIcon(canvas, iconRect, iconColor);
-                break;
-            case EffectType.Chorus:
-                DrawChorusIcon(canvas, iconRect, iconColor);
-                break;
-            case EffectType.Delay:
-                DrawDelayIcon(canvas, iconRect, iconColor);
-                break;
-            case EffectType.Reverb:
-                DrawReverbIcon(canvas, iconRect, iconColor);
-                break;
-        }
-    }
-
-    private void DrawArpHarmonyIcon(ICanvas canvas, RectF rect, Color color)
-    {
-        // Stacked notes with ascending arrow - represents chord + arpeggio
-        canvas.StrokeColor = color;
-        canvas.FillColor = color;
-        canvas.StrokeSize = 2;
-        canvas.StrokeLineCap = LineCap.Round;
-
-        float noteSize = rect.Height * 0.2f;
-        float spacing = rect.Height * 0.25f;
-        
-        // Draw 3 stacked note heads (ellipses)
-        for (int i = 0; i < 3; i++)
-        {
-            float y = rect.Bottom - (i + 0.5f) * spacing;
-            float x = rect.X + rect.Width * 0.3f;
-            canvas.FillEllipse(x - noteSize * 0.6f, y - noteSize * 0.4f, noteSize * 1.2f, noteSize * 0.8f);
-        }
-        
-        // Draw ascending arrow on the right
-        float arrowX = rect.X + rect.Width * 0.7f;
-        float arrowBottom = rect.Bottom - spacing * 0.3f;
-        float arrowTop = rect.Top + spacing * 0.3f;
-        
-        canvas.DrawLine(arrowX, arrowBottom, arrowX, arrowTop);
-        canvas.DrawLine(arrowX - noteSize * 0.5f, arrowTop + noteSize, arrowX, arrowTop);
-        canvas.DrawLine(arrowX + noteSize * 0.5f, arrowTop + noteSize, arrowX, arrowTop);
-    }
-
-    private void DrawEQIcon(ICanvas canvas, RectF rect, Color color)
-    {
-        // 3 vertical bars at different heights (equalizer)
-        canvas.StrokeColor = color;
-        canvas.FillColor = color;
-        canvas.StrokeSize = 3;
-        canvas.StrokeLineCap = LineCap.Round;
-
-        float barWidth = rect.Width / 5;
-        float spacing = barWidth;
-        
-        // Low bar (short)
-        float x1 = rect.X + spacing * 0.5f;
-        canvas.DrawLine(x1, rect.Bottom, x1, rect.Bottom - rect.Height * 0.4f);
-        
-        // Mid bar (tall)
-        float x2 = rect.Center.X;
-        canvas.DrawLine(x2, rect.Bottom, x2, rect.Top);
-        
-        // High bar (medium)
-        float x3 = rect.Right - spacing * 0.5f;
-        canvas.DrawLine(x3, rect.Bottom, x3, rect.Bottom - rect.Height * 0.65f);
-    }
-
-    private void DrawChorusIcon(ICanvas canvas, RectF rect, Color color)
-    {
-        // 2-3 overlapping waves
-        canvas.StrokeColor = color;
-        canvas.StrokeSize = 2;
-        canvas.StrokeLineCap = LineCap.Round;
-
-        float waveHeight = rect.Height * 0.3f;
-        
-        // Draw 3 overlapping sine-like waves
-        for (int w = 0; w < 3; w++)
-        {
-            float yOffset = rect.Y + rect.Height * 0.25f + w * (rect.Height * 0.2f);
-            var path = new PathF();
-            
-            for (int i = 0; i <= 20; i++)
-            {
-                float t = i / 20f;
-                float x = rect.X + t * rect.Width;
-                float y = yOffset + (float)Math.Sin(t * Math.PI * 2) * waveHeight * (1 - w * 0.2f);
-                
-                if (i == 0)
-                    path.MoveTo(x, y);
-                else
-                    path.LineTo(x, y);
-            }
-            
-            canvas.DrawPath(path);
-        }
-    }
-
-    private void DrawDelayIcon(ICanvas canvas, RectF rect, Color color)
-    {
-        // Repeating dots/circles getting smaller (echo effect)
-        canvas.FillColor = color;
-
-        float maxRadius = rect.Height * 0.2f;
-        int dots = 4;
-        
-        for (int i = 0; i < dots; i++)
-        {
-            float t = i / (float)(dots - 1);
-            float x = rect.X + t * rect.Width * 0.8f + rect.Width * 0.1f;
-            float y = rect.Center.Y;
-            float radius = maxRadius * (1 - t * 0.6f);
-            float alpha = 1 - t * 0.5f;
-            
-            canvas.FillColor = color.WithAlpha(alpha);
-            canvas.FillCircle(x, y, radius);
-        }
-    }
-
-    private void DrawReverbIcon(ICanvas canvas, RectF rect, Color color)
-    {
-        // Expanding arcs (sound waves radiating)
-        canvas.StrokeColor = color;
-        canvas.StrokeSize = 2;
-        canvas.StrokeLineCap = LineCap.Round;
-
-        float centerX = rect.X + rect.Width * 0.2f;
-        float centerY = rect.Center.Y;
-
-        // Draw 3 arcs expanding to the right
-        for (int i = 0; i < 3; i++)
-        {
-            float radius = rect.Width * 0.25f + i * (rect.Width * 0.2f);
-            float alpha = 1 - i * 0.25f;
-            
-            canvas.StrokeColor = color.WithAlpha(alpha);
-            
-            // Draw arc (partial circle)
-            var path = new PathF();
-            float startAngle = -45;
-            float endAngle = 45;
-            
-            for (int a = (int)startAngle; a <= endAngle; a += 5)
-            {
-                float rad = a * (float)Math.PI / 180f;
-                float x = centerX + (float)Math.Cos(rad) * radius;
-                float y = centerY + (float)Math.Sin(rad) * radius;
-                
-                if (a == (int)startAngle)
-                    path.MoveTo(x, y);
-                else
-                    path.LineTo(x, y);
-            }
-            
-            canvas.DrawPath(path);
-        }
+        EffectIconRenderer.Draw(canvas, iconRect, effect, iconColor);
     }
 
     /// <summary>
