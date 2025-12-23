@@ -1280,7 +1280,10 @@ public partial class MainPage : ContentPage
             {
                 _padDrawable.OnTapEnd((float)lastTouch.X, (float)lastTouch.Y);
             }
-            _padDrawable.OnAllTouchesEnd();
+            // FIX: Don't call OnAllTouchesEnd unconditionally!
+            // Instead, signal that a touch ended so the drawable can release notes
+            // that are no longer being touched. Pass empty list to trigger release logic.
+            _padDrawable.OnTouchEnded();
         }
         _padGraphicsView?.Invalidate();
     }
@@ -1310,7 +1313,7 @@ public partial class MainPage : ContentPage
         // Debounce: ignore duplicate NoteOn for same note within 20ms
         // This prevents double-sound issues from Android touch event quirks
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        if (_lastNoteOnTime.TryGetValue(midiNote, out long lastTime))
+        if (_lastNoteOnTime.TryGetValue(midiNote, out lastTime))
         {
             if (now - lastTime < NoteOnDebounceMs)
             {

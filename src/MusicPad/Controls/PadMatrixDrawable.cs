@@ -437,40 +437,9 @@ public class PadMatrixDrawable : IDrawable
         var touchList = touches.ToList();
         var currentTouchCount = touchList.Count;
         
-        // Check for arrow taps first
-        foreach (var touch in touchList)
-        {
-            if (_hasUpArrow && _upArrowRect.Contains(new PointF(touch.X, touch.Y)))
-            {
-                // Don't process as pad touch, wait for release to trigger navigation
-            }
-            else if (_hasDownArrow && _downArrowRect.Contains(new PointF(touch.X, touch.Y)))
-            {
-                // Don't process as pad touch
-            }
-        }
         
-        // Handle note touches
-        if (currentTouchCount < _lastTouchCount)
-        {
-            var notesToKeep = new HashSet<int>();
-            foreach (var touch in touchList)
-            {
-                int? note = GetNoteAtPosition(touch.X, touch.Y);
-                if (note.HasValue && _activeNotes.Contains(note.Value))
-                {
-                    notesToKeep.Add(note.Value);
-                }
-            }
-            
-            var toRelease = _activeNotes.Except(notesToKeep).ToList();
-            foreach (var note in toRelease)
-            {
-                _activeNotes.Remove(note);
-                NoteOff?.Invoke(this, note);
-            }
-        }
-        
+        // Build set of notes currently being touched (excluding arrow areas)
+        var currentlyTouchedNotes = new HashSet<int>();
         foreach (var touch in touchList)
         {
             // Skip arrow areas
@@ -480,10 +449,28 @@ public class PadMatrixDrawable : IDrawable
                 continue;
                 
             int? note = GetNoteAtPosition(touch.X, touch.Y);
-            if (note.HasValue && !_activeNotes.Contains(note.Value))
+            if (note.HasValue)
             {
-                _activeNotes.Add(note.Value);
-                NoteOn?.Invoke(this, note.Value);
+                currentlyTouchedNotes.Add(note.Value);
+            }
+        }
+        
+        // ALWAYS release notes that are no longer being touched
+        // (not just when touch count decreases - also when fingers move to different pads)
+        var toRelease = _activeNotes.Except(currentlyTouchedNotes).ToList();
+        foreach (var note in toRelease)
+        {
+            _activeNotes.Remove(note);
+            NoteOff?.Invoke(this, note);
+        }
+        
+        // Trigger NoteOn for newly touched notes
+        foreach (var note in currentlyTouchedNotes)
+        {
+            if (!_activeNotes.Contains(note))
+            {
+                _activeNotes.Add(note);
+                NoteOn?.Invoke(this, note);
             }
         }
         
@@ -498,6 +485,31 @@ public class PadMatrixDrawable : IDrawable
             NoteOff?.Invoke(this, note);
         }
         _lastTouchCount = 0;
+    }
+    
+    /// <summary>
+    /// Called when a touch ends. Decrements the expected touch count so that 
+    /// subsequent OnTouches calls can properly detect which notes to release.
+    /// This avoids the bug where OnAllTouchesEnd would clear all notes even when
+    /// other touches are still active.
+    /// </summary>
+    public void OnTouchEnded()
+    {
+        // Decrement the expected touch count so the next OnTouches call 
+        // with fewer touches will trigger the proper release logic
+        if (_lastTouchCount > 0)
+        {
+            _lastTouchCount--;
+        }
+        // If no touches remain, release all notes
+        if (_lastTouchCount == 0)
+        {
+            foreach (var note in _activeNotes.ToList())
+            {
+                _activeNotes.Remove(note);
+                NoteOff?.Invoke(this, note);
+            }
+        }
     }
     
     /// <summary>
