@@ -40,3 +40,4 @@ public class EffectSelectorLayoutDefinition : ILayoutCalculator
     public static string[] ButtonNames => new[] { Button0, Button1, Button2, Button3, Button4 };
 }
 
+

@@ -580,7 +580,7 @@ public partial class MainPage : ContentPage
             }
             else
             {
-                // Landscape Square Padrea: pickers top-left, volume below pickers, padrea center, efarea right
+                // Landscape Square Padrea: pickers top-left, volume below pickers, padrea left-center, efarea right
                 ControlsStack.HorizontalOptions = LayoutOptions.Start;
                 ControlsStack.VerticalOptions = LayoutOptions.Start;
                 ControlsStack.Margin = new Thickness(0);
@@ -589,41 +589,61 @@ public partial class MainPage : ContentPage
                 VolumeKnob.VerticalOptions = LayoutOptions.Start;
                 VolumeKnob.Margin = new Thickness(30, controlsHeight + 16, 0, 0);
 
-                // Square padrea centered on page
-                double availableHeight = _pageHeight - padding * 4;
-                double padreaSize = availableHeight;
-                double padreaCenterX = _pageWidth / 2;
-                double padreaLeft = padreaCenterX - padreaSize / 2;
+                // Account for Grid's Padding=8 on all sides
+                // Content area is (_pageWidth - 16) x (_pageHeight - 16)
+                double contentWidth = _pageWidth - padding * 2;
+                double contentHeight = _pageHeight - padding * 2;
+
+                // Layout zones
+                double leftControlsWidth = Math.Max(controlsWidth, 30 + volumeSize);
+                double hamburgerHeight = 50;
+                double minEfareaWidth = 160;
+                double gapBetweenElements = padding * 2;
+
+                // Padrea: positioned after left controls
+                double padreaLeft = leftControlsWidth + padding;
+                
+                // Calculate max padrea size
+                // Effect area minimum left position (if it has minEfareaWidth)
+                double efareaMinLeft = contentWidth - minEfareaWidth;
+                double padreaMaxWidth = efareaMinLeft - gapBetweenElements - padreaLeft;
+                double padreaMaxHeight = contentHeight - padding * 2;
+                double padreaSize = Math.Min(padreaMaxWidth, padreaMaxHeight);
+                
+                double padreaRight = padreaLeft + padreaSize;
+
+                // Effect area: fills remaining space to the right
+                double efareaLeft = padreaRight + gapBetweenElements;
+                double efareaTop = hamburgerHeight;
+                double efareaWidth = contentWidth - efareaLeft;   // Ends at content right edge
+                double efareaHeight = contentHeight - efareaTop;  // Ends at content bottom edge
 
                 // Recording area in landscape square mode
-                RecArea.HorizontalOptions = LayoutOptions.Center;
+                RecArea.HorizontalOptions = LayoutOptions.Start;
                 RecArea.VerticalOptions = LayoutOptions.Start;
                 RecArea.WidthRequest = padreaSize;
-                RecArea.Margin = new Thickness(0, controlsHeight + 16, 0, 0);
+                RecArea.Margin = new Thickness(padreaLeft, controlsHeight + 16, 0, 0);
                 
-                // Navigation bar above the padrea (landscape square mode)
-                NavigationBar.HorizontalOptions = LayoutOptions.Center;
+                // Navigation bar above the padrea
+                NavigationBar.HorizontalOptions = LayoutOptions.Start;
                 NavigationBar.VerticalOptions = LayoutOptions.Start;
                 NavigationBar.WidthRequest = padreaSize;
-                NavigationBar.Margin = new Thickness(0, controlsHeight + 16 + recAreaHeight + padding, 0, 0);
+                NavigationBar.Margin = new Thickness(padreaLeft, controlsHeight + 16 + recAreaHeight + padding, 0, 0);
 
-                PadContainer.HorizontalOptions = LayoutOptions.Center;
+                PadContainer.HorizontalOptions = LayoutOptions.Start;
                 PadContainer.VerticalOptions = LayoutOptions.Center;
                 PadContainer.WidthRequest = padreaSize;
                 PadContainer.HeightRequest = padreaSize;
-                PadContainer.Margin = new Thickness(0);
+                PadContainer.Margin = new Thickness(padreaLeft, 0, 0, 0);
 
-                // Effect area on the right side - constrained width
-                double padreaRight = padreaCenterX + padreaSize / 2;
-                double efareaWidth = _pageWidth - padreaRight - padding * 2;
-                
-                _effectAreaDrawable.SetOrientation(true); // Horizontal buttons at top
-                _effectAreaDrawable.SetLandscapeSquare(true); // EQ under LPF layout
+                // Effect area: strict bounds within content area
+                _effectAreaDrawable.SetOrientation(true);
+                _effectAreaDrawable.SetLandscapeSquare(true);
                 EffectArea.HorizontalOptions = LayoutOptions.Start;
                 EffectArea.VerticalOptions = LayoutOptions.Start;
-                EffectArea.WidthRequest = Math.Max(40, efareaWidth);
-                EffectArea.HeightRequest = _pageHeight - padding * 2;
-                EffectArea.Margin = new Thickness(padreaRight + padding, 0, 0, 0);
+                EffectArea.WidthRequest = efareaWidth;
+                EffectArea.HeightRequest = efareaHeight;
+                EffectArea.Margin = new Thickness(efareaLeft, efareaTop, 0, 0);
             }
         }
         else

@@ -9,11 +9,13 @@
     <Grid x:Name="MainGrid" Padding="8">
         <!-- Layout will be configured dynamically in code-behind -->
         
-        <!-- Hamburger Menu Button and Commit Label - top right corner -->
-        <StackLayout VerticalOptions="Start"
+        <!-- Hamburger Menu Button and Commit Label - top right corner, high ZIndex to stay on top -->
+        <StackLayout x:Name="HamburgerStack"
+                     VerticalOptions="Start"
                      HorizontalOptions="End"
                      Spacing="2"
-                     Margin="4,0">
+                     Margin="4,0"
+                     ZIndex="100">
             <Border x:Name="HamburgerButton"
                     StrokeShape="RoundRectangle 6"
                     Padding="8,6"
