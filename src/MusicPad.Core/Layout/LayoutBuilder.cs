@@ -319,6 +319,159 @@ public class ElementBuilder
         return this;
     }
 
+    /// <summary>
+    /// Sets size for a button that fits within height: Min(height - margin*2, maxSize).
+    /// Used for buttons that should be square but scale down in short containers.
+    /// </summary>
+    public ElementBuilder ButtonSize(string maxSizeConstant, string marginConstant)
+    {
+        _spec.Width = new SizeSpec
+        {
+            Type = SizeType.ButtonSize,
+            ConstantName = maxSizeConstant,
+            ButtonMarginConstant = marginConstant
+        };
+        _spec.Height = new SizeSpec
+        {
+            Type = SizeType.ButtonSize,
+            ConstantName = maxSizeConstant,
+            ButtonMarginConstant = marginConstant
+        };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets size for a button with fixed values.
+    /// </summary>
+    public ElementBuilder ButtonSize(float maxSize, float margin = 8f)
+    {
+        _spec.Width = new SizeSpec
+        {
+            Type = SizeType.ButtonSize,
+            Value = maxSize,
+            ButtonMargin = margin
+        };
+        _spec.Height = new SizeSpec
+        {
+            Type = SizeType.ButtonSize,
+            Value = maxSize,
+            ButtonMargin = margin
+        };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets height to fill the container.
+    /// </summary>
+    public ElementBuilder FillHeight()
+    {
+        _spec.Height = new SizeSpec { Type = SizeType.FillHeight };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets width to a fixed value.
+    /// </summary>
+    public ElementBuilder Width(float width)
+    {
+        _spec.Width = new SizeSpec { Type = SizeType.Fixed, Value = width };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets width from a constant.
+    /// </summary>
+    public ElementBuilder Width(string constantName)
+    {
+        _spec.Width = new SizeSpec { Type = SizeType.Constant, ConstantName = constantName };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets height to a fixed value.
+    /// </summary>
+    public ElementBuilder Height(float height)
+    {
+        _spec.Height = new SizeSpec { Type = SizeType.Fixed, Value = height };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets height from a constant.
+    /// </summary>
+    public ElementBuilder Height(string constantName)
+    {
+        _spec.Height = new SizeSpec { Type = SizeType.Constant, ConstantName = constantName };
+        return this;
+    }
+
+    /// <summary>
+    /// Positions element to the left of another element (before it).
+    /// </summary>
+    public ElementBuilder Before(string elementName, float spacing = 0)
+    {
+        _spec.XPosition = new PositionSpec
+        {
+            Type = PositionType.Before,
+            RelativeTo = elementName,
+            Value = spacing
+        };
+        return this;
+    }
+
+    /// <summary>
+    /// Positions element to the left of another element with constant spacing.
+    /// </summary>
+    public ElementBuilder Before(string elementName, string spacingConstant)
+    {
+        _spec.XPosition = new PositionSpec
+        {
+            Type = PositionType.Before,
+            RelativeTo = elementName,
+            ConstantName = spacingConstant
+        };
+        return this;
+    }
+
+    /// <summary>
+    /// Positions element at right edge with constant offset.
+    /// </summary>
+    public ElementBuilder Right(string constantName)
+    {
+        _spec.XPosition = new PositionSpec { Type = PositionType.Right, ConstantName = constantName };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets width to fill the space between two elements with padding.
+    /// </summary>
+    public ElementBuilder FillWidthBetween(string afterElement, string beforeElement, string paddingConstant)
+    {
+        _spec.Width = new SizeSpec
+        {
+            Type = SizeType.FillBetween,
+            FillAfterElement = afterElement,
+            FillBeforeElement = beforeElement,
+            FillPaddingConstant = paddingConstant
+        };
+        return this;
+    }
+
+    /// <summary>
+    /// Sets width to fill the space between two elements with fixed padding.
+    /// </summary>
+    public ElementBuilder FillWidthBetween(string afterElement, string beforeElement, float padding = 8f)
+    {
+        _spec.Width = new SizeSpec
+        {
+            Type = SizeType.FillBetween,
+            FillAfterElement = afterElement,
+            FillBeforeElement = beforeElement,
+            FillPadding = padding
+        };
+        return this;
+    }
+
     // === Chaining ===
 
     /// <summary>

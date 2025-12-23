@@ -115,7 +115,8 @@ MusicPad/
 │       │   ├── ArpHarmonyLayoutCalculator.cs # ArpHarmony layout calculator
 │       │   ├── ArpHarmonyLayoutDefinition.cs # ArpHarmony layout definition
 │       │   ├── EffectSelectorLayoutCalculator.cs # Effect selector buttons layout
-│       │   └── EffectSelectorLayoutDefinition.cs # Effect selector layout definition
+│       │   ├── EffectSelectorLayoutDefinition.cs # Effect selector layout definition
+│       │   └── RecAreaLayoutDefinition.cs    # RecArea layout definition
 │       └── Sfz/
 │           ├── SfzParser.cs          # SFZ file parser
 │           ├── SfzPlayer.cs          # Polyphonic sample playback
@@ -152,7 +153,8 @@ MusicPad/
 │       │   ├── ReverbLayoutTests.cs            # Reverb layout tests
 │       │   ├── EqLayoutTests.cs                # EQ layout tests
 │       │   ├── ArpHarmonyLayoutTests.cs        # ArpHarmony layout tests
-│       │   └── EffectSelectorLayoutTests.cs    # Effect selector layout tests
+│       │   ├── EffectSelectorLayoutTests.cs    # Effect selector layout tests
+│       │   └── RecAreaLayoutTests.cs           # RecArea layout tests
 │       ├── Controls/
 │       │   └── DrawableConstantsTests.cs       # Shared constants tests
 │       ├── WaveTableGeneratorTests.cs
@@ -489,6 +491,7 @@ The main synthesizer interface is divided into named areas:
 | `ReverbLayoutTests` | Reverb layout calculator and DSL tests |
 | `EqLayoutTests` | EQ sliders layout tests |
 | `ArpHarmonyLayoutTests` | ArpHarmony layout tests |
+| `RecAreaLayoutTests` | RecArea layout tests |
 
 ## Test Devices
 
@@ -535,7 +538,7 @@ The main synthesizer interface is divided into named areas:
 - [x] WAV export (offline rendering)
 - [x] FLAC export (lossless audio)
 - [x] Scales 8x8 padrea with chromatic layout and 3-color coding
-- [x] Unit tests passing (817 tests)
+- [x] Unit tests passing (869 tests)
 - [x] GitHub repository connected
 - [x] Fluent C# Layout DSL for responsive UI layouts (all effects + EQ + ArpHarmony)
 

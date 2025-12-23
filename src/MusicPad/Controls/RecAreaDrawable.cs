@@ -1,20 +1,28 @@
 using Microsoft.Maui.Graphics;
+using MusicPad.Core.Layout;
 using MusicPad.Core.Theme;
+using CoreRectF = MusicPad.Core.Layout.RectF;
+using MauiRectF = Microsoft.Maui.Graphics.RectF;
+using MauiPointF = Microsoft.Maui.Graphics.PointF;
 
 namespace MusicPad.Controls;
 
 /// <summary>
 /// Drawable for the recording area controls (Record, Stop, Play).
+/// Uses RecAreaLayoutDefinition for layout calculations.
 /// </summary>
 public class RecAreaDrawable : IDrawable
 {
-    private RectF _recordButtonRect;
-    private RectF _playButtonRect;
-    private RectF _statusRect;
+    private MauiRectF _recordButtonRect;
+    private MauiRectF _playButtonRect;
+    private MauiRectF _statusRect;
     
     private bool _isRecording;
     private bool _isPlaying;
     private string _statusText = "";
+    
+    // Layout definition (singleton)
+    private readonly RecAreaLayoutDefinition _layout = RecAreaLayoutDefinition.Instance;
     
     // Colors - dynamic palette colors
     private static Color BackgroundColor => Color.FromArgb(AppColors.BackgroundEffect);
@@ -81,10 +89,8 @@ public class RecAreaDrawable : IDrawable
         }
     }
     
-    public void Draw(ICanvas canvas, RectF dirtyRect)
+    public void Draw(ICanvas canvas, MauiRectF dirtyRect)
     {
-        float padding = 8f;
-        float buttonSize = Math.Min(dirtyRect.Height - padding * 2, 40f);
         float cornerRadius = 6f;
         
         // Background
@@ -96,27 +102,28 @@ public class RecAreaDrawable : IDrawable
         canvas.StrokeSize = 2f;
         canvas.DrawRoundedRectangle(dirtyRect, cornerRadius);
         
-        // Layout: [REC/STOP] [Status...] [PLAY/STOP]
-        float buttonY = dirtyRect.Y + (dirtyRect.Height - buttonSize) / 2;
+        // Calculate layout using DSL definition
+        var bounds = new CoreRectF(dirtyRect.X, dirtyRect.Y, dirtyRect.Width, dirtyRect.Height);
+        var context = LayoutContext.Horizontal();
+        var layoutResult = _layout.Calculate(bounds, context);
         
-        // Record button (left side)
-        float recX = dirtyRect.X + padding;
-        _recordButtonRect = new RectF(recX, buttonY, buttonSize, buttonSize);
+        // Get element rectangles from layout
+        var recordRect = layoutResult[RecAreaLayoutDefinition.RecordButton];
+        var playRect = layoutResult[RecAreaLayoutDefinition.PlayButton];
+        var statusRect = layoutResult[RecAreaLayoutDefinition.StatusArea];
+        
+        // Convert to MAUI RectF and store for hit testing
+        _recordButtonRect = new MauiRectF(recordRect.X, recordRect.Y, recordRect.Width, recordRect.Height);
+        _playButtonRect = new MauiRectF(playRect.X, playRect.Y, playRect.Width, playRect.Height);
+        _statusRect = new MauiRectF(statusRect.X, statusRect.Y, statusRect.Width, statusRect.Height);
+        
+        // Draw elements
         DrawRecordButton(canvas, _recordButtonRect);
-        
-        // Play button (right side)
-        float playX = dirtyRect.Right - padding - buttonSize;
-        _playButtonRect = new RectF(playX, buttonY, buttonSize, buttonSize);
         DrawPlayButton(canvas, _playButtonRect);
-        
-        // Status text (center)
-        float statusX = recX + buttonSize + padding * 2;
-        float statusWidth = playX - statusX - padding * 2;
-        _statusRect = new RectF(statusX, dirtyRect.Y, statusWidth, dirtyRect.Height);
         DrawStatus(canvas, _statusRect);
     }
     
-    private void DrawRecordButton(ICanvas canvas, RectF rect)
+    private void DrawRecordButton(ICanvas canvas, MauiRectF rect)
     {
         // Background
         canvas.FillColor = ButtonBgColor;
@@ -131,7 +138,7 @@ public class RecAreaDrawable : IDrawable
         {
             // Stop icon (square)
             canvas.FillColor = StopColor;
-            var stopRect = new RectF(iconX - iconSize/2, iconY - iconSize/2, iconSize, iconSize);
+            var stopRect = new MauiRectF(iconX - iconSize/2, iconY - iconSize/2, iconSize, iconSize);
             canvas.FillRoundedRectangle(stopRect, 2);
             
             // Pulsing border
@@ -147,7 +154,7 @@ public class RecAreaDrawable : IDrawable
         }
     }
     
-    private void DrawPlayButton(ICanvas canvas, RectF rect)
+    private void DrawPlayButton(ICanvas canvas, MauiRectF rect)
     {
         // Background
         canvas.FillColor = ButtonBgColor;
@@ -161,7 +168,7 @@ public class RecAreaDrawable : IDrawable
         {
             // Stop icon (square)
             canvas.FillColor = StopColor;
-            var stopRect = new RectF(iconX - iconSize/2, iconY - iconSize/2, iconSize, iconSize);
+            var stopRect = new MauiRectF(iconX - iconSize/2, iconY - iconSize/2, iconSize, iconSize);
             canvas.FillRoundedRectangle(stopRect, 2);
             
             // Active border
@@ -182,7 +189,7 @@ public class RecAreaDrawable : IDrawable
         }
     }
     
-    private void DrawStatus(ICanvas canvas, RectF rect)
+    private void DrawStatus(ICanvas canvas, MauiRectF rect)
     {
         if (string.IsNullOrEmpty(_statusText))
         {
@@ -201,7 +208,7 @@ public class RecAreaDrawable : IDrawable
         }
     }
     
-    public void OnTouchStart(PointF point)
+    public void OnTouchStart(MauiPointF point)
     {
         if (_recordButtonRect.Contains(point))
         {

@@ -142,8 +142,8 @@ public abstract class LayoutDefinition : ILayoutCalculator
         ElementSpec spec)
     {
         // Resolve size first
-        float width = ResolveSize(spec.Width, bounds, context, constants, isWidth: true);
-        float height = ResolveSize(spec.Height, bounds, context, constants, isWidth: false);
+        float width = ResolveSize(spec.Width, bounds, context, constants, resolved, isWidth: true);
+        float height = ResolveSize(spec.Height, bounds, context, constants, resolved, isWidth: false);
 
         // Resolve position
         float x = ResolveX(spec, bounds, constants, resolved, width);
@@ -153,7 +153,7 @@ public abstract class LayoutDefinition : ILayoutCalculator
     }
 
     private float ResolveSize(SizeSpec? spec, RectF bounds, LayoutContext context,
-        Dictionary<string, float> constants, bool isWidth)
+        Dictionary<string, float> constants, Dictionary<string, RectF> resolved, bool isWidth)
     {
         if (spec == null)
             return isWidth ? bounds.Width : bounds.Height;
@@ -164,6 +164,9 @@ public abstract class LayoutDefinition : ILayoutCalculator
             SizeType.Constant => constants.GetValueOrDefault(spec.ConstantName!, spec.Value),
             SizeType.Percentage => (isWidth ? bounds.Width : bounds.Height) * spec.Value / 100f,
             SizeType.KnobSize => ResolveKnobSize(bounds, constants, spec),
+            SizeType.ButtonSize => ResolveButtonSize(bounds, constants, spec),
+            SizeType.FillHeight => bounds.Height,
+            SizeType.FillBetween => ResolveFillBetween(bounds, constants, resolved, spec, isWidth),
             _ => spec.Value
         };
     }
@@ -190,6 +193,52 @@ public abstract class LayoutDefinition : ILayoutCalculator
         
         // Return total hit rect size (diameter + padding on each side)
         return actualDiameter + hitPadding * 2;
+    }
+
+    private float ResolveButtonSize(RectF bounds, Dictionary<string, float> constants, SizeSpec spec)
+    {
+        // Get max size from constant or value
+        float maxSize = spec.ConstantName != null 
+            ? constants.GetValueOrDefault(spec.ConstantName, 40f)
+            : spec.Value;
+        
+        // Get margin from constant or value
+        float margin = spec.ButtonMarginConstant != null
+            ? constants.GetValueOrDefault(spec.ButtonMarginConstant, 8f)
+            : spec.ButtonMargin ?? 8f;
+
+        // Button size is Min(height - margin*2, maxSize)
+        return Math.Min(bounds.Height - margin * 2, maxSize);
+    }
+
+    private float ResolveFillBetween(RectF bounds, Dictionary<string, float> constants, 
+        Dictionary<string, RectF> resolved, SizeSpec spec, bool isWidth)
+    {
+        float padding = spec.FillPaddingConstant != null
+            ? constants.GetValueOrDefault(spec.FillPaddingConstant, 8f)
+            : spec.FillPadding ?? 8f;
+
+        if (!isWidth)
+        {
+            // For height, just fill the bounds
+            return bounds.Height;
+        }
+
+        // For width, calculate space between two elements
+        float startX = bounds.X;
+        float endX = bounds.Right;
+
+        if (spec.FillAfterElement != null && resolved.TryGetValue(spec.FillAfterElement, out var afterRect))
+        {
+            startX = afterRect.Right + padding;
+        }
+
+        if (spec.FillBeforeElement != null && resolved.TryGetValue(spec.FillBeforeElement, out var beforeRect))
+        {
+            endX = beforeRect.Left - padding;
+        }
+
+        return Math.Max(0, endX - startX);
     }
 
     private float ResolveX(ElementSpec spec, RectF bounds, Dictionary<string, float> constants,
@@ -341,6 +390,16 @@ internal class SizeSpec
     public float? KnobVerticalMargin { get; set; }
     public string? KnobPaddingConstant { get; set; }
     public string? KnobVerticalMarginConstant { get; set; }
+    
+    // Button sizing - Min(height - margin*2, maxSize)
+    public float? ButtonMargin { get; set; }
+    public string? ButtonMarginConstant { get; set; }
+    
+    // FillBetween sizing - fill space between two elements
+    public string? FillAfterElement { get; set; }
+    public string? FillBeforeElement { get; set; }
+    public float? FillPadding { get; set; }
+    public string? FillPaddingConstant { get; set; }
 
     public SizeSpec Clone() => new()
     {
@@ -350,7 +409,13 @@ internal class SizeSpec
         KnobPadding = KnobPadding,
         KnobVerticalMargin = KnobVerticalMargin,
         KnobPaddingConstant = KnobPaddingConstant,
-        KnobVerticalMarginConstant = KnobVerticalMarginConstant
+        KnobVerticalMarginConstant = KnobVerticalMarginConstant,
+        ButtonMargin = ButtonMargin,
+        ButtonMarginConstant = ButtonMarginConstant,
+        FillAfterElement = FillAfterElement,
+        FillBeforeElement = FillBeforeElement,
+        FillPadding = FillPadding,
+        FillPaddingConstant = FillPaddingConstant
     };
 }
 
@@ -359,6 +424,9 @@ internal enum SizeType
     Fixed,
     Constant,
     Percentage,
-    KnobSize
+    KnobSize,
+    ButtonSize,   // Min(height - margin*2, maxSize)
+    FillHeight,   // Fill the container height
+    FillBetween   // Fill space between two elements (or after one element to before another)
 }
 
